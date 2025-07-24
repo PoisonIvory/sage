@@ -1,0 +1,17 @@
+# Xcode
+build/
+DerivedData/
+*.xcworkspace
+
+# Swift Package Manager
+.swiftpm/
+.build/
+
+# Firebase
+GoogleService-Info.plist
+
+# macOS
+.DS_Store
+
+# Cursor-specific
+.idea/
