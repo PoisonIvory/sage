@@ -1,30 +1,20 @@
-# Sage - Speech Biomarker iOS App
+# Sage: Voice Biomarker iOS App
 
-## 👩‍💻 About the Developer
+Sage is an iOS app that analyzes voice recordings to provide health insights and generate anonymized research datasets for women's health.
 
-This project is part of my personal journey to become a published iOS developer. I began with no formal engineering background and am learning through hands-on experience while building a real-world app with AI support. My goals include:
-
-* Learning Swift, SwiftUI, and iOS app architecture through real product development
-* Practicing test-driven development (TDD) and writing production-quality code
-* Understanding cloud infrastructure like Firebase, Firestore, and Google Cloud Functions
-* Applying responsible engineering practices around health data privacy and security
-* Publishing this app to the App Store and using it to contribute to health research
-
-I use Cursor and GPT-based tools to accelerate learning, debug faster, and adopt professional patterns early. If you're reading this as a collaborator, mentor, or reviewer—your feedback is always welcome!
-
-> **Project Goal:** Build an iOS app that analyzes voice recordings to provide health insights while generating anonymized research datasets for monetization.
-
-> **Learning Journey:** Project-based learning to go from non-engineer to published iOS developer in 8-10 weeks.
+---
 
 ## App Overview
 
-Sage helps users understand voice patterns through research-grade speech analysis. Users record tasks (sustained vowels, reading passages, spontaneous speech) and receive personalized insights (e.g. voice stability, speaking rate).
+VoiceInsights helps users understand voice patterns through research-grade speech analysis. Users record tasks (sustained vowels, reading passages, spontaneous speech) and receive personalized insights (e.g. voice stability, speaking rate).
 
 **Key Value Propositions:**
 
 * For Users: Track voice over time, early health insights, beautiful charts
 * For Researchers: Access anonymized, high-quality speech datasets
 * For Business: Dual revenue: premium subscriptions + research data licensing
+
+---
 
 ## Technical Architecture
 
@@ -55,6 +45,8 @@ Audio Upload → Cloud Function → Feature Extraction → Store Results → Upd
 * Voice quality (jitter, shimmer, HNR)
 * Temporal (rate, pauses)
 * Spectral (MFCCs, centroid)
+
+---
 
 ## Project Structure
 
@@ -90,21 +82,7 @@ Planned directory structure for architecture alignment:
 └── functions/ (Python Cloud Functions)
 ```
 
-```
-/Users/ivy/Desktop/Sage/
-├── Views/
-│   ├── Authentication/
-│   ├── Recording/
-│   ├── Dashboard/
-│   └── Profile/
-├── Models/
-├── Services/
-├── Utils/
-├── Resources/
-├── SageTests/
-├── SageUITests/
-└── functions/ (Python Cloud Functions)
-```
+---
 
 ## Development Setup
 
@@ -165,6 +143,8 @@ pip install -r requirements.txt
 firebase deploy --only functions
 ```
 
+---
+
 ## Test-Driven Development (TDD) Support
 
 ### Architectural Principles
@@ -194,6 +174,8 @@ firebase deploy --only functions
 * [ ] ViewModel logic is 100% covered by tests
 * [ ] All services are mocked in tests
 
+---
+
 ## Testing Strategy
 
 ### Unit Tests
@@ -217,6 +199,8 @@ firebase deploy --only functions
 * [ ] Works offline (local only)
 * [ ] Background processing completes
 
+---
+
 ## Key Metrics
 
 ### Engagement
@@ -237,6 +221,8 @@ firebase deploy --only functions
 * Researcher signups
 * Revenue per data sample
 
+---
+
 ## Privacy & Compliance
 
 * Encryption in transit and at rest
@@ -244,6 +230,8 @@ firebase deploy --only functions
 * Anonymized dataset export
 * Consent required for data use
 * HIPAA + GDPR + iOS Privacy labels
+
+---
 
 ## Deployment Process
 
@@ -258,6 +246,8 @@ firebase deploy --only functions
 * Complete metadata/screenshots
 * Submit for review
 * Release once approved
+
+---
 
 ## Learning Resources
 
@@ -278,6 +268,8 @@ firebase deploy --only functions
 * Firebase iOS docs
 * Cloud Functions docs
 
+---
+
 ## 🤖 Using Cursor AI with Sage
 
 * **Reference files and classes by full path/name** for best results (e.g., `Sage/ContentView.swift`).
@@ -287,6 +279,8 @@ firebase deploy --only functions
 * **Troubleshoot:** “Why might Firebase upload fail in this project?”
 
 *Tip: Cursor works best when you specify file names, class names, and expected behaviors in your prompts!*
+
+---
 
 ## AI Support (Cursor / GPT)
 
@@ -314,11 +308,15 @@ firebase deploy --only functions
 * Target: wellness users, not technical
 * Design for clarity + reliability
 
+---
+
 ## 🆘 Getting Help
 
 * **Stuck on setup?** Ask Cursor: “Why is my Firebase config not working?”
 * **Code questions?** Ask: “How does audio analysis work in this repo?”
 * **Common issues?** See 'Known Issues & Troubleshooting' in the Development Setup section.
+
+---
 
 ## Roadmap
 
@@ -345,4 +343,24 @@ firebase deploy --only functions
 ---
 
 **For Cursor Users:** Use this README as your source of truth. It describes architecture, patterns, constraints, and prompts to feed into AI tools like Cursor for reliable and helpful results.
+
+---
+
+## Continuous Improvement & Feedback
+
+All technical and standards-related feedback should be logged in the centralized Feedback Log in `DATA_STANDARDS.md`.  
+When a change is implemented, document it in `CHANGELOG.md` with the date, section(s) affected, description, rationale, and your name.
+
+**AI Guidance:**  
+When generating or updating code, documentation, or workflow, always check the Feedback Log in `DATA_STANDARDS.md` and the `CHANGELOG.md` for recent changes and standards.
+
+### Feedback Log
+
+| Date       | Section Affected | Change/Feedback                | Rationale/Source                | Updated By |
+|------------|------------------|-------------------------------|----------------------------------|------------|
+|            |                  |                               |                                  |            |
+
+---
+
+Thank you for contributing to Sage. Your work helps advance research-grade, privacy-first health technology.
 
