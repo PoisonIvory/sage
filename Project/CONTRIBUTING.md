@@ -73,4 +73,25 @@ When generating or updating code, documentation, or workflow, always check the l
 
 ---
 
+## UI Development Standards
+
+- All new SwiftUI Views **must** use the design system components in `Sage/DesignSystem/`.
+- Do not use raw `Color`, `Font`, or `padding` values—use `SageColors`, `SageTypography`, and `SageSpacing`.
+- If you need a new style, add it to the design system first.
+
+**Checklist for New Views:**
+- [ ] Uses `SageColors` for all colors
+- [ ] Uses `SageTypography` for all text
+- [ ] Uses `SageSpacing` for all padding/margins
+- [ ] Uses `SageButton`, `SageCard`, etc. where appropriate
+
+> **AI Guidance:**  
+> When generating UI code, always reference the design system.  
+> If you see hardcoded values, refactor to use the shared components.
+
+---
+
+See [UI_STANDARDS.md](./UI_STANDARDS.md) for full design system usage rules.
+See [PROMPTS.md](./PROMPTS.md) for AI prompt examples.
+
 Thank you for contributing to Sage. Your work helps advance research-grade, privacy-first health technology.

@@ -59,6 +59,21 @@ Use these prompts with Cursor or GPT-based tools to accelerate development, enfo
 
 ---
 
+## UI/UX Prompts
+
+- "Generate a new SwiftUI View for [feature] using only the components in `Sage/DesignSystem/` (e.g., SageCard, SageButton, SageTypography)."
+- "Refactor this View to use `SageColors` and `SageSpacing` instead of hardcoded values."
+- "Add a new card style to the design system and use it in the dashboard."
+
+> **AI Guidance:**  
+> Never generate UI code with hardcoded colors, fonts, or spacing.  
+> Always use the design system components and extend them as needed.
+
+---
+
+See [UI_STANDARDS.md](./UI_STANDARDS.md) for design system rules.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for developer checklist.
+
 **AI Guidance:**  
 When generating or updating prompts, always check the Feedback Log in `DATA_STANDARDS.md` and the `CHANGELOG.md` for the latest standards and refinements.
 

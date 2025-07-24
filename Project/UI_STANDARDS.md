@@ -52,6 +52,35 @@ When generating text or SwiftUI views, use system font styles, left-align body t
 
 ---
 
+## 2. Design System Usage (Required)
+
+All new SwiftUI Views **must** use the shared design system components in `Sage/DesignSystem/` for:
+- Colors (`SageColors`)
+- Typography (`SageTypography`)
+- Spacing (`SageSpacing`)
+- Buttons (`SageButton`)
+- Cards (`SageCard`)
+- Section headers (`SageSectionHeader`)
+- Avatars (`SageAvatar`)
+- Dividers (`SageDivider`)
+
+**Do not hardcode colors, fonts, or spacing in View files.**  
+**Always import and use the design system for consistency and maintainability.**
+
+> **AI Guidance:**  
+> When generating or refactoring any View, always use the components from `Sage/DesignSystem/`.  
+> If a new UI pattern is needed, first extend the design system, then use it in your View.
+
+**Example:**
+```swift
+SageCard {
+    SageSectionHeader(title: "Profile")
+    Text("Name: ...").font(SageTypography.body)
+}
+```
+
+---
+
 ## 3. Color & Iconography
 
 - **Brand Palette (Light Mode):**  
@@ -138,6 +167,13 @@ When generating UI/UX, always align with Sage’s brand ethos and emotional tone
 - Medium Article on Co–Star’s Design – Visual tone and metaphysical content
 - Apple UI Design Do’s and Don’ts – Accent color and font usage in branding
 - Apple vs Material Design – Use of white space and visual hierarchy
+
+---
+
+## 3. Cross-References
+- See [CONTRIBUTING.md](./CONTRIBUTING.md) for developer checklist
+- See [PROMPTS.md](./PROMPTS.md) for AI prompt examples
+- See [AI_GENERATION_RULES.md](./AI_GENERATION_RULES.md) for automated enforcement
 
 ---
 
