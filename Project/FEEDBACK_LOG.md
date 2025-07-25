@@ -25,6 +25,7 @@ This log captures all feedback, discoveries, and lessons learned during developm
 | YYYY-MM-DD | UI_STANDARDS.md     | Chart colors failed accessibility contrast | Adjusted palette, logged in CHANGELOG.md | Ivy        |
 | YYYY-MM-DD | Onboarding Flow     | User confusion on consent step         | Updated UI text, flagged for doc update | Ivy        |
 | YYYY-MM-DD | Test Coverage       | AI skipped test for error state        | Added test, improved PROMPTS.md | Ivy        |
+| 2025-07-25 | OnboardingFlowViewModel | AI imported MLVision modules by mistake | Added modal scope guard to all docs | Ivy |
 | ...        | ...                 | ...                                    | ...                          | ...        |
 
 ---
@@ -55,7 +56,5 @@ This log captures all feedback, discoveries, and lessons learned during developm
 - [ ] Entries reference the relevant file, component, or doc.
 - [ ] Updates to standards/docs based on this log are reflected in `CHANGELOG.md`.
 
----
 
-**End of FEEDBACK_LOG.md**  
 

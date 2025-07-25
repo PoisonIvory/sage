@@ -14,7 +14,7 @@ This data dictionary defines every field, feature, and metadata element used in 
 - **AI Guidance:**  
   When generating or updating code, tests, or documentation, always check this data dictionary for field definitions and update it as needed.
 - **Feedback Loop:**  
-  Log any changes, clarifications, or issues in the Feedback Log in `DATA_STANDARDS.md` and document finalized changes in `CHANGELOG.md`.
+  Log any changes, clarifications, or issues in the Feedback Log in `DATA_STANDARDS.md`.
 
 ---
 
@@ -36,7 +36,20 @@ This data dictionary defines every field, feature, and metadata element used in 
 | device_model       | String    | Device used for recording                        | iPhone 12             | Metadata, §2.3          | [Any iOS model]              |                            |
 | cycle_phase        | String    | Menstrual cycle phase                            | luteal                | Metadata, §2.3          | follicular, ovulation, luteal, menstruation | User/self-report/inferred  |
 | symptom_mood       | Integer   | Mood rating (user self-report, 1–5)              | 4                     | Metadata, §2.3          | 1–5                          | See survey schema          |
-| ...                | ...       | ...                                              | ...                   | ...                    | ...                          | ...                        |
+| frameFeatures      | Array    | Frame-level features: array of dicts with time-aligned feature vectors (e.g., time_sec, power_dB, is_clipped, etc.) | [{"time_sec":0.01,"power_dB":-20.0,"is_clipped":false}, ...] | Features, §3.3 | See below | Used for time-aligned analysis, export as CSV/JSON |
+| summaryFeatures    | Dict     | Summary features: means, SDs, etc. for each recording | {"F0_mean":220.5,"jitter_pct":0.89,...} | Features, §3.3 | See below | Exported as single-row CSV/JSON |
+| fileURL            | String   | Local file path/URL of the audio file | file:///Users/.../test.wav | Metadata, §2.3 | valid file URL | Not exported to research dataset |
+| filename           | String   | Name of the audio file | test.wav | Metadata, §2.3 | valid filename | Used for traceability |
+| fileFormat         | String   | Audio file format | wav | Metadata, §2.3 | wav | Must be WAV for analysis |
+| sampleRate         | Float    | Audio sample rate (Hz) | 48000 | Metadata, §2.3 | 48000 | Must be 48kHz for analysis |
+| bitDepth           | Int      | Audio bit depth | 24 | Metadata, §2.3 | 24 | Must be 24-bit for analysis |
+| channelCount       | Int      | Number of audio channels | 1 | Metadata, §2.3 | 1 | Must be mono for analysis |
+| deviceModel        | String   | Device model used for recording | iPhone 15 | Metadata, §2.3 | [Any iOS model] | For device QA |
+| osVersion          | String   | OS version | 17.0 | Metadata, §2.3 | [Any] | For device QA |
+| appVersion         | String   | App version | 1.0 | Metadata, §2.3 | [Any] | For traceability |
+| duration           | Float    | Duration of the recording (seconds) | 5.0 | Metadata, §2.3 | >0 | Used for validation |
+| cyclePhase         | String   | Menstrual cycle phase | luteal | Metadata, §2.3 | follicular, ovulation, luteal, menstruation | Optional |
+| symptomMood        | Int      | Mood rating (user self-report, 1–5) | 4 | Metadata, §2.3 | 1–5 | Optional |
 
 *Add new fields as needed. For arrays (e.g., MFCCs), specify the number of elements and order.*
 
@@ -76,7 +89,7 @@ This data dictionary defines every field, feature, and metadata element used in 
 ## 5. Data Schema Versioning
 
 - **Schema changes must be versioned.**  
-  - When a field is added, removed, or changed, increment the schema version and document the change in `CHANGELOG.md`.
+  - When a field is added, removed, or changed, increment the schema version.
   - Reference the schema version in all feature files and data exports.
 
 ---
@@ -84,7 +97,7 @@ This data dictionary defines every field, feature, and metadata element used in 
 ## 6. AI Guidance
 
 - When generating or updating code, tests, or documentation, always check this data dictionary for field definitions.
-- When adding a new field, update this file and log the change in the Feedback Log in `DATA_STANDARDS.md` and in `CHANGELOG.md`.
+- When adding a new field, update this file and log the change in the Feedback Log in `DATA_STANDARDS.md`.
 - When in doubt about a field, consult this file or propose a clarification.
 
 ---

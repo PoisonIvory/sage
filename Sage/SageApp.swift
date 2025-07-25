@@ -6,15 +6,31 @@
 //
 
 import SwiftUI
+import Firebase // DATA_STANDARDS.md §3.1
 
 @main
 struct SageApp: App {
-    let persistenceController = PersistenceController.shared
+    @StateObject private var authViewModel = AuthViewModel()
+
+    init() {
+        FirebaseApp.configure() // DATA_STANDARDS.md §3.1, AI_GENERATION_RULES.md §2.2
+        print("Firebase configured") // UI_STANDARDS.md §5.2
+    }
 
     var body: some Scene {
         WindowGroup {
-            ContentView()
-                .environment(\.managedObjectContext, persistenceController.container.viewContext)
+            Group {
+                if authViewModel.isAuthenticated {
+                    ContentView()
+                        .environmentObject(authViewModel)
+                } else {
+                    AuthChoiceView()
+                        .environmentObject(authViewModel)
+                }
+            }
+            .onAppear {
+                print("SageApp: App launched")
+            }
         }
     }
 }

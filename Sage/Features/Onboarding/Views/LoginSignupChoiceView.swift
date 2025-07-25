@@ -11,8 +11,17 @@ struct LoginSignupChoiceView: View {
                 .font(SageTypography.body)
                 .foregroundColor(SageColors.espressoBrown)
                 .multilineTextAlignment(.center)
-            SageButton(title: "Log In", action: onLogin)
-            SageButton(title: "Sign Up", action: onSignup)
+                .onAppear {
+                    print("LoginSignupChoiceView: appeared")
+                }
+            SageButton(title: "Log In", action: {
+                print("LoginSignupChoiceView: Log In button tapped")
+                onLogin()
+            })
+            SageButton(title: "Sign Up", action: {
+                print("LoginSignupChoiceView: Sign Up button tapped")
+                onSignup()
+            })
         }
     }
 }

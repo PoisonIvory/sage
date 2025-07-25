@@ -3,6 +3,7 @@ import SwiftUI
 struct SageCard<Content: View>: View {
     let content: Content
     init(@ViewBuilder content: () -> Content) {
+        print("SageCard: initialized")
         self.content = content()
     }
     var body: some View {

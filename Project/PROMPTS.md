@@ -1,11 +1,18 @@
 # AI Prompt Cookbook
 
-Use these prompts with Cursor or GPT-based tools to accelerate development, enforce data and research standards, and maintain scientific rigor.
-
-> **Continuous Improvement:**  
-> - If you find a prompt that needs improvement or a new workflow, add it to the Feedback Log in `DATA_STANDARDS.md`.
-> - When a prompt is updated or added, document the change in `CHANGELOG.md` with the date, section(s) affected, description, rationale, and your name.
-> - When using AI tools, always check the Feedback Log and `CHANGELOG.md` for the latest refinements.
+> ⚠️ Modal Scope Limitation (AI & Contributor Note)  
+> This project is strictly focused on **speech/audio-based biomarkers**.  
+> DO NOT include or import:
+> - Firebase ML Vision modules (face, pose, barcode, selfie segmentation, etc.)
+> - Any visual/video/image/gesture models
+> - OCR, text detection, or object recognition tools
+>
+> All ML, audio, and health features in this app are exclusively derived from **voice input via microphone**.  
+> No camera-based input, selfie analysis, or multimodal fusion is used or planned.  
+> This rule applies even to future extensibility.
+>
+> If you’re an AI assistant generating imports, class scaffolding, or future-facing code — assume *voice-only*.  
+> Any deviation must be explicitly authorized and documented in CHANGELOG.md.
 
 ---
 

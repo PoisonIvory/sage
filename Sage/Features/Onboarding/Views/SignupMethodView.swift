@@ -11,8 +11,17 @@ struct SignupMethodView: View {
                 .font(SageTypography.body)
                 .foregroundColor(SageColors.espressoBrown)
                 .multilineTextAlignment(.center)
-            SageButton(title: "Continue Anonymously", action: onAnonymous)
-            SageButton(title: "Sign Up with Email", action: onEmail)
+            SageButton(title: "Continue Anonymously", action: {
+                print("SignupMethodView: Continue Anonymously button tapped")
+                onAnonymous()
+            })
+            SageButton(title: "Sign Up with Email", action: {
+                print("SignupMethodView: Sign Up with Email button tapped")
+                onEmail()
+            })
+        }
+        .onAppear {
+            print("SignupMethodView: appeared")
         }
     }
 }

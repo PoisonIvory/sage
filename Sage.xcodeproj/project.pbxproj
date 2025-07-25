@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CA9F4FE72E33498400B66700 /* DeviceKit in Frameworks */ = {isa = PBXBuildFile; productRef = CA9F4FE62E33498400B66700 /* DeviceKit */; };
+		CA9F4FF82E3354AA00B66700 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CA9F4FF72E3354AA00B66700 /* GoogleService-Info.plist */; };
 		CAE6CA942E32FA2800CA805D /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = CAE6CA932E32FA2800CA805D /* FirebaseFirestore */; };
 		CAFB09312E32F285000001D1 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = CAFB09302E32F285000001D1 /* FirebaseAnalytics */; };
 		CAFB09332E32F285000001D1 /* FirebaseAppCheck in Frameworks */ = {isa = PBXBuildFile; productRef = CAFB09322E32F285000001D1 /* FirebaseAppCheck */; };
@@ -36,6 +38,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		CA9F4FF72E3354AA00B66700 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		CAFB08AC2E32BE28000001D1 /* Sage.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Sage.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CAFB08BF2E32BE2A000001D1 /* SageTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SageTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CAFB08C92E32BE2A000001D1 /* SageUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SageUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -65,6 +68,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				CAFB09332E32F285000001D1 /* FirebaseAppCheck in Frameworks */,
+				CA9F4FE72E33498400B66700 /* DeviceKit in Frameworks */,
 				CAFB09412E32F285000001D1 /* FirebaseStorage in Frameworks */,
 				CAE6CA942E32FA2800CA805D /* FirebaseFirestore in Frameworks */,
 				CAFB093D2E32F285000001D1 /* FirebaseMessaging in Frameworks */,
@@ -96,6 +100,7 @@
 		CAFB08A32E32BE28000001D1 = {
 			isa = PBXGroup;
 			children = (
+				CA9F4FF72E3354AA00B66700 /* GoogleService-Info.plist */,
 				CAFB08AE2E32BE28000001D1 /* Sage */,
 				CAFB08C22E32BE2A000001D1 /* SageTests */,
 				CAFB08CC2E32BE2A000001D1 /* SageUITests */,
@@ -142,6 +147,7 @@
 				CAFB093E2E32F285000001D1 /* FirebasePerformance */,
 				CAFB09402E32F285000001D1 /* FirebaseStorage */,
 				CAE6CA932E32FA2800CA805D /* FirebaseFirestore */,
+				CA9F4FE62E33498400B66700 /* DeviceKit */,
 			);
 			productName = Sage;
 			productReference = CAFB08AC2E32BE28000001D1 /* Sage.app */;
@@ -227,6 +233,7 @@
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
 				CAFB092F2E32F285000001D1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
+				CA9F4FE52E33498400B66700 /* XCRemoteSwiftPackageReference "DeviceKit" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = CAFB08AD2E32BE28000001D1 /* Products */;
@@ -245,6 +252,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CA9F4FF82E3354AA00B66700 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -430,6 +438,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We use your microphone to extract acoustic features from your speech and provide insights into your health.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -469,6 +478,7 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We use your microphone to extract acoustic features from your speech and provide insights into your health.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -628,6 +638,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		CA9F4FE52E33498400B66700 /* XCRemoteSwiftPackageReference "DeviceKit" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/devicekit/DeviceKit.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 5.6.0;
+			};
+		};
 		CAFB092F2E32F285000001D1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
@@ -639,6 +657,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		CA9F4FE62E33498400B66700 /* DeviceKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CA9F4FE52E33498400B66700 /* XCRemoteSwiftPackageReference "DeviceKit" */;
+			productName = DeviceKit;
+		};
 		CAE6CA932E32FA2800CA805D /* FirebaseFirestore */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = CAFB092F2E32F285000001D1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;

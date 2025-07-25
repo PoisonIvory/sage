@@ -1,9 +1,36 @@
 # AI_GENERATION_RULES.md
 
-## 1. Purpose
+## AI Guidance
 
-This document defines the rules and validation criteria that all AI-generated code, documentation, and tests must meet before being accepted into the Sage project.  
-**Goal:** Ensure that AI agents (e.g., Cursor, GPT) self-audit their outputs for compliance, scientific rigor, and maintainability—reducing human review burden and increasing trustworthiness.
+> ⚠️ Modal Scope Limitation (AI & Contributor Note)  
+> This project is strictly focused on **speech/audio-based biomarkers**.  
+> DO NOT include or import:
+> - Firebase ML Vision modules (face, pose, barcode, selfie segmentation, etc.)
+> - Any visual/video/image/gesture models
+> - OCR, text detection, or object recognition tools
+>
+> All ML, audio, and health features in this app are exclusively derived from **voice input via microphone**.  
+> No camera-based input, selfie analysis, or multimodal fusion is used or planned.  
+> This rule applies even to future extensibility.
+>
+> If you’re an AI assistant generating imports, class scaffolding, or future-facing code — assume *voice-only*.  
+> Any deviation must be explicitly authorized and documented in CHANGELOG.md.
+
+## Self-Audit
+
+> ⚠️ Modal Scope Limitation (AI & Contributor Note)  
+> This project is strictly focused on **speech/audio-based biomarkers**.  
+> DO NOT include or import:
+> - Firebase ML Vision modules (face, pose, barcode, selfie segmentation, etc.)
+> - Any visual/video/image/gesture models
+> - OCR, text detection, or object recognition tools
+>
+> All ML, audio, and health features in this app are exclusively derived from **voice input via microphone**.  
+> No camera-based input, selfie analysis, or multimodal fusion is used or planned.  
+> This rule applies even to future extensibility.
+>
+> If you’re an AI assistant generating imports, class scaffolding, or future-facing code — assume *voice-only*.  
+> Any deviation must be explicitly authorized and documented in CHANGELOG.md.
 
 ---
 
@@ -52,9 +79,6 @@ This document defines the rules and validation criteria that all AI-generated co
 - **Documentation Update:**  
   - All new features, fields, or standards must be documented in the appropriate Markdown files.
   - **If not updated:** Refuse to submit and prompt for documentation.
-- **CHANGELOG.md Update:**  
-  - All significant changes must be logged in `CHANGELOG.md` with date, section, rationale, and author.
-  - **If not updated:** Flag for review.
 
 ### 3.5 Feedback Loop
 

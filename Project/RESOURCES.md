@@ -23,7 +23,7 @@ Make it explicit for the agent:
   - Cross-link to [DATA_STANDARDS.md](./DATA_STANDARDS.md) for implementation details, [DATA_DICTIONARY.md](./DATA_DICTIONARY.md) for field definitions, and [UI_STANDARDS.md](./UI_STANDARDS.md) for data visualization.
   - Cite the original research paper or tool in code comments and docstrings.
   - If a required resource or validation is missing, flag the gap and suggest an update to this file.
-- When updating this file, log the change in the Feedback Log in DATA_STANDARDS.md and in CHANGELOG.md.
+- When updating this file, log the change in the Feedback Log in DATA_STANDARDS.md.
 ```
 
 ### 2. **Add “AI Prompt Examples” Section**

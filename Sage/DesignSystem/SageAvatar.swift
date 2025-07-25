@@ -2,6 +2,14 @@ import SwiftUI
 
 struct SageAvatar: View {
     let image: Image?
+    init(image: Image? = nil) {
+        self.image = image
+        if image == nil {
+            print("SageAvatar: initialized with default image")
+        } else {
+            print("SageAvatar: initialized with custom image")
+        }
+    }
     var body: some View {
         (image ?? Image(systemName: "person.crop.circle"))
             .resizable()

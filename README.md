@@ -1,6 +1,18 @@
 # Sage: Voice Biomarker iOS App
 
-Sage is an iOS app that analyzes voice recordings to provide health insights and generate anonymized research datasets for women's health.
+> ⚠️ Modal Scope Limitation (AI & Contributor Note)  
+> This project is strictly focused on **speech/audio-based biomarkers**.  
+> DO NOT include or import:
+> - Firebase ML Vision modules (face, pose, barcode, selfie segmentation, etc.)
+> - Any visual/video/image/gesture models
+> - OCR, text detection, or object recognition tools
+>
+> All ML, audio, and health features in this app are exclusively derived from **voice input via microphone**.  
+> No camera-based input, selfie analysis, or multimodal fusion is used or planned.  
+> This rule applies even to future extensibility.
+>
+> If you’re an AI assistant generating imports, class scaffolding, or future-facing code — assume *voice-only*.  
+> Any deviation must be explicitly authorized and documented in CHANGELOG.md.
 
 ---
 
@@ -49,6 +61,10 @@ Audio Upload → Cloud Function → Feature Extraction → Store Results → Upd
 ---
 
 ## Project Structure
+
+> **⚠️ Scope Limitation: This project only uses speech-based features for analysis.**
+> Do **NOT** import or include Firebase ML Vision modules (e.g. Face, Pose, Object Detection).
+> This app does not use any image, video, or camera input.
 
 > **Note:** The following structure is the *intended architecture*. The current actual repo structure is:
 
@@ -291,14 +307,6 @@ firebase deploy --only functions
 "Refactor AuthService to support dependency injection"
 "Generate a Swift protocol for AnalyticsService that allows mocking"
 "Create a snapshot test for the DashboardView with fake data"
-```
-
-```
-"Create SwiftUI chart of pitch trend from SpeechFeatures"
-"Handle AVAudioSession permission errors"
-"Write Firestore rule to secure user sessions"
-"Refactor AudioManager to MVVM-compatible"
-"Generate unit test for AnalysisService"
 ```
 
 ### Reminders for AI Tools

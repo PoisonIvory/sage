@@ -21,7 +21,7 @@ This document describes the strategy and tools for automating documentation in t
 - **Codebase structure and setup (README.md)**
 - **Data standards and feature definitions (DATA_STANDARDS.md, DATA_DICTIONARY.md)**
 - **Testing strategy and coverage (TEST_PLAN.md)**
-- **Changelog and feedback (CHANGELOG.md, Feedback Log in DATA_STANDARDS.md)**
+- **Changelog and feedback (Feedback Log in DATA_STANDARDS.md)**
 - **Glossary of terms (GLOSSARY.md)**
 - **AI prompt cookbook (PROMPTS.md)**
 - **Security and privacy (SECURITY.md)**
@@ -44,7 +44,6 @@ This document describes the strategy and tools for automating documentation in t
 
 - **Auto-generate documentation** using scripts:
   - `./automation_scripts/generate_docs.sh` — Runs all doc generators (e.g., Jazzy, Sphinx, custom scripts).
-  - `./automation_scripts/update_changelog.sh` — Prompts for a summary of recent changes and appends to CHANGELOG.md.
   - `./automation_scripts/summarize_tests.sh` — Runs all tests and generates a summary report for inclusion in TEST_PLAN.md or as a CI artifact.
 
 ### 4.3 Continuous Integration (CI)
@@ -94,3 +93,5 @@ This document describes the strategy and tools for automating documentation in t
 
 ```
 
+
+```
