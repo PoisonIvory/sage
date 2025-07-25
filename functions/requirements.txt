@@ -1,0 +1,10 @@
+opensmile==2.5.1
+praat-parselmouth==0.4.3
+librosa==0.10.1
+firebase-admin==6.2.0
+google-cloud-firestore==2.11.0
+numpy==1.24.3
+soundfile==0.12.1
+scipy==1.10.1
+requests==2.31.0
+# Add any other dependencies as needed for your environment
