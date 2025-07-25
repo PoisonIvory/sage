@@ -3,6 +3,7 @@ import SwiftUI
 struct SignUpView: View {
     @ObservedObject var viewModel: AuthViewModel
     @State private var signUpSuccess = false
+    var onAuthenticated: (() -> Void)? = nil
 
     var body: some View {
         VStack(spacing: 28) {
@@ -29,6 +30,20 @@ struct SignUpView: View {
                         }
                     }
                     .disabled(!viewModel.isFormValid || viewModel.isLoading)
+                    // Optional: Continue Anonymously
+                    Text("Continue Anonymously")
+                        .font(SageTypography.caption)
+                        .foregroundColor(SageColors.softTaupe)
+                        .underline()
+                        .multilineTextAlignment(.center)
+                        .padding(.top, SageSpacing.medium)
+                        .frame(maxWidth: .infinity)
+                        .onTapGesture {
+                            print("SignUpView: Continue Anonymously tapped")
+                            viewModel.signInAnonymously()
+                        }
+                        .accessibilityLabel("Continue without creating an account.")
+                        .accessibilityHint("Browse Sage anonymously. No account or data is stored.")
                 }
             }
             if viewModel.isLoading {
@@ -48,6 +63,20 @@ struct SignUpView: View {
         }
         .onAppear {
             print("SignUpView: appeared")
+        }
+        .onChange(of: viewModel.isAuthenticated) { isAuthenticated in
+            if isAuthenticated {
+                print("SignUpView: Authenticated, calling onAuthenticated")
+                AnalyticsService.shared.track(
+                    "sign_up_complete",
+                    properties: [
+                        "method": viewModel.isAnonymous ? "anonymous" : "email",
+                        "source": "SignUpView",
+                        "event_version": 1
+                    ]
+                )
+                onAuthenticated?()
+            }
         }
     }
 } 

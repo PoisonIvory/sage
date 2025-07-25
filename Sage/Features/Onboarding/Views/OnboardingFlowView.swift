@@ -33,6 +33,16 @@ struct OnboardingFlowView: View {
         }
         .onChange(of: viewModel.step) { _, newStep in
             print("OnboardingFlowView: step changed to \(newStep)") // UI_STANDARDS.md §5.2
+            if newStep == .completed {
+                AnalyticsService.shared.track(
+                    AnalyticsEvent.onboardingComplete,
+                    properties: [
+                        "source": "OnboardingFlowView",
+                        "event_version": 1
+                        // Optionally add duration if available
+                    ]
+                )
+            }
         }
     }
 }
