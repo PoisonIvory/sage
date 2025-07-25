@@ -38,7 +38,7 @@ This data dictionary defines every field, feature, and metadata element used in 
 | symptom_mood       | Integer   | Mood rating (user self-report, 1–5)              | 4                     | Metadata, §2.3          | 1–5                          | See survey schema          |
 | frameFeatures      | Array    | Frame-level features: array of dicts with time-aligned feature vectors (e.g., time_sec, power_dB, is_clipped, etc.) | [{"time_sec":0.01,"power_dB":-20.0,"is_clipped":false}, ...] | Features, §3.3 | See below | Used for time-aligned analysis, export as CSV/JSON |
 | summaryFeatures    | Dict     | Summary features: means, SDs, etc. for each recording | {"F0_mean":220.5,"jitter_pct":0.89,...} | Features, §3.3 | See below | Exported as single-row CSV/JSON |
-| fileURL            | String   | Local file path/URL of the audio file | file:///Users/.../test.wav | Metadata, §2.3 | valid file URL | Not exported to research dataset |
+| fileURL            | String   | Local file path/URL of the audio file | [test.wav](./test.wav) | Metadata, §2.3 | valid file URL | Not exported to research dataset |
 | filename           | String   | Name of the audio file | test.wav | Metadata, §2.3 | valid filename | Used for traceability |
 | fileFormat         | String   | Audio file format | wav | Metadata, §2.3 | wav | Must be WAV for analysis |
 | sampleRate         | Float    | Audio sample rate (Hz) | 48000 | Metadata, §2.3 | 48000 | Must be 48kHz for analysis |

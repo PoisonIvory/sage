@@ -28,24 +28,33 @@ final class RecordingValidator {
     /// - Returns: RecordingValidationResult with reasons and metrics.
     /// - References DATA_STANDARDS.md §3.4, DATA_DICTIONARY.md, RESOURCES.md.
     static func validateFull(recording: Recording) -> RecordingValidationResult {
+        print("[RecordingValidator] Starting validation for recording id=\(recording.id)")
         var reasons: [String] = []
         var metrics: [String: AnyCodable] = [:]
 
         // Duration check
         if recording.duration < Thresholds.minDuration {
-            reasons.append("Duration too short (< \(Thresholds.minDuration)s)")
+            let msg = "Duration too short (< \(Thresholds.minDuration)s)"
+            print("[RecordingValidator] \(msg)")
+            reasons.append(msg)
         }
         metrics["duration"] = AnyCodable(recording.duration)
 
         // Format checks
         if recording.sampleRate != Thresholds.requiredSampleRate {
-            reasons.append("Sample rate not 48kHz (found \(recording.sampleRate))")
+            let msg = "Sample rate not 48kHz (found \(recording.sampleRate))"
+            print("[RecordingValidator] \(msg)")
+            reasons.append(msg)
         }
         if recording.bitDepth != Thresholds.requiredBitDepth {
-            reasons.append("Bit depth not 24-bit (found \(recording.bitDepth))")
+            let msg = "Bit depth not 24-bit (found \(recording.bitDepth))"
+            print("[RecordingValidator] \(msg)")
+            reasons.append(msg)
         }
         if recording.channelCount != Thresholds.requiredChannels {
-            reasons.append("Not mono audio (found \(recording.channelCount) channels)")
+            let msg = "Not mono audio (found \(recording.channelCount) channels)"
+            print("[RecordingValidator] \(msg)")
+            reasons.append(msg)
         }
 
         // Silence detection (frame-level)
@@ -58,8 +67,11 @@ final class RecordingValidator {
             }
             let silencePct = Double(silenceFrames.count) / Double(frames.count)
             metrics["silence_pct"] = AnyCodable(silencePct)
+            print("[RecordingValidator] Silence percentage: \(Int(silencePct * 100))%")
             if silencePct > Thresholds.maxSilencePct {
-                reasons.append("Too much silence (\(Int(silencePct * 100))%)")
+                let msg = "Too much silence (\(Int(silencePct * 100))%)"
+                print("[RecordingValidator] \(msg)")
+                reasons.append(msg)
             }
         }
 
@@ -73,30 +85,33 @@ final class RecordingValidator {
             }
             let clippingPct = Double(clippedFrames.count) / Double(frames.count)
             metrics["clipping_pct"] = AnyCodable(clippingPct)
+            print("[RecordingValidator] Clipping percentage: \(String(format: "%.1f", clippingPct * 100))%")
             if clippingPct > Thresholds.maxClippingPct {
-                // Format as percentage with one decimal place (DATA_STANDARDS.md §3.4)
                 let clippingPercent = clippingPct * 100
-                reasons.append("Clipping detected (\(String(format: "%.1f", clippingPercent))% of frames)")
+                let msg = "Clipping detected (\(String(format: "%.1f", clippingPercent))% of frames)"
+                print("[RecordingValidator] \(msg)")
+                reasons.append(msg)
             }
         }
 
         // SNR estimation (if available)
         if let snr = recording.summaryFeatures?["snr_dB"]?.value as? Double {
             metrics["snr_dB"] = AnyCodable(snr)
+            print("[RecordingValidator] SNR: \(snr) dB")
             if snr < Thresholds.minSNR {
-                reasons.append("Low SNR (< \(Thresholds.minSNR) dB)")
+                let msg = "Low SNR (< \(Thresholds.minSNR) dB)"
+                print("[RecordingValidator] \(msg)")
+                reasons.append(msg)
             }
         }
 
-        // Reference sample QA (RESOURCES.md §6)
-        // (Stub: actual implementation would compare to reference outputs)
-        // if isReferenceSample(recording) { ... compare features, log discrepancies ... }
-
-        return RecordingValidationResult(
+        let result = RecordingValidationResult(
             isValid: reasons.isEmpty,
             reasons: reasons,
             metrics: metrics.isEmpty ? nil : metrics
         )
+        print("[RecordingValidator] Validation result for recording id=\(recording.id): isValid=\(result.isValid), reasons=\(result.reasons), metrics=\(result.metrics ?? [:])")
+        return result
     }
 
     // MARK: - Reference Sample QA (stub)

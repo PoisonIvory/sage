@@ -29,6 +29,7 @@ final class AudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate, 
 
     // MARK: - Recording Methods
     func startRecording(promptID: String) {
+        print("[AudioRecorder] Attempting to start recording for promptID=\(promptID)")
         self.promptID = promptID
         let audioSession = AVAudioSession.sharedInstance()
         do {
@@ -54,19 +55,27 @@ final class AudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate, 
             currentTime = 0
             isRecording = true
             frameFeatures = []
+            print("[AudioRecorder] Recording started: file=\(fileName), userID=\(userID), sampleRate=\(sampleRate), bitDepth=\(bitDepth), channels=\(channelCount)")
             startMeterTimer()
         } catch {
-            print("❌ Failed to start recording: \(error.localizedDescription)")
+            print("[AudioRecorder] Failed to start recording: \(error.localizedDescription)")
         }
     }
 
     func stopRecording(promptID: String) {
-        guard let recorder = audioRecorder else { return }
+        print("[AudioRecorder] Stopping recording for promptID=\(promptID)")
+        guard let recorder = audioRecorder else {
+            print("[AudioRecorder] No active recorder found on stopRecording")
+            return
+        }
         recorder.stop()
         isRecording = false
         timer?.invalidate()
         timer = nil
-        guard let start = startTime else { return }
+        guard let start = startTime else {
+            print("[AudioRecorder] No startTime found on stopRecording")
+            return
+        }
         let duration = Date().timeIntervalSince(start)
         let url = recorder.url
         let deviceModel = UIDevice.current.model
@@ -91,6 +100,7 @@ final class AudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate, 
             frameFeatures: frameFeatures,
             summaryFeatures: nil // To be filled by analysis pipeline
         )
+        print("[AudioRecorder] Recording stopped: file=\(url.lastPathComponent), duration=\(duration)s, frames=\(frameFeatures.count)")
         recordings.append(recording)
         saveRecordings()
     }
@@ -99,8 +109,9 @@ final class AudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate, 
         let url = recording.fileURL
         do {
             try FileManager.default.removeItem(at: url)
+            print("[AudioRecorder] Deleted recording file: \(url.lastPathComponent)")
         } catch {
-            print("⚠️ Error deleting recording: \(error.localizedDescription)")
+            print("[AudioRecorder] Error deleting recording: \(error.localizedDescription)")
         }
         recordings.removeAll { $0.id == recording.id }
         saveRecordings()
@@ -108,6 +119,7 @@ final class AudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate, 
 
     // MARK: - Metering & Frame Feature Extraction
     private func startMeterTimer() {
+        print("[AudioRecorder] Starting metering timer for frame feature extraction")
         timer = Timer.scheduledTimer(withTimeInterval: 0.01, repeats: true) { [weak self] _ in
             guard let self = self, let recorder = self.audioRecorder else { return }
             recorder.updateMeters()
@@ -121,6 +133,9 @@ final class AudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate, 
             ]
             self.frameFeatures.append(frame)
             self.currentMeterLevel = power
+            if Int(self.currentTime * 100) % 100 == 0 { // Log every second
+                print("[AudioRecorder] Frame feature: time=\(self.currentTime)s, power=\(power), isClipped=\(isClipped)")
+            }
         }
     }
 
@@ -135,8 +150,9 @@ final class AudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate, 
         do {
             let data = try JSONEncoder().encode(recordings)
             try data.write(to: recordingsFilePath())
+            print("[AudioRecorder] Recordings saved to disk (")
         } catch {
-            print("💾 Error saving recordings: \(error.localizedDescription)")
+            print("[AudioRecorder] Error saving recordings: \(error.localizedDescription)")
         }
     }
     private func loadRecordings() {
@@ -145,8 +161,9 @@ final class AudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate, 
         do {
             let data = try Data(contentsOf: path)
             recordings = try JSONDecoder().decode([Recording].self, from: data)
+            print("[AudioRecorder] Loaded \(recordings.count) recordings from disk")
         } catch {
-            print("📂 Error loading recordings: \(error.localizedDescription)")
+            print("[AudioRecorder] Error loading recordings: \(error.localizedDescription)")
         }
     }
 }
@@ -154,9 +171,19 @@ final class AudioRecorder: NSObject, ObservableObject, AVAudioRecorderDelegate, 
 extension AudioRecorder {
     /// Requests microphone permission and calls the completion handler with the result.
     func requestMicrophonePermission(completion: @escaping (Bool) -> Void) {
-        AVAudioSession.sharedInstance().requestRecordPermission { granted in
-            DispatchQueue.main.async {
-                completion(granted)
+        if #available(iOS 17.0, *) {
+            AVAudioApplication.requestRecordPermission { granted in
+                DispatchQueue.main.async {
+                    print("[AudioRecorder] Microphone permission granted=\(granted)")
+                    completion(granted)
+                }
+            }
+        } else {
+            AVAudioSession.sharedInstance().requestRecordPermission { granted in
+                DispatchQueue.main.async {
+                    print("[AudioRecorder] Microphone permission granted=\(granted)")
+                    completion(granted)
+                }
             }
         }
     }

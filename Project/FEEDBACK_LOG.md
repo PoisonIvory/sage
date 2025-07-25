@@ -26,6 +26,7 @@ This log captures all feedback, discoveries, and lessons learned during developm
 | YYYY-MM-DD | Onboarding Flow     | User confusion on consent step         | Updated UI text, flagged for doc update | Ivy        |
 | YYYY-MM-DD | Test Coverage       | AI skipped test for error state        | Added test, improved PROMPTS.md | Ivy        |
 | 2025-07-25 | OnboardingFlowViewModel | AI imported MLVision modules by mistake | Added modal scope guard to all docs | Ivy |
+| 2024-07-XX | Firestore schema, DATA_DICTIONARY.md, DATA_STANDARDS.md | Migrated frameFeatures to FrameBatch subcollection (50 frames/doc, 100Hz, power_dB rounded). Updated docs and added migration helper for legacy data. | Firestore doc size, query efficiency, clinical alignment | AI/automation |
 | ...        | ...                 | ...                                    | ...                          | ...        |
 
 ---

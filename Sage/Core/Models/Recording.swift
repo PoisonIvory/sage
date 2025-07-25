@@ -127,4 +127,35 @@ struct AnyCodable: Codable, Hashable, Equatable {
         default: hasher.combine(0)
         }
     }
-} 
+}
+
+// MARK: - Firestore Dictionary Conversion
+extension Recording {
+    func toFirestoreDict() -> [String: Any] {
+        var dict: [String: Any] = [
+            "user_id": userID,
+            "session_time": ISO8601DateFormatter().string(from: sessionTime),
+            "task": task,
+            "filename": filename,
+            "fileFormat": fileFormat,
+            "sampleRate": sampleRate,
+            "bitDepth": bitDepth,
+            "channelCount": channelCount,
+            "deviceModel": deviceModel,
+            "osVersion": osVersion,
+            "appVersion": appVersion,
+            "duration": duration
+        ]
+        if let cyclePhase = cyclePhase { dict["cyclePhase"] = cyclePhase }
+        if let symptomMood = symptomMood { dict["symptomMood"] = symptomMood }
+        // Remove frameFeatures from Firestore export; now stored in subcollection
+        if let summaryFeatures = summaryFeatures {
+            dict["summaryFeatures"] = summaryFeatures.mapValues { $0.value }
+        }
+        // Add hasFrameData flag if frameFeatures exist in memory
+        dict["hasFrameData"] = (frameFeatures != nil && !(frameFeatures?.isEmpty ?? true))
+        return dict
+    }
+}
+
+/// NOTE: As of 2024-07, frame-level features are stored in Firestore subcollection 'frames' as FrameBatch documents. See DATA_STANDARDS.md §3.4. 
