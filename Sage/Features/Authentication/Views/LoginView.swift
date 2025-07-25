@@ -8,23 +8,18 @@ struct LoginView: View {
             SageSectionHeader(title: "Login")
             SageCard {
                 VStack(alignment: .leading, spacing: 16) {
-                    TextField("Email", text: $viewModel.email)
-                        .keyboardType(.emailAddress)
-                        .autocapitalization(.none)
-                        .font(SageTypography.body)
-                        .padding(12)
-                        .background(SageColors.fogWhite)
-                        .cornerRadius(10)
-                    SecureField("Password", text: $viewModel.password)
-                        .font(SageTypography.body)
-                        .padding(12)
-                        .background(SageColors.fogWhite)
-                        .cornerRadius(10)
-                    if let error = viewModel.errorMessage {
-                        Text(error)
-                            .font(SageTypography.caption)
-                            .foregroundColor(SageColors.earthClay) // UI_STANDARDS.md §2.4
-                    }
+                    SageTextField(
+                        placeholder: "Email",
+                        text: $viewModel.email,
+                        error: viewModel.errorMessage?.contains("email") == true ? viewModel.errorMessage : nil,
+                        keyboardType: .emailAddress
+                    )
+                    SageTextField(
+                        placeholder: "Password",
+                        text: $viewModel.password,
+                        isSecure: true,
+                        error: viewModel.errorMessage?.contains("password") == true ? viewModel.errorMessage : nil
+                    )
                     SageButton(title: "Login") {
                         print("LoginView: Login button tapped")
                         viewModel.loginWithEmail()
@@ -33,7 +28,7 @@ struct LoginView: View {
                 }
             }
             if viewModel.isLoading {
-                ProgressView().padding()
+                SageProgressView().padding()
             }
             Spacer()
         }

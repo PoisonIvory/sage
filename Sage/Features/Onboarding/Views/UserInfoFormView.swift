@@ -12,6 +12,8 @@ struct UserInfoFormView: View {
 
     @State private var showAlert = false
     @State private var ageText: String = ""
+    @State private var nameError: String? = nil
+    @State private var ageError: String? = nil
 
     var body: some View {
         VStack(spacing: SageSpacing.large) {
@@ -20,31 +22,41 @@ struct UserInfoFormView: View {
                 .font(SageTypography.body)
                 .foregroundColor(SageColors.espressoBrown)
                 .multilineTextAlignment(.center)
-            // Name (DATA_DICTIONARY.md: name)
-            TextField("Name", text: $userInfo.name)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
+            SageTextField(
+                placeholder: "Name",
+                text: $userInfo.name,
+                error: nameError
+            )
             #if os(iOS)
-            // Age (DATA_DICTIONARY.md: age)
-            TextField("Age", text: $ageText)
-                .keyboardType(.numberPad)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
+            SageTextField(
+                placeholder: "Age",
+                text: $ageText,
+                error: ageError,
+                keyboardType: .numberPad
+            )
             #else
-            TextField("Age", text: $ageText)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
+            SageTextField(
+                placeholder: "Age",
+                text: $ageText,
+                error: ageError
+            )
             #endif
-            // Gender (DATA_DICTIONARY.md: gender)
-            TextField("Gender (optional)", text: $userInfo.gender)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
+            SageTextField(
+                placeholder: "Gender (optional)",
+                text: $userInfo.gender
+            )
             SageButton(title: "Continue") {
                 print("UserInfoFormView: Continue button tapped with name=\(userInfo.name), ageText=\(ageText), gender=\(userInfo.gender)")
                 // Validate per DATA_STANDARDS.md §2.3
-                if userInfo.name.isEmpty || ageText.isEmpty || Int(ageText) == nil {
-                    print("UserInfoFormView: Missing or invalid required fields")
-                    showAlert = true
-                } else {
+                nameError = userInfo.name.isEmpty ? "Name is required." : nil
+                ageError = ageText.isEmpty || Int(ageText) == nil ? "Valid age is required." : nil
+                if nameError == nil && ageError == nil {
                     userInfo.age = Int(ageText) ?? 0
                     print("UserInfoFormView: Form complete, calling onComplete() with age=\(userInfo.age)")
                     onComplete()
+                } else {
+                    print("UserInfoFormView: Missing or invalid required fields")
+                    showAlert = true
                 }
             }
         }

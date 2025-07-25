@@ -12,7 +12,11 @@ struct SessionsView: View {
                 VStack(spacing: SageSpacing.large) {
                     SageSectionHeader(title: "Voice Sessions")
                     if viewModel.recordings.isEmpty {
-                        emptyStateView
+                        SageEmptyState(
+                            iconName: "mic.circle.fill",
+                            title: "No recordings yet",
+                            message: "Start your first voice journal by tapping the + button."
+                        ) { }
                     } else {
                         recordingsList
                     }
@@ -57,32 +61,6 @@ struct SessionsView: View {
                 }
             }
         }
-    }
-
-    private var emptyStateView: some View {
-        VStack(alignment: .center, spacing: 12) {
-            Spacer(minLength: SageSpacing.xLarge)
-            Image(systemName: "mic.circle.fill")
-                .font(.system(size: 44, weight: .regular))
-                .foregroundColor(SageColors.sageTeal)
-                .accessibilityHidden(true)
-            Text("No recordings yet")
-                .font(SageTypography.headline)
-                .fontWeight(.bold)
-                .foregroundColor(SageColors.espressoBrown)
-                .padding(.top, SageSpacing.xLarge)
-            Text("Start your first voice journal by tapping the + button.")
-                .font(SageTypography.body)
-                .foregroundColor(SageColors.sandstone)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal, SageSpacing.xlarge)
-            Spacer()
-        }
-        .frame(maxWidth: .infinity)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("No recordings yet. Start your first voice journal by tapping the add button.")
-        .accessibilityIdentifier("sessions-empty-state")
-        // Test ID for UI testing
     }
 
     private var recordingsList: some View {
