@@ -13,7 +13,7 @@ final class SessionsViewModel: ObservableObject {
     @Published var uploadProgress: Double = 0.0
     @Published var lastValidationResult: RecordingValidationResult?
     @Published var currentPromptID: String? = nil
-    @Published var isRecordingActive: Bool = false
+    @Published var showRecordingModal: Bool = false
     @Published var uploadSuccess: Bool = false
 
     // MARK: - Dependencies
@@ -57,7 +57,7 @@ final class SessionsViewModel: ObservableObject {
                 // TODO: Replace with real prompt selection logic
                 let promptID = "default-prompt" // Stub: Replace with actual prompt selection
                 self.currentPromptID = promptID
-                self.isRecordingActive = true
+                self.showRecordingModal = true
                 self.startRecording(promptID: promptID)
             } else {
                 self.errorMessage = "Microphone access is required to record your voice journal. Please enable it in Settings."
@@ -69,7 +69,7 @@ final class SessionsViewModel: ObservableObject {
     func endCurrentSession() {
         guard let promptID = currentPromptID else { return }
         stopRecording(promptID: promptID)
-        isRecordingActive = false
+        showRecordingModal = false
         currentPromptID = nil
     }
 

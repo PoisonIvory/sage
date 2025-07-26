@@ -7,17 +7,13 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		CA6F2AE02E34E2710060DA83 /* FirebaseAppCheck in Frameworks */ = {isa = PBXBuildFile; productRef = CA6F2ADF2E34E2710060DA83 /* FirebaseAppCheck */; };
+		CA6F2AE22E34E2710060DA83 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = CA6F2AE12E34E2710060DA83 /* FirebaseAuth */; };
+		CA6F2AE42E34E2710060DA83 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = CA6F2AE32E34E2710060DA83 /* FirebaseCore */; };
+		CA6F2AE62E34E2710060DA83 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = CA6F2AE52E34E2710060DA83 /* FirebaseFirestore */; };
 		CA9F4FE72E33498400B66700 /* DeviceKit in Frameworks */ = {isa = PBXBuildFile; productRef = CA9F4FE62E33498400B66700 /* DeviceKit */; };
-		CA9F4FF82E3354AA00B66700 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CA9F4FF72E3354AA00B66700 /* GoogleService-Info.plist */; };
-		CAE6CA942E32FA2800CA805D /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = CAE6CA932E32FA2800CA805D /* FirebaseFirestore */; };
-		CAFB09312E32F285000001D1 /* FirebaseAnalytics in Frameworks */ = {isa = PBXBuildFile; productRef = CAFB09302E32F285000001D1 /* FirebaseAnalytics */; };
-		CAFB09332E32F285000001D1 /* FirebaseAppCheck in Frameworks */ = {isa = PBXBuildFile; productRef = CAFB09322E32F285000001D1 /* FirebaseAppCheck */; };
-		CAFB09352E32F285000001D1 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = CAFB09342E32F285000001D1 /* FirebaseAuth */; };
-		CAFB09372E32F285000001D1 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = CAFB09362E32F285000001D1 /* FirebaseCore */; };
-		CAFB09392E32F285000001D1 /* FirebaseCrashlytics in Frameworks */ = {isa = PBXBuildFile; productRef = CAFB09382E32F285000001D1 /* FirebaseCrashlytics */; };
-		CAFB093D2E32F285000001D1 /* FirebaseMessaging in Frameworks */ = {isa = PBXBuildFile; productRef = CAFB093C2E32F285000001D1 /* FirebaseMessaging */; };
-		CAFB093F2E32F285000001D1 /* FirebasePerformance in Frameworks */ = {isa = PBXBuildFile; productRef = CAFB093E2E32F285000001D1 /* FirebasePerformance */; };
-		CAFB09412E32F285000001D1 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = CAFB09402E32F285000001D1 /* FirebaseStorage */; };
+		CA9F50132E33AE8D00B66700 /* Mixpanel in Frameworks */ = {isa = PBXBuildFile; productRef = CA9F50122E33AE8D00B66700 /* Mixpanel */; };
+		CA9F508D2E34DBE400B66700 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CA9F508C2E34DBE400B66700 /* GoogleService-Info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -38,7 +34,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		CA9F4FF72E3354AA00B66700 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		CA9F508C2E34DBE400B66700 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		CAFB08AC2E32BE28000001D1 /* Sage.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Sage.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CAFB08BF2E32BE2A000001D1 /* SageTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SageTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CAFB08C92E32BE2A000001D1 /* SageUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SageUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -67,16 +63,12 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CAFB09332E32F285000001D1 /* FirebaseAppCheck in Frameworks */,
 				CA9F4FE72E33498400B66700 /* DeviceKit in Frameworks */,
-				CAFB09412E32F285000001D1 /* FirebaseStorage in Frameworks */,
-				CAE6CA942E32FA2800CA805D /* FirebaseFirestore in Frameworks */,
-				CAFB093D2E32F285000001D1 /* FirebaseMessaging in Frameworks */,
-				CAFB09352E32F285000001D1 /* FirebaseAuth in Frameworks */,
-				CAFB09392E32F285000001D1 /* FirebaseCrashlytics in Frameworks */,
-				CAFB09372E32F285000001D1 /* FirebaseCore in Frameworks */,
-				CAFB093F2E32F285000001D1 /* FirebasePerformance in Frameworks */,
-				CAFB09312E32F285000001D1 /* FirebaseAnalytics in Frameworks */,
+				CA6F2AE42E34E2710060DA83 /* FirebaseCore in Frameworks */,
+				CA6F2AE02E34E2710060DA83 /* FirebaseAppCheck in Frameworks */,
+				CA9F50132E33AE8D00B66700 /* Mixpanel in Frameworks */,
+				CA6F2AE22E34E2710060DA83 /* FirebaseAuth in Frameworks */,
+				CA6F2AE62E34E2710060DA83 /* FirebaseFirestore in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -100,11 +92,11 @@
 		CAFB08A32E32BE28000001D1 = {
 			isa = PBXGroup;
 			children = (
-				CA9F4FF72E3354AA00B66700 /* GoogleService-Info.plist */,
 				CAFB08AE2E32BE28000001D1 /* Sage */,
 				CAFB08C22E32BE2A000001D1 /* SageTests */,
 				CAFB08CC2E32BE2A000001D1 /* SageUITests */,
 				CAFB08AD2E32BE28000001D1 /* Products */,
+				CA9F508C2E34DBE400B66700 /* GoogleService-Info.plist */,
 			);
 			sourceTree = "<group>";
 		};
@@ -138,16 +130,12 @@
 			);
 			name = Sage;
 			packageProductDependencies = (
-				CAFB09302E32F285000001D1 /* FirebaseAnalytics */,
-				CAFB09322E32F285000001D1 /* FirebaseAppCheck */,
-				CAFB09342E32F285000001D1 /* FirebaseAuth */,
-				CAFB09362E32F285000001D1 /* FirebaseCore */,
-				CAFB09382E32F285000001D1 /* FirebaseCrashlytics */,
-				CAFB093C2E32F285000001D1 /* FirebaseMessaging */,
-				CAFB093E2E32F285000001D1 /* FirebasePerformance */,
-				CAFB09402E32F285000001D1 /* FirebaseStorage */,
-				CAE6CA932E32FA2800CA805D /* FirebaseFirestore */,
 				CA9F4FE62E33498400B66700 /* DeviceKit */,
+				CA9F50122E33AE8D00B66700 /* Mixpanel */,
+				CA6F2ADF2E34E2710060DA83 /* FirebaseAppCheck */,
+				CA6F2AE12E34E2710060DA83 /* FirebaseAuth */,
+				CA6F2AE32E34E2710060DA83 /* FirebaseCore */,
+				CA6F2AE52E34E2710060DA83 /* FirebaseFirestore */,
 			);
 			productName = Sage;
 			productReference = CAFB08AC2E32BE28000001D1 /* Sage.app */;
@@ -232,8 +220,9 @@
 			mainGroup = CAFB08A32E32BE28000001D1;
 			minimizedProjectReferenceProxies = 1;
 			packageReferences = (
-				CAFB092F2E32F285000001D1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 				CA9F4FE52E33498400B66700 /* XCRemoteSwiftPackageReference "DeviceKit" */,
+				CA9F50112E33AE8D00B66700 /* XCRemoteSwiftPackageReference "mixpanel-swift" */,
+				CA6F2ADE2E34E2710060DA83 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */,
 			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = CAFB08AD2E32BE28000001D1 /* Products */;
@@ -252,7 +241,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CA9F4FF82E3354AA00B66700 /* GoogleService-Info.plist in Resources */,
+				CA9F508D2E34DBE400B66700 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -638,6 +627,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		CA6F2ADE2E34E2710060DA83 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
+			requirement = {
+				kind = upToNextMajorVersion;
+				minimumVersion = 12.0.0;
+			};
+		};
 		CA9F4FE52E33498400B66700 /* XCRemoteSwiftPackageReference "DeviceKit" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/devicekit/DeviceKit.git";
@@ -646,66 +643,46 @@
 				minimumVersion = 5.6.0;
 			};
 		};
-		CAFB092F2E32F285000001D1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */ = {
+		CA9F50112E33AE8D00B66700 /* XCRemoteSwiftPackageReference "mixpanel-swift" */ = {
 			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/firebase/firebase-ios-sdk.git";
+			repositoryURL = "https://github.com/mixpanel/mixpanel-swift";
 			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 12.0.0;
+				branch = master;
+				kind = branch;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		CA6F2ADF2E34E2710060DA83 /* FirebaseAppCheck */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CA6F2ADE2E34E2710060DA83 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAppCheck;
+		};
+		CA6F2AE12E34E2710060DA83 /* FirebaseAuth */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CA6F2ADE2E34E2710060DA83 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseAuth;
+		};
+		CA6F2AE32E34E2710060DA83 /* FirebaseCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CA6F2ADE2E34E2710060DA83 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseCore;
+		};
+		CA6F2AE52E34E2710060DA83 /* FirebaseFirestore */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CA6F2ADE2E34E2710060DA83 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseFirestore;
+		};
 		CA9F4FE62E33498400B66700 /* DeviceKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = CA9F4FE52E33498400B66700 /* XCRemoteSwiftPackageReference "DeviceKit" */;
 			productName = DeviceKit;
 		};
-		CAE6CA932E32FA2800CA805D /* FirebaseFirestore */ = {
+		CA9F50122E33AE8D00B66700 /* Mixpanel */ = {
 			isa = XCSwiftPackageProductDependency;
-			package = CAFB092F2E32F285000001D1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseFirestore;
-		};
-		CAFB09302E32F285000001D1 /* FirebaseAnalytics */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = CAFB092F2E32F285000001D1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseAnalytics;
-		};
-		CAFB09322E32F285000001D1 /* FirebaseAppCheck */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = CAFB092F2E32F285000001D1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseAppCheck;
-		};
-		CAFB09342E32F285000001D1 /* FirebaseAuth */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = CAFB092F2E32F285000001D1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseAuth;
-		};
-		CAFB09362E32F285000001D1 /* FirebaseCore */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = CAFB092F2E32F285000001D1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseCore;
-		};
-		CAFB09382E32F285000001D1 /* FirebaseCrashlytics */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = CAFB092F2E32F285000001D1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseCrashlytics;
-		};
-		CAFB093C2E32F285000001D1 /* FirebaseMessaging */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = CAFB092F2E32F285000001D1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseMessaging;
-		};
-		CAFB093E2E32F285000001D1 /* FirebasePerformance */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = CAFB092F2E32F285000001D1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebasePerformance;
-		};
-		CAFB09402E32F285000001D1 /* FirebaseStorage */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = CAFB092F2E32F285000001D1 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
-			productName = FirebaseStorage;
+			package = CA9F50112E33AE8D00B66700 /* XCRemoteSwiftPackageReference "mixpanel-swift" */;
+			productName = Mixpanel;
 		};
 /* End XCSwiftPackageProductDependency section */
 	};

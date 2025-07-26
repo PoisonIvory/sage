@@ -70,7 +70,7 @@ struct SignUpView: View {
                 AnalyticsService.shared.track(
                     "sign_up_complete",
                     properties: [
-                        "method": viewModel.isAnonymous ? "anonymous" : "email",
+                        "method": viewModel.signUpMethod ?? "unknown",
                         "source": "SignUpView",
                         "event_version": 1
                     ]

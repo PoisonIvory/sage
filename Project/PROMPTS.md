@@ -30,6 +30,8 @@
 - "Generate unit tests for the shimmer extractor in AnalysisService.swift using controlled noise input, ensuring all edge cases are covered and referencing DATA_STANDARDS.md section 4. Add comments explaining how each test case relates to the standard."
 - "Write an XCUITest for the end-to-end flow from audio recording to dashboard insight display, ensuring all UI elements are accessible and tested on at least two simulators. Reference the relevant user flow in README.md."
 - "Create a test for MFCC extraction in AnalysisService.swift that validates output against the OpenSMILE reference in reference_data/. Add a comment referencing the OpenSMILE configuration in RESOURCES.md."
+- "Track onboarding_complete event with duration and source, per DATA_STANDARDS.md §4.3.1"
+- "Write a test for onboarding_complete tracking in AnalyticsService.swift"
 
 ---
 

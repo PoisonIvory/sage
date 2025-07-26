@@ -13,16 +13,26 @@ struct SageTextField: View {
             if isSecure {
                 SecureField(placeholder, text: $text)
                     .font(SageTypography.body)
+                    .foregroundColor(SageColors.espressoBrown)
                     .padding(12)
-                    .background(SageColors.fogWhite)
+                    .background(Color.white)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(SageColors.sandstone, lineWidth: 1.2)
+                    )
                     .cornerRadius(10)
                     .keyboardType(keyboardType)
                     .textInputAutocapitalization(autocapitalization)
             } else {
                 TextField(placeholder, text: $text)
                     .font(SageTypography.body)
+                    .foregroundColor(SageColors.espressoBrown)
                     .padding(12)
-                    .background(SageColors.fogWhite)
+                    .background(Color.white)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(SageColors.sandstone, lineWidth: 1.2)
+                    )
                     .cornerRadius(10)
                     .keyboardType(keyboardType)
                     .textInputAutocapitalization(autocapitalization)

@@ -159,6 +159,23 @@ When generating UI/UX, always align with Sage’s brand ethos and emotional tone
 
 ---
 
+## Voice Hero Component (Onboarding Manifesto)
+- **Purpose:** Unskippable manifesto screen for onboarding, sets Sage's clinical, conviction-driven tone.
+- **Visuals:**
+  - Background: SageColors.fogWhite with AbstractWaveBackground overlay for subtle texture.
+  - Illustration: Custom SwiftUI line-art mouth/voice motif, animated with gentle wave emission (see `MouthVoiceMotif`).
+  - Typography: Title uses `SageTypography.title` (bold, serif), subtitle uses `SageTypography.headline` with emphasis on 'proving'.
+  - Layout: Illustration left/top, text block center-right, wide margins (≥24pt), button below text.
+  - Button: 'Next', styled with `SageButton` and `SageColors.earthClay`, spring-damped tap animation.
+- **Accessibility:**
+  - Dynamic type and VoiceOver for all text.
+  - Button a11y label: 'Continue to next onboarding screen'.
+- **Animation:**
+  - Subtle, organic, spring-damped (matches TabView transitions).
+- **Reference:** See `VoiceHeroView.swift` in Onboarding/Views.
+
+---
+
 ## 7. Sources & References
 
 - Apple Human Interface Guidelines – Typography, Color, Animation, Accessibility

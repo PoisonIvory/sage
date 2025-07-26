@@ -50,6 +50,7 @@ This data dictionary defines every field, feature, and metadata element used in 
 | duration           | Float    | Duration of the recording (seconds) | 5.0 | Metadata, §2.3 | >0 | Used for validation |
 | cyclePhase         | String   | Menstrual cycle phase | luteal | Metadata, §2.3 | follicular, ovulation, luteal, menstruation | Optional |
 | symptomMood        | Int      | Mood rating (user self-report, 1–5) | 4 | Metadata, §2.3 | 1–5 | Optional |
+| onboarding_complete  | Event  | User completes onboarding flow. Fires when onboarding is finished, with duration and source properties. | { "duration": 42.0, "source": "ContentView", "event_version": 1, "origin": "AI_generated" } | AnalyticsService.swift, §4.3.1 | duration: Float, source: String, event_version: Int, origin: String | Per DATA_STANDARDS.md §4.3.1, no PII, testable, see PROMPTS.md |
 
 *Add new fields as needed. For arrays (e.g., MFCCs), specify the number of elements and order.*
 

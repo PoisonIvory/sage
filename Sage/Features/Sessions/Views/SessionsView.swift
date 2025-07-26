@@ -10,14 +10,10 @@ struct SessionsView: View {
         NavigationView {
             ZStack {
                 VStack(spacing: SageSpacing.large) {
-                    SageSectionHeader(title: "Voice Sessions")
                     if viewModel.recordings.isEmpty {
-                        SageEmptyState(
-                            iconName: "mic.circle.fill",
-                            title: "No recordings yet",
-                            message: "Start your first voice journal by tapping the + button."
-                        ) { }
+                        PoeticSessionsEmptyState()
                     } else {
+                        SageSectionHeader(title: "Voice Sessions")
                         recordingsList
                     }
                 }
@@ -38,7 +34,7 @@ struct SessionsView: View {
             }
             .navigationTitle("")
             .navigationBarHidden(true)
-            .sheet(isPresented: $viewModel.isRecordingActive) {
+            .sheet(isPresented: $viewModel.showRecordingModal) {
                 RecordingSessionModal(viewModel: viewModel)
             }
             .alert(isPresented: Binding<Bool>(
