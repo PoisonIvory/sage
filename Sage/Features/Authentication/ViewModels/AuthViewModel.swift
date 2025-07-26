@@ -2,29 +2,47 @@ import Foundation
 import Combine
 import FirebaseAuth
 
+// MARK: - Error Constants
+enum AuthError: String, CaseIterable {
+    case invalidEmail = "Invalid email"
+    case invalidPassword = "Invalid password"
+    
+    var message: String {
+        return self.rawValue
+    }
+}
+
 class AuthViewModel: ObservableObject {
     @Published var email: String = ""
     @Published var password: String = ""
     @Published var isLoading: Bool = false
+    @Published var isCheckingSession: Bool = false
     @Published var errorMessage: String?
     @Published var isAuthenticated: Bool = false
     @Published var signUpMethod: String? // "anonymous" or "email"
     @Published var shouldShowRetryOption: Bool = false
     @Published var canWorkOffline: Bool = false
 
-    init() {
+    init(disableAutoAuth: Bool = false) {
         print("AuthViewModel: Initializing")
-        checkExistingAuthentication()
+        if !disableAutoAuth {
+            checkExistingAuthentication()
+        }
     }
 
     // MARK: - Email/Password Auth
     func signUpWithEmail() {
         print("AuthViewModel: Sign Up button tapped with email=\(email)")
         guard isEmailValid, isPasswordValid else {
-            errorMessage = "Please enter a valid email and password."
+            if !isEmailValid {
+                errorMessage = AuthError.invalidEmail.message
+            } else if !isPasswordValid {
+                errorMessage = AuthError.invalidPassword.message
+            }
             print("AuthViewModel: Invalid email or password")
             return
         }
+        errorMessage = nil // Clear any previous error messages
         isLoading = true
         // Replace with Firebase Auth or your AuthManager
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
@@ -36,10 +54,15 @@ class AuthViewModel: ObservableObject {
     func loginWithEmail() {
         print("AuthViewModel: Login button tapped with email=\(email)")
         guard isEmailValid, isPasswordValid else {
-            errorMessage = "Please enter a valid email and password."
+            if !isEmailValid {
+                errorMessage = AuthError.invalidEmail.message
+            } else if !isPasswordValid {
+                errorMessage = AuthError.invalidPassword.message
+            }
             print("AuthViewModel: Invalid email or password")
             return
         }
+        errorMessage = nil // Clear any previous error messages
         isLoading = true
         // Replace with Firebase Auth or your AuthManager
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
@@ -76,6 +99,7 @@ class AuthViewModel: ObservableObject {
     /// Checks if there's an existing user session and automatically authenticates them
     func checkExistingAuthentication() {
         print("AuthViewModel: Checking for existing user session")
+        isCheckingSession = true
         
         if let currentUser = Auth.auth().currentUser {
             print("AuthViewModel: Found existing user session with UID: \(currentUser.uid)")
@@ -93,6 +117,11 @@ class AuthViewModel: ObservableObject {
             }
         } else {
             print("AuthViewModel: No existing user session found")
+        }
+        
+        // Add a small delay to show the loading state
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+            self.isCheckingSession = false
         }
     }
 
@@ -150,6 +179,7 @@ class AuthViewModel: ObservableObject {
         password = ""
         errorMessage = nil
         isLoading = false
+        isCheckingSession = false
         isAuthenticated = false
         signUpMethod = nil
         shouldShowRetryOption = false

@@ -13,31 +13,43 @@ struct AuthChoiceView: View {
         NavigationStack {
             VStack(spacing: 28) {
                 SageSectionHeader(title: "Welcome to Sage")
-                SageCard {
-                    VStack(spacing: 20) {
-                        SageButton(title: "Continue Anonymously") {
-                            print("AuthChoiceView: Continue Anonymously button tapped")
-                            viewModel.signInAnonymously()
-                        }
-                        NavigationLink(value: AuthFlow.signUp) {
-                            Text("Sign Up with Email")
-                                .font(SageTypography.body)
-                                .foregroundColor(SageColors.sageTeal)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                        NavigationLink(value: AuthFlow.login) {
-                            Text("Log In")
-                                .font(SageTypography.body)
-                                .foregroundColor(SageColors.sageTeal)
-                                .frame(maxWidth: .infinity, alignment: .leading)
+                
+                // Show loading indicator during existing session check
+                if viewModel.isCheckingSession {
+                    VStack(spacing: 16) {
+                        SageProgressView()
+                        Text("Checking your session...")
+                            .font(SageTypography.caption)
+                            .foregroundColor(SageColors.softTaupe)
+                    }
+                    .padding()
+                } else {
+                    SageCard {
+                        VStack(spacing: 20) {
+                            SageButton(title: "Continue Anonymously") {
+                                handleContinueAnonymouslyTapped()
+                            }
+                            NavigationLink(value: AuthFlow.signUp) {
+                                Text("Sign Up with Email")
+                                    .font(SageTypography.body)
+                                    .foregroundColor(SageColors.sageTeal)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+                            NavigationLink(value: AuthFlow.login) {
+                                Text("Log In")
+                                    .font(SageTypography.body)
+                                    .foregroundColor(SageColors.sageTeal)
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
                         }
                     }
                 }
+                
                 if let error = viewModel.errorMessage {
                     SageCard {
                         Text("Error: \(error)")
                             .font(SageTypography.caption)
-                            .foregroundColor(SageColors.earthClay) // UI_STANDARDS.md §2.4
+                            .foregroundColor(SageColors.earthClay)
                     }
                 }
                 if viewModel.isLoading {
@@ -51,14 +63,52 @@ struct AuthChoiceView: View {
             .navigationDestination(for: AuthFlow.self) { flow in
                 switch flow {
                 case .signUp:
-                    SignUpView(viewModel: viewModel)
+                    SignUpView(viewModel: viewModel, onAuthenticated: handleAuthenticationSuccess)
                 case .login:
                     LoginView(viewModel: viewModel)
                 }
             }
         }
         .onAppear {
-            print("AuthChoiceView: appeared")
+            handleViewAppeared()
         }
+        .onChange(of: viewModel.isAuthenticated) { isAuthenticated in
+            if isAuthenticated {
+                handleAuthenticationSuccess()
+            }
+        }
+    }
+    
+    // MARK: - Helper Functions
+    
+    private func handleViewAppeared() {
+        print("AuthChoiceView: appeared")
+        checkExistingSession()
+    }
+    
+    private func handleContinueAnonymouslyTapped() {
+        print("AuthChoiceView: Continue Anonymously button tapped")
+        viewModel.signInAnonymously()
+    }
+    
+    private func checkExistingSession() {
+        if viewModel.isAuthenticated {
+            print("AuthChoiceView: Already authenticated")
+            handleAuthenticationSuccess()
+        }
+    }
+    
+    private func handleAuthenticationSuccess() {
+        print("AuthChoiceView: Authentication successful")
+        
+        AnalyticsService.shared.trackAuthEvent(
+            "auth_success",
+            source: "AuthChoiceView",
+            authViewModel: viewModel
+        )
+        
+        // For NavigationStack usage, we might want to navigate to a different view
+        // or handle the authentication differently
+        print("AuthChoiceView: Authentication complete, user can proceed")
     }
 } 
