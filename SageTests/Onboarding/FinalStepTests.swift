@@ -63,8 +63,9 @@ final class FinalStepTests: XCTestCase {
     // MARK: - Critical User Flow Tests
     
     func testFinishTapsTransitionToCompletion() {
-        // Given: User is on final step screen
+        // Given: User is on final step screen with profile
         viewModel.currentStep = .finalStep
+        viewModel.userProfile = OnboardingTestDataFactory.createCompleteUserProfile()
         
         // When: User taps finish
         viewModel.selectFinish()
@@ -118,7 +119,7 @@ final class FinalStepTests: XCTestCase {
     // MARK: - Analytics Integration Tests
     
     func testAnalyticsEventsAreTracked() {
-        // Given: User has completed profile
+        // Given: User has completed profile and is on final step
         viewModel.currentStep = .finalStep
         viewModel.userProfile = OnboardingTestDataFactory.createCompleteUserProfile()
         

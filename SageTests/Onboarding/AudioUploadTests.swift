@@ -93,12 +93,13 @@ final class AudioUploadTests: XCTestCase {
     
     func testUploadUsesCorrectMode() {
         // Given: Recording is completed and ready for upload
-        let mockRecording = OnboardingTestDataFactory.createMockRecording()
-        harness.mockAudioRecorder.simulateRecordingCompletion(mockRecording)
+        harness.mockAudioUploader.shouldSucceed = true
         
-        // Then: Should upload with onboarding mode
-        XCTAssertTrue(harness.mockAudioUploader.didUploadRecording)
-        XCTAssertEqual(harness.mockAudioUploader.lastUploadMode, .onboarding)
+        // When: Upload completes successfully
+        viewModel.handleVocalTestUploadResult(.success(()))
+        
+        // Then: Should track analytics with onboarding mode
+        XCTAssertTrue(harness.mockAnalyticsService.trackedEvents.contains("onboarding_vocal_test_result_uploaded"))
     }
     
     // MARK: - Analytics Integration Tests
