@@ -1,8 +1,7 @@
 import SwiftUI
 
 struct HomeView: View {
-    // TODO: This will be replaced with actual F0 data from speech analysis pipeline
-    @State private var f0Value: String = "210 Hz"
+    @StateObject private var f0DataService = F0DataService()
     
     var body: some View {
         ZStack {
@@ -11,6 +10,10 @@ struct HomeView: View {
         }
         .onAppear {
             print("HomeView: appeared")
+            f0DataService.fetchF0Data()
+        }
+        .onDisappear {
+            f0DataService.stopListening()
         }
     }
     
@@ -37,7 +40,8 @@ struct HomeView: View {
         SageCard {
             VStack(spacing: SageSpacing.medium) {
                 f0Label
-                f0Value
+                f0ValueContent
+                f0ConfidenceContent
             }
         }
         .frame(maxWidth: 300)
@@ -49,10 +53,31 @@ struct HomeView: View {
             .foregroundColor(SageColors.espressoBrown)
     }
     
-    private var f0Value: some View {
-        Text(f0Value)
-            .font(SageTypography.title)
-            .foregroundColor(SageColors.sageTeal)
+    private var f0ValueContent: some View {
+        Group {
+            if f0DataService.isLoading {
+                SageProgressView()
+                    .scaleEffect(0.8)
+            } else if let errorMessage = f0DataService.errorMessage {
+                Text("Analysis pending...")
+                    .font(SageTypography.title)
+                    .foregroundColor(SageColors.softTaupe)
+            } else {
+                Text(f0DataService.f0Value)
+                    .font(SageTypography.title)
+                    .foregroundColor(SageColors.sageTeal)
+            }
+        }
+    }
+    
+    private var f0ConfidenceContent: some View {
+        Group {
+            if !f0DataService.isLoading && f0DataService.errorMessage == nil && f0DataService.f0Confidence > 0 {
+                Text("\(Int(f0DataService.f0Confidence))% confidence")
+                    .font(SageTypography.caption)
+                    .foregroundColor(SageColors.earthClay)
+            }
+        }
     }
 }
 

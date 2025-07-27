@@ -57,11 +57,23 @@ def analyze_recording(audio_buffer, sample_rate=48000):
         pitch = snd.to_pitch(time_step=0.01, pitch_floor=75, pitch_ceiling=500)
         f0_values = pitch.selected_array['frequency']
         f0_nonzero = f0_values[np.nonzero(f0_values)]
+        # Calculate F0 confidence based on voiced frame ratio and stability
+        total_frames = len(f0_values)
+        voiced_frames = len(f0_nonzero)
+        voiced_ratio = voiced_frames / total_frames if total_frames > 0 else 0
+        
+        # Confidence calculation: higher ratio of voiced frames = higher confidence
+        # Also consider F0 stability (lower SD = higher confidence)
+        f0_stability = 1.0 - min(1.0, np.std(f0_nonzero) / np.mean(f0_nonzero)) if f0_nonzero.size > 0 and np.mean(f0_nonzero) > 0 else 0
+        confidence = (voiced_ratio * 0.7 + f0_stability * 0.3) * 100  # Convert to percentage
+        
         praat_features = {
             'mean_f0': float(np.mean(f0_nonzero)) if f0_nonzero.size > 0 else 0,
             'min_f0': float(np.min(f0_nonzero)) if f0_nonzero.size > 0 else 0,
             'max_f0': float(np.max(f0_nonzero)) if f0_nonzero.size > 0 else 0,
             'sd_f0': float(np.std(f0_nonzero)) if f0_nonzero.size > 0 else 0,
+            'f0_confidence': float(confidence),
+            'voiced_frames_ratio': float(voiced_ratio),
         }
         # Jitter, shimmer, HNR
         point_process = parselmouth.praat.call(snd, "To PointProcess (periodic, cc)", 75, 500)
