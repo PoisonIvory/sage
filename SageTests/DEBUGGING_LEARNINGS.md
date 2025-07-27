@@ -1,8 +1,22 @@
 # Debugging Learnings & Best Practices
 
+## 📋 Table of Contents
+- [Overview](#-overview)
+- [Common Debugging Patterns](#-common-debugging-patterns)
+- [Best Practices for Future Development](#-best-practices-for-future-development)
+- [Pre-Testing Checklist](#-pre-testing-checklist)
+- [Common Fixes We've Applied](#-common-fixes-weve-applied)
+- [Concurrency & Threading](#-concurrency--threading)
+- [Tooling & Automation](#-tooling--automation)
+- [MVP vs Post-MVP Considerations](#-mvp-vs-post-mvp-considerations)
+- [Expected Benefits](#-expected-benefits)
+- [Resources](#-resources)
+
 ## 🎯 Overview
 
 This document captures the key learnings from our debugging sessions and retrospective analysis. These patterns should be applied to all future development work to prevent repeated debugging cycles.
+
+**Scope**: Applies to all production Swift code in ViewModels, Coordinators, Services, and Unit Tests.
 
 ## 🚨 Common Debugging Patterns We've Identified
 
@@ -53,7 +67,7 @@ This document captures the key learnings from our debugging sessions and retrosp
 
 **Solution**: Implement contract testing and keep tests in sync with implementation.
 
-### 5. **NEW: Method Length & Complexity Pattern**
+### 5. Method Length & Complexity Pattern
 
 **Problem**: Methods become too long and handle multiple responsibilities, making them hard to test and debug.
 
@@ -65,7 +79,7 @@ This document captures the key learnings from our debugging sessions and retrosp
 
 **Solution**: Break down long methods into smaller, focused helper methods.
 
-### 6. **NEW: Missing Helper Method Pattern**
+### 6. Missing Helper Method Pattern
 
 **Problem**: Code repeats similar logic instead of extracting common patterns into helper methods.
 
@@ -77,7 +91,7 @@ This document captures the key learnings from our debugging sessions and retrosp
 
 **Solution**: Extract common patterns into reusable helper methods.
 
-### 7. **NEW: Inconsistent Error Handling Pattern**
+### 7. Inconsistent Error Handling Pattern
 
 **Problem**: Error handling is inconsistent across the codebase, making debugging difficult.
 
@@ -187,7 +201,7 @@ private func validateTestEnvironment() {
 }
 ```
 
-### 7. **NEW: Method Length Guidelines**
+### 7. Method Length Guidelines
 
 ```swift
 // ✅ GOOD: Methods under 20 lines, single responsibility
@@ -208,7 +222,7 @@ func processUserData() {
 }
 ```
 
-### 8. **NEW: Helper Method Extraction**
+### 8. Helper Method Extraction
 
 ```swift
 // ✅ GOOD: Extract common patterns into helpers
@@ -236,7 +250,7 @@ private func trackOnboardingStarted() {
 }
 ```
 
-### 9. **NEW: Consistent Error Handling**
+### 9. Consistent Error Handling
 
 ```swift
 // ✅ GOOD: Centralized error handling
@@ -264,7 +278,7 @@ private func handleError(_ error: Error) {
 }
 ```
 
-### 10. **NEW: UI Content Centralization**
+### 10. UI Content Centralization
 
 ```swift
 // ✅ GOOD: Centralize UI strings
@@ -287,16 +301,16 @@ var explainerHeadline: String {
 
 Before writing any test, verify:
 
-- [ ] **Actual Implementation**: What does the method/class actually do?
-- [ ] **State Requirements**: What state needs to be set up?
-- [ ] **Dependencies**: What mocks/services are required?
-- [ ] **Error Handling**: How are errors actually handled?
-- [ ] **Async Behavior**: Is the method async or sync?
-- [ ] **Validation**: What validation actually exists?
-- [ ] **Method Length**: Is the method under 20 lines? If not, can it be broken down?
-- [ ] **Helper Methods**: Are there repeated patterns that could be extracted?
-- [ ] **Error Consistency**: Does error handling follow established patterns?
-- [ ] **UI Content**: Are strings centralized or hardcoded?
+- [ ] **[Implementation]** What does the method/class actually do?
+- [ ] **[State]** What state needs to be set up?
+- [ ] **[Dependencies]** What mocks/services are required?
+- [ ] **[Error]** How are errors actually handled?
+- [ ] **[Async]** Is the method async or sync?
+- [ ] **[Validation]** What validation actually exists?
+- [ ] **[Length]** Is the method under 20 lines? If not, can it be broken down?
+- [ ] **[Reuse]** Are there repeated patterns that could be extracted?
+- [ ] **[Consistency]** Does error handling follow established patterns?
+- [ ] **[Content]** Are strings centralized or hardcoded?
 
 ## 🔧 Common Fixes We've Applied
 
@@ -342,7 +356,7 @@ viewModel.handleVocalTestUploadResult(.success(()))
 viewModel.startVocalTest() // Without user profile
 ```
 
-### 5. **NEW: Method Refactoring**
+### 5. Method Refactoring
 
 ```swift
 // ✅ BEFORE: Long method with multiple responsibilities
@@ -364,7 +378,7 @@ private func trackSignupAnalytics() { /* 8 lines */ }
 private func navigateToNextStep() { /* 3 lines */ }
 ```
 
-### 6. **NEW: Helper Method Creation**
+### 6. Helper Method Creation
 
 ```swift
 // ✅ BEFORE: Repeated analytics pattern
@@ -396,6 +410,92 @@ private func trackAnalyticsEvent(_ eventName: String, properties: [String: Any])
 }
 ```
 
+## 🔄 Concurrency & Threading
+
+### Rule: Use @MainActor for UI-Bound Logic
+
+**Why**: UI-bound logic in ViewModels should be `@MainActor` to avoid race conditions or thread violations.
+
+```swift
+// ✅ GOOD: @MainActor for UI-bound ViewModels
+@MainActor
+final class OnboardingJourneyViewModel: ObservableObject {
+    @Published var currentStep: OnboardingStep = .signupMethod
+    @Published var errorMessage: String?
+    
+    func selectGetStarted() {
+        // UI updates are safe on main thread
+        currentStep = .explainer
+    }
+}
+
+// ✅ GOOD: @MainActor for test classes that interact with ViewModels
+@MainActor
+class OnboardingFlowTests: XCTestCase {
+    func testUserSelectsGetStarted() {
+        let viewModel = createViewModel()
+        viewModel.selectGetStarted()
+        XCTAssertEqual(viewModel.currentStep, .explainer)
+    }
+}
+```
+
+## 🛠️ Tooling & Automation
+
+### Recommended Tools
+
+**SwiftLint for Method Length**
+```yaml
+# .swiftlint.yml
+function_body_length:
+  warning: 20
+  error: 30
+```
+
+**Sourcery for Boilerplate**
+```swift
+// Generate mock protocols automatically
+// Generate equatable conformance
+// Generate test helpers
+```
+
+**SwiftFormat for Code Style**
+```bash
+# Format code automatically
+swiftformat --indent 4 --trimwhitespace always .
+```
+
+**XCTFail Helpers for Error Assertions**
+```swift
+// Custom assertion helpers for better error messages
+func XCTAssertAnalyticsTracked(_ event: String, in mock: MockAnalyticsService) {
+    XCTAssertTrue(mock.trackedEvents.contains(event), 
+                  "Expected analytics event '\(event)' to be tracked")
+}
+
+func XCTAssertUserProfileCreated(in viewModel: OnboardingJourneyViewModel) {
+    XCTAssertNotNil(viewModel.userProfile, 
+                   "Expected user profile to be created")
+}
+```
+
+## 🎯 MVP vs Post-MVP Considerations
+
+### Essential for MVP (Implement Now)
+- [x] **Method Length**: Keep methods under 20 lines
+- [x] **Single Responsibility**: One responsibility per method
+- [x] **@MainActor**: Use for UI-bound ViewModels
+- [x] **Basic Error Handling**: Consistent error messages
+- [x] **Test Data Validation**: Validate factory method inputs
+- [x] **State Management**: Set state directly on ViewModels
+
+### Post-MVP Enhancements (Phase In Later)
+- [ ] **Analytics Consistency**: Centralized analytics helpers
+- [ ] **UI Content Centralization**: String constants for all UI text
+- [ ] **Advanced Tooling**: SwiftLint, Sourcery, SwiftFormat
+- [ ] **Comprehensive Error Handling**: Custom error types and recovery
+- [ ] **Performance Optimization**: Lazy loading, caching strategies
+
 ## 🎯 Expected Benefits
 
 By following these practices:
@@ -414,6 +514,7 @@ By following these practices:
 
 - [MVP Testing Strategy](./README.md#mvp-testing-strategy)
 - [Test Harness Documentation](./OnboardingTestHarness.swift)
+- [Code Quality Patterns](./CODE_QUALITY_PATTERNS.md)
 - [Data Standards](../Project/DATA_STANDARDS.md)
 - [UI Standards](../Project/UI_STANDARDS.md)
 

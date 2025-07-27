@@ -1,8 +1,24 @@
 # Code Quality Patterns & Best Practices
 
+## 📋 Table of Contents
+- [Overview](#-overview)
+- [Method Length & Complexity Guidelines](#-method-length--complexity-guidelines)
+- [Helper Method Extraction Patterns](#-helper-method-extraction-patterns)
+- [UI Content Centralization](#-ui-content-centralization)
+- [Test Data Factory Patterns](#-test-data-factory-patterns)
+- [State Management Patterns](#-state-management-patterns)
+- [Analytics Patterns](#-analytics-patterns)
+- [Concurrency & Threading](#-concurrency--threading)
+- [Tooling & Automation](#-tooling--automation)
+- [MVP vs Post-MVP Considerations](#-mvp-vs-post-mvp-considerations)
+- [Code Review Checklist](#-code-review-checklist)
+- [Implementation Strategy](#-implementation-strategy)
+
 ## 🎯 Overview
 
 This document outlines the code quality patterns and best practices we've identified through our debugging sessions and codebase analysis. These patterns should be applied to all future development work to improve maintainability, readability, and reduce debugging time.
+
+**Scope**: Applies to all production Swift code in ViewModels, Coordinators, Services, and Unit Tests.
 
 ## 📏 Method Length & Complexity Guidelines
 
@@ -107,7 +123,7 @@ private func navigateToNextStep() { /* 3 lines */ }
 
 ## 🔧 Helper Method Extraction Patterns
 
-### Pattern: Extract Common Analytics Logic
+### Avoiding Repetition in Analytics
 
 **Problem**: Analytics tracking methods repeat the same pattern.
 
@@ -152,7 +168,7 @@ private func trackOnboardingStarted() {
 }
 ```
 
-### Pattern: Extract Validation Logic
+### Centralizing Validation Logic
 
 **Problem**: Validation logic is scattered across multiple methods.
 
@@ -194,7 +210,7 @@ func selectEmail() {
 }
 ```
 
-### Pattern: Extract Error Handling
+### Standardizing Error Handling
 
 **Problem**: Error handling is inconsistent across the codebase.
 
@@ -297,7 +313,7 @@ var explainerSubtext: String {
 
 ## 🧪 Test Data Factory Patterns
 
-### Pattern: Validate Factory Method Inputs
+### Validating Test Setup Inputs
 
 **Problem**: Factory methods crash with invalid inputs.
 
@@ -424,33 +440,117 @@ private func trackOnboardingStarted() {
 }
 ```
 
-## 🎯 Benefits of Following These Patterns
+## 🔄 Concurrency & Threading
 
-### Immediate Benefits:
-- **Easier Testing**: Smaller methods are easier to test in isolation
-- **Better Debugging**: Focused methods make it easier to identify issues
-- **Improved Readability**: Code is more self-documenting
-- **Reduced Duplication**: Helper methods eliminate repeated code
+### Rule: Use @MainActor for UI-Bound Logic
 
-### Long-term Benefits:
-- **Faster Development**: Less time spent debugging and refactoring
-- **Easier Onboarding**: New developers can understand code faster
-- **Better Maintainability**: Changes are localized to specific methods
-- **Reduced Technical Debt**: Cleaner codebase with less complexity
+**Why**: UI-bound logic in ViewModels should be `@MainActor` to avoid race conditions or thread violations.
+
+```swift
+// ✅ GOOD: @MainActor for UI-bound ViewModels
+@MainActor
+final class OnboardingJourneyViewModel: ObservableObject {
+    @Published var currentStep: OnboardingStep = .signupMethod
+    @Published var errorMessage: String?
+    
+    func selectGetStarted() {
+        // UI updates are safe on main thread
+        currentStep = .explainer
+    }
+}
+
+// ✅ GOOD: @MainActor for test classes that interact with ViewModels
+@MainActor
+class OnboardingFlowTests: XCTestCase {
+    func testUserSelectsGetStarted() {
+        let viewModel = createViewModel()
+        viewModel.selectGetStarted()
+        XCTAssertEqual(viewModel.currentStep, .explainer)
+    }
+}
+```
+
+## 🛠️ Tooling & Automation
+
+### Recommended Tools
+
+**SwiftLint for Method Length**
+```yaml
+# .swiftlint.yml
+function_body_length:
+  warning: 20
+  error: 30
+```
+
+**Sourcery for Boilerplate**
+```swift
+// Generate mock protocols automatically
+// Generate equatable conformance
+// Generate test helpers
+```
+
+**SwiftFormat for Code Style**
+```bash
+# Format code automatically
+swiftformat --indent 4 --trimwhitespace always .
+```
+
+**XCTFail Helpers for Error Assertions**
+```swift
+// Custom assertion helpers for better error messages
+func XCTAssertAnalyticsTracked(_ event: String, in mock: MockAnalyticsService) {
+    XCTAssertTrue(mock.trackedEvents.contains(event), 
+                  "Expected analytics event '\(event)' to be tracked")
+}
+
+func XCTAssertUserProfileCreated(in viewModel: OnboardingJourneyViewModel) {
+    XCTAssertNotNil(viewModel.userProfile, 
+                   "Expected user profile to be created")
+}
+```
+
+## 🎯 MVP vs Post-MVP Considerations
+
+### Essential for MVP (Implement Now)
+- [x] **Method Length**: Keep methods under 20 lines
+- [x] **Single Responsibility**: One responsibility per method
+- [x] **@MainActor**: Use for UI-bound ViewModels
+- [x] **Basic Error Handling**: Consistent error messages
+- [x] **Test Data Validation**: Validate factory method inputs
+
+### Post-MVP Enhancements (Phase In Later)
+- [ ] **Analytics Consistency**: Centralized analytics helpers
+- [ ] **UI Content Centralization**: String constants for all UI text
+- [ ] **Advanced Tooling**: SwiftLint, Sourcery, SwiftFormat
+- [ ] **Comprehensive Error Handling**: Custom error types and recovery
+- [ ] **Performance Optimization**: Lazy loading, caching strategies
 
 ## 📋 Code Review Checklist
 
 When reviewing code, check for:
 
-- [ ] **Method Length**: Are methods under 20 lines?
-- [ ] **Single Responsibility**: Does each method do one thing?
-- [ ] **Helper Methods**: Are common patterns extracted?
-- [ ] **Error Handling**: Is error handling consistent?
-- [ ] **UI Content**: Are strings centralized?
-- [ ] **State Management**: Is state set directly on ViewModels?
-- [ ] **Analytics**: Is analytics tracking consistent?
-- [ ] **Test Data**: Do factory methods validate inputs?
-- [ ] **Documentation**: Are complex methods documented?
+### ✅ Do's
+- [ ] **[Length]** Methods under 20 lines?
+- [ ] **[SRP]** One responsibility per method?
+- [ ] **[Reuse]** Common code extracted to helpers?
+- [ ] **[Error]** Consistent error handling?
+- [ ] **[UI]** Strings centralized or hardcoded?
+- [ ] **[State]** State set directly on ViewModels?
+- [ ] **[Analytics]** Analytics tracking consistent?
+- [ ] **[Test Data]** Factory methods validate inputs?
+- [ ] **[Documentation]** Complex methods documented?
+- [ ] **[MainActor]** UI-bound ViewModels use @MainActor?
+
+### ❌ Don'ts
+- [ ] **[Anti-Pattern]** Methods over 50 lines?
+- [ ] **[Anti-Pattern]** Multiple responsibilities in one method?
+- [ ] **[Anti-Pattern]** Repeated code patterns?
+- [ ] **[Anti-Pattern]** Inconsistent error handling?
+- [ ] **[Anti-Pattern]** Hardcoded UI strings?
+- [ ] **[Anti-Pattern]** Setting mock properties instead of ViewModel state?
+- [ ] **[Anti-Pattern]** Inconsistent analytics tracking?
+- [ ] **[Anti-Pattern]** Factory methods without input validation?
+- [ ] **[Anti-Pattern]** Missing @MainActor on UI-bound ViewModels?
 
 ## 🚀 Implementation Strategy
 
@@ -473,6 +573,20 @@ When reviewing code, check for:
 1. Ensure all tests still pass
 2. Validate that refactoring improves maintainability
 3. Document new patterns for future development
+
+## 🎯 Benefits of Following These Patterns
+
+### Immediate Benefits:
+- **Easier Testing**: Smaller methods are easier to test in isolation
+- **Better Debugging**: Focused methods make it easier to identify issues
+- **Improved Readability**: Code is more self-documenting
+- **Reduced Duplication**: Helper methods eliminate repeated code
+
+### Long-term Benefits:
+- **Faster Development**: Less time spent debugging and refactoring
+- **Easier Onboarding**: New developers can understand code faster
+- **Better Maintainability**: Changes are localized to specific methods
+- **Reduced Technical Debt**: Cleaner codebase with less complexity
 
 ---
 
