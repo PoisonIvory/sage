@@ -60,15 +60,22 @@ class OnboardingTypesTests: XCTestCase {
     }
     
     func testSignupResultErrorEquality() {
-        // Given: Error results with same description
-        let error1 = NSError(domain: "test", code: 1, userInfo: [NSLocalizedDescriptionKey: "Test error"])
-        let error2 = NSError(domain: "test", code: 2, userInfo: [NSLocalizedDescriptionKey: "Test error"])
+        // Given: Error results with same error type
+        let error1 = SignupErrorType.networkRequestFailed
+        let error2 = SignupErrorType.networkRequestFailed
         
         let result1 = SignupResult.error(error1)
         let result2 = SignupResult.error(error2)
         
-        // Then: Should be equal (based on description)
+        // Then: Should be equal (based on error type)
         XCTAssertEqual(result1, result2)
+        
+        // Given: Different error types
+        let error3 = SignupErrorType.emailAlreadyInUse
+        let result3 = SignupResult.error(error3)
+        
+        // Then: Should not be equal
+        XCTAssertNotEqual(result1, result3)
     }
     
     // MARK: - ValidationError Tests
@@ -81,17 +88,23 @@ class OnboardingTypesTests: XCTestCase {
     
     func testValidationErrorEquality() {
         // Given: Same validation errors
-        let error1 = ValidationError.ageRequired
-        let error2 = ValidationError.ageRequired
+        let error1 = ValidationError.ageRequired()
+        let error2 = ValidationError.ageRequired()
         
         // Then: Should be equal
         XCTAssertEqual(error1, error2)
         
         // Given: Different validation errors
-        let error3 = ValidationError.ageInvalid
+        let error3 = ValidationError.ageInvalid()
         
         // Then: Should not be equal
         XCTAssertNotEqual(error1, error3)
+        
+        // Given: Same error type with different field names
+        let error4 = ValidationError.ageRequired(fieldName: "custom_age")
+        
+        // Then: Should still be equal (field name doesn't affect equality)
+        XCTAssertEqual(error1, error4)
     }
     
     // MARK: - UserProfileData Tests
