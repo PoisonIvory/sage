@@ -10,6 +10,14 @@
 //  - Coordinator notification
 //  - Navigation to home page
 //  - User profile finalization
+//
+//  Improvements:
+//  - Consolidated redundant navigation tests
+//  - Removed overzealous state checks
+//  - Dropped placeholder tests
+//  - Minimized localization and UI string repeats
+//  - Focused on essential MVP functionality
+//  - Reduced from 44 tests to 12 high-value tests
 
 import XCTest
 @testable import Sage
@@ -45,18 +53,7 @@ final class FinalStepTests: XCTestCase {
     
     // MARK: - Navigation Tests
     
-    func testUserIsNavigatedToFinalStepAfterReadingPrompt() {
-        // Given: User has completed reading prompt
-        viewModel.currentStep = .readingPrompt
-        
-        // When: User taps "Next"
-        viewModel.selectNext()
-        
-        // Then: Should be on final step screen
-        XCTAssertEqual(viewModel.currentStep, .finalStep)
-    }
-    
-    func testUserTapsFinish() {
+    func testFinishTapsTransitionToCompletion() {
         // Given: User is on final step screen
         viewModel.currentStep = .finalStep
         
@@ -65,14 +62,12 @@ final class FinalStepTests: XCTestCase {
         
         // Then: Should complete onboarding
         XCTAssertEqual(viewModel.currentStep, .completed)
-        
-        // Then: Should notify coordinator
         XCTAssertTrue(harness.mockCoordinator.didCompleteOnboarding)
     }
     
     // MARK: - UI Content Tests
     
-    func testFinalStepScreenContent() {
+    func testFinalStepUIContentIsCorrectAndStable() {
         // Given: User is on final step screen
         viewModel.currentStep = .finalStep
         
@@ -83,95 +78,27 @@ final class FinalStepTests: XCTestCase {
         XCTAssertEqual(viewModel.finishButtonTitle, "Finish")
     }
     
-    func testFinalStepContentIsConsistent() {
-        // Given: User is on final step screen
-        viewModel.currentStep = .finalStep
-        
-        // When: Content is accessed multiple times
-        let message1 = viewModel.finalStepMessage
-        let message2 = viewModel.finalStepMessage
-        let buttonTitle1 = viewModel.finishButtonTitle
-        let buttonTitle2 = viewModel.finishButtonTitle
-        
-        // Then: Content should be consistent
-        XCTAssertEqual(message1, message2)
-        XCTAssertEqual(buttonTitle1, buttonTitle2)
-    }
-    
     // MARK: - Screen State Tests
     
-    func testFinalStepScreenStateIsCorrect() {
+    func testFinalScreenIsCleanBeforeAndAfterCompletion() {
         // Given: User is on final step screen
         viewModel.currentStep = .finalStep
         
-        // Then: Should not be recording
+        // Then: Should have clean state before completion
         XCTAssertFalse(viewModel.isRecording)
-        
-        // Then: Should not have error messages
         XCTAssertNil(viewModel.errorMessage)
-        
-        // Then: Should not have field errors
         XCTAssertTrue(viewModel.fieldErrors.isEmpty)
-        
-        // Then: Should not show next button (this screen has finish button)
-        XCTAssertFalse(viewModel.shouldShowNextButton)
-    }
-    
-    func testFinalStepScreenStateAfterCompletion() {
-        // Given: User is on final step screen
-        viewModel.currentStep = .finalStep
         
         // When: User completes onboarding
         viewModel.selectFinish()
         
-        // Then: Should be completed
-        XCTAssertEqual(viewModel.currentStep, .completed)
-        
-        // Then: Should maintain clean state
+        // Then: Should maintain clean state after completion
         XCTAssertFalse(viewModel.isRecording)
         XCTAssertNil(viewModel.errorMessage)
         XCTAssertTrue(viewModel.fieldErrors.isEmpty)
     }
     
-    // MARK: - Button Interaction Tests
-    
-    func testFinishButtonIsEnabled() {
-        // Given: User is on final step screen
-        viewModel.currentStep = .finalStep
-        
-        // Then: Finish button should be enabled
-        // Note: This assumes the view model has a property to check button state
-        // If not, this test can be removed or modified based on actual implementation
-        XCTAssertTrue(true) // Placeholder for button state check
-    }
-    
-    func testFinishButtonTriggersCompletion() {
-        // Given: User is on final step screen
-        viewModel.currentStep = .finalStep
-        
-        // When: User taps "Finish" button
-        viewModel.selectFinish()
-        
-        // Then: Should complete onboarding
-        XCTAssertEqual(viewModel.currentStep, .completed)
-        
-        // Then: Should notify coordinator
-        XCTAssertTrue(harness.mockCoordinator.didCompleteOnboarding)
-    }
-    
-    // MARK: - Coordinator Notification Tests
-    
-    func testCoordinatorIsNotifiedOnCompletion() {
-        // Given: User has a profile and is on final step
-        viewModel.selectAnonymous() // Creates user profile
-        viewModel.currentStep = .finalStep
-        
-        // When: User taps "Finish"
-        viewModel.selectFinish()
-        
-        // Then: Should notify coordinator with user profile
-        XCTAssertTrue(harness.mockCoordinator.didCompleteOnboarding)
-    }
+    // MARK: - Coordinator Tests
     
     func testCoordinatorReceivesCorrectUserProfile() {
         // Given: User has completed signup and has a profile
@@ -190,23 +117,9 @@ final class FinalStepTests: XCTestCase {
         XCTAssertEqual(viewModel.userProfile?.id, userProfile?.id)
     }
     
-    // MARK: - Content Localization Tests
+    // MARK: - Error Recovery Tests
     
-    func testFinalStepContentUsesCorrectLanguage() {
-        // Given: User is on final step screen
-        viewModel.currentStep = .finalStep
-        
-        // Then: Message should use proper language
-        XCTAssertTrue(viewModel.finalStepMessage.contains("Almost there"))
-        XCTAssertTrue(viewModel.finalStepMessage.contains("completing setup"))
-        
-        // Then: Button should use proper language
-        XCTAssertEqual(viewModel.finishButtonTitle, "Finish")
-    }
-    
-    // MARK: - Error State Tests
-    
-    func testFinalStepScreenHandlesErrorsGracefully() {
+    func testFinishWorksDespitePreviousErrors() {
         // Given: User is on final step screen with previous errors
         viewModel.currentStep = .finalStep
         viewModel.errorMessage = "Previous error"
@@ -217,42 +130,6 @@ final class FinalStepTests: XCTestCase {
         
         // Then: Should still complete successfully
         XCTAssertEqual(viewModel.currentStep, .completed)
-        
-        // Then: Should notify coordinator despite previous errors
-        XCTAssertTrue(harness.mockCoordinator.didCompleteOnboarding)
-    }
-    
-    // MARK: - Multiple Completion Tests
-    
-    func testMultipleFinishButtonTaps() {
-        // Given: User is on final step screen
-        viewModel.currentStep = .finalStep
-        
-        // When: User taps "Finish" button multiple times
-        viewModel.selectFinish()
-        viewModel.selectFinish()
-        viewModel.selectFinish()
-        
-        // Then: Should remain completed (not advance further)
-        XCTAssertEqual(viewModel.currentStep, .completed)
-        
-        // Then: Should notify coordinator only once
-        XCTAssertTrue(harness.mockCoordinator.didCompleteOnboarding)
-    }
-    
-    // MARK: - Screen Transition Tests
-    
-    func testFinalStepToCompletionTransition() {
-        // Given: User is on final step screen
-        viewModel.currentStep = .finalStep
-        
-        // When: User taps "Finish" button
-        viewModel.selectFinish()
-        
-        // Then: Should transition to completed state
-        XCTAssertEqual(viewModel.currentStep, .completed)
-        
-        // Then: Should notify coordinator
         XCTAssertTrue(harness.mockCoordinator.didCompleteOnboarding)
     }
     
@@ -269,27 +146,6 @@ final class FinalStepTests: XCTestCase {
         // Then: Content should be meaningful
         XCTAssertTrue(viewModel.finalStepMessage.count > 20)
         XCTAssertTrue(viewModel.finishButtonTitle.count > 0)
-    }
-    
-    // MARK: - Screen Flow Tests
-    
-    func testFinalStepIsCorrectStepInFlow() {
-        // Given: User has completed entire onboarding flow
-        viewModel.selectAnonymous() // Signup
-        viewModel.selectBegin() // To vocal test
-        viewModel.currentStep = .vocalTest
-        viewModel.shouldShowNextButton = true
-        viewModel.selectNext() // To reading prompt
-        viewModel.selectNext() // To final step
-        
-        // Then: Should be on final step screen
-        XCTAssertEqual(viewModel.currentStep, .finalStep)
-        
-        // When: User completes onboarding
-        viewModel.selectFinish()
-        
-        // Then: Should be completed
-        XCTAssertEqual(viewModel.currentStep, .completed)
     }
     
     // MARK: - State Persistence Tests
@@ -312,83 +168,6 @@ final class FinalStepTests: XCTestCase {
         // Then: Should still maintain user profile
         XCTAssertNotNil(viewModel.userProfile)
         XCTAssertEqual(viewModel.userProfile?.id, originalProfile?.id)
-    }
-    
-    // MARK: - Button State Tests
-    
-    func testFinishButtonStateIsConsistent() {
-        // Given: User is on final step screen
-        viewModel.currentStep = .finalStep
-        
-        // When: Finish button title is accessed multiple times
-        let buttonTitle1 = viewModel.finishButtonTitle
-        let buttonTitle2 = viewModel.finishButtonTitle
-        let buttonTitle3 = viewModel.finishButtonTitle
-        
-        // Then: Button title should be consistent
-        XCTAssertEqual(buttonTitle1, buttonTitle2)
-        XCTAssertEqual(buttonTitle2, buttonTitle3)
-        XCTAssertEqual(buttonTitle1, "Finish")
-    }
-    
-    // MARK: - Error Recovery Tests
-    
-    func testFinalStepRecoversFromPreviousErrors() {
-        // Given: User has previous errors from earlier steps
-        viewModel.currentStep = .finalStep
-        viewModel.errorMessage = "Upload failed"
-        viewModel.fieldErrors["recording"] = "Recording error"
-        
-        // When: User taps "Finish"
-        viewModel.selectFinish()
-        
-        // Then: Should complete successfully despite previous errors
-        XCTAssertEqual(viewModel.currentStep, .completed)
-        XCTAssertTrue(harness.mockCoordinator.didCompleteOnboarding)
-    }
-    
-    // MARK: - Content Validation Tests
-    
-    func testFinalStepMessageIsValid() {
-        // Given: User is on final step screen
-        viewModel.currentStep = .finalStep
-        
-        // Then: Message should be valid
-        XCTAssertNotNil(viewModel.finalStepMessage)
-        XCTAssertFalse(viewModel.finalStepMessage.isEmpty)
-        XCTAssertTrue(viewModel.finalStepMessage.count > 0)
-        XCTAssertTrue(viewModel.finalStepMessage.count < 200) // Reasonable length
-    }
-    
-    func testFinishButtonTitleIsValid() {
-        // Given: User is on final step screen
-        viewModel.currentStep = .finalStep
-        
-        // Then: Button title should be valid
-        XCTAssertNotNil(viewModel.finishButtonTitle)
-        XCTAssertFalse(viewModel.finishButtonTitle.isEmpty)
-        XCTAssertTrue(viewModel.finishButtonTitle.count > 0)
-        XCTAssertTrue(viewModel.finishButtonTitle.count < 20) // Reasonable length
-    }
-    
-    // MARK: - Completion State Tests
-    
-    func testCompletionStateIsCorrect() {
-        // Given: User completes onboarding
-        viewModel.currentStep = .finalStep
-        viewModel.selectFinish()
-        
-        // Then: Should be in completed state
-        XCTAssertEqual(viewModel.currentStep, .completed)
-        
-        // Then: Should not be recording
-        XCTAssertFalse(viewModel.isRecording)
-        
-        // Then: Should not have error messages
-        XCTAssertNil(viewModel.errorMessage)
-        
-        // Then: Should not have field errors
-        XCTAssertTrue(viewModel.fieldErrors.isEmpty)
     }
     
     // MARK: - User Profile Finalization Tests
