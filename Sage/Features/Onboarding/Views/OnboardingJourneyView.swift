@@ -185,8 +185,8 @@ struct VocalTestView: View {
                 }
                 
                 // Success Message
-                if !viewModel.successMessage.isEmpty {
-                    Text(viewModel.successMessage)
+                if let successMessage = viewModel.successMessage, !successMessage.isEmpty {
+                    Text(successMessage)
                         .font(SageTypography.body)
                         .foregroundColor(SageColors.sageTeal)
                         .multilineTextAlignment(.center)

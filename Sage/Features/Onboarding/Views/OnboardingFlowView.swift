@@ -41,10 +41,7 @@ struct OnboardingFlowView: View {
         VStack {
             switch viewModel.currentStep {
             case .signupMethod:
-                SignupMethodView(
-                    onAnonymous: { viewModel.selectAnonymous() },
-                    onEmail: { viewModel.selectEmail() }
-                )
+                SignupMethodView(viewModel: viewModel)
             case .explainer:
                 Text("Explainer Screen - Let's run some quick tests")
             case .vocalTest:
