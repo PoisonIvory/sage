@@ -43,6 +43,7 @@ import Mixpanel
 // Then Firebase returns auth/network-request-failed
 // Then the app displays: "Check your internet connection and try again."
 
+@MainActor
 final class SignupFlowTests: XCTestCase {
     
     // MARK: - Test Properties

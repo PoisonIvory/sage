@@ -11,6 +11,7 @@
 import XCTest
 @testable import Sage
 
+@MainActor
 class OnboardingTypesTests: XCTestCase {
     
     // MARK: - SignupMethod Tests

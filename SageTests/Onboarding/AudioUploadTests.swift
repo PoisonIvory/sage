@@ -41,6 +41,7 @@ import Mixpanel
 // Given the Firebase upload fails due to authentication error
 // Then the app displays: "Session expired. Please log in again."
 
+@MainActor
 final class AudioUploadTests: XCTestCase {
     
     // MARK: - Test Properties

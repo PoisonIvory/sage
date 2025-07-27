@@ -10,6 +10,7 @@
 import XCTest
 @testable import Sage
 
+@MainActor
 class RecordingValidationTests: XCTestCase {
     func testRejectRecording_withShortDuration() async throws {
         // Given: Recording with duration too short

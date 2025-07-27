@@ -10,6 +10,7 @@
 import XCTest
 @testable import Sage
 
+@MainActor
 class AuthErrorHandlingTests: XCTestCase {
     var authViewModel: AuthViewModel!
     
