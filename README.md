@@ -372,5 +372,12 @@ When generating or updating code, documentation, or workflow, always check the F
 Thank you for contributing to Sage. Your work helps advance research-grade, privacy-first health technology.
 
 ### Onboarding UX
-- The onboarding flow is a 3-stage flow with a user explainer, an initial session, then ask for additional information (age, gender, diagnosis, medication, etc. ) to customize their voice summary.
+- The onboarding flow is a multi-stage journey implemented in `OnboardingJourneyView` and `OnboardingJourneyViewModel`, fully tested with TDD and following all code quality and UI standards.
+- Stages:
+  1. **Signup Method Choice**: User selects email or anonymous signup.
+  2. **Explainer**: Introduction to the voice biomarker process.
+  3. **Vocal Test**: User completes a guided vocal recording.
+  4. **Reading Prompt**: User completes a reading task (future iterations may expand this).
+  5. **Final Step**: User reviews and completes onboarding, then transitions to the main app.
+- All onboarding logic, validation, and analytics are centralized in the new journey. No legacy onboarding flows remain in the app.
 

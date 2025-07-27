@@ -129,18 +129,17 @@ struct SageApp: App {
                     LoginView(viewModel: authViewModel)
                         .onAppear { print("SageApp: LoginView is now visible") }
                 case .onboarding:
-                    FirstTimeOnboardingView(onComplete: {
-                        print("SageApp: Onboarding complete, navigating to home")
-                        AnalyticsService.shared.track(
-                            "onboarding_successful",
-                            properties: [
-                                "source": "SageApp",
-                                "event_version": 1
-                            ]
-                        )
-                        currentScreen = .browse
-                    })
-                    .onAppear { print("SageApp: FirstTimeOnboardingView is now visible") }
+                    OnboardingJourneyView(
+                        analyticsService: AnalyticsService.shared,
+                        authService: AuthService(),
+                        userProfileRepository: UserProfileRepository(),
+                        microphonePermissionManager: MicrophonePermissionManager(),
+                        audioRecorder: OnboardingAudioRecorder(),
+                        audioUploader: AudioUploader(),
+                        coordinator: nil,
+                        dateProvider: SystemDateProvider()
+                    )
+                    .onAppear { print("SageApp: OnboardingJourneyView is now visible") }
                 }
             }
         }
