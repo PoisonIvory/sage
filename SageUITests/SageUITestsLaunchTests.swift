@@ -4,6 +4,14 @@
 //
 //  Created by Ivy Hamilton on 24/7/2025.
 //
+//  Test Focus Areas:
+//  - App launch stability
+//  - Crash prevention
+//
+//  MVP Testing Strategy:
+//  - Focus on critical crash prevention
+//  - Test app launch without crashing
+//  - Remove unnecessary setup and validation
 
 import XCTest
 
@@ -19,12 +27,14 @@ final class SageUITestsLaunchTests: XCTestCase {
 
     @MainActor
     func testLaunch() throws {
+        // Given: App launches
         let app = XCUIApplication()
         app.launch()
 
-        // Insert steps here to perform after app launch but before taking a screenshot,
-        // such as logging into a test account or navigating somewhere in the app
-
+        // Then: Should launch without crashing
+        XCTAssertTrue(app.exists)
+        
+        // Capture screenshot for visual verification
         let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = "Launch Screen"
         attachment.lifetime = .keepAlways
