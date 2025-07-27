@@ -24,7 +24,6 @@ VoiceInsights helps users understand voice patterns through research-grade speec
 
 * For Users: Track voice over time, early health insights, beautiful charts
 * For Researchers: Access anonymized, high-quality speech datasets
-* For Business: Dual revenue: premium subscriptions + research data licensing
 
 ---
 
