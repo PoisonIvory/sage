@@ -138,6 +138,7 @@ final class SignupFlowTests: XCTestCase {
         // Then: Should create profile and proceed (current implementation doesn't handle auth errors)
         XCTAssertNotNil(viewModel.userProfile)
         XCTAssertEqual(viewModel.currentStep, .explainer)
+        // Note: Auth errors are not handled in the current implementation
     }
     
     // MARK: - Crash Prevention Tests
@@ -155,5 +156,6 @@ final class SignupFlowTests: XCTestCase {
         // Then: Should create profile and proceed (current implementation doesn't handle auth errors)
         XCTAssertNotNil(viewModel.userProfile)
         XCTAssertEqual(viewModel.currentStep, .explainer)
+        // Note: Auth errors are not handled in the current implementation
     }
 } 

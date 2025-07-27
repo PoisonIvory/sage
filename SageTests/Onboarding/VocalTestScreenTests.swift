@@ -85,8 +85,9 @@ final class VocalTestScreenTests: XCTestCase {
     }
     
     func testVocalTestRecordingCompletion() {
-        // Given: Recording is in progress
+        // Given: Recording is in progress with permission granted
         viewModel.currentStep = .vocalTest
+        harness.mockMicrophonePermissionManager.permissionGranted = true
         viewModel.startVocalTest()
         
         // When: Recording completes (via completion handler)
@@ -157,8 +158,9 @@ final class VocalTestScreenTests: XCTestCase {
     // MARK: - Crash Prevention Tests
     
     func testRecordingStateTransitions() {
-        // Given: User is on vocal test screen
+        // Given: User is on vocal test screen with permission granted
         viewModel.currentStep = .vocalTest
+        harness.mockMicrophonePermissionManager.permissionGranted = true
         
         // When: User starts recording and it completes
         viewModel.startVocalTest()
