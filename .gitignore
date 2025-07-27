@@ -15,6 +15,7 @@ GoogleService-Info.plist
 
 # Cursor-specific
 .idea/
+.cursor/
 
 # Function source files
 function_source.zip
