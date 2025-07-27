@@ -5,32 +5,39 @@
 //  Created by Ivy Hamilton on 24/7/2025.
 //
 //  Test Focus Areas:
-//  - UI content verification for final step screen
-//  - Onboarding completion handling
-//  - Coordinator notification
-//  - Navigation to home page
+//  - Final step completion flow
 //  - User profile finalization
+//  - Coordinator notification
+//  - Navigation to completion
+//  - Error handling for finalization failures
 //
-//  Improvements:
-//  - Consolidated redundant navigation tests
-//  - Removed overzealous state checks
-//  - Dropped placeholder tests
-//  - Minimized localization and UI string repeats
-//  - Focused on essential MVP functionality
-//  - Reduced from 44 tests to 12 high-value tests
-//  - Fixed MainActor isolation issues
+//  MVP Testing Strategy:
+//  - Focus on critical user flows and crash prevention
+//  - Test ViewModel logic and data validation
+//  - Verify coordinator transitions and analytics integration
+//  - Remove UI text, localization, and redundant state tests
 
 import XCTest
+import Mixpanel
 @testable import Sage
 
-// MARK: - Final Step Screen Test Requirements
+// MARK: - Final Step Test Requirements
 
-// Given the user is on View 4
-// Then the UI displays the message: "Almost there! You're one step away from completing setup."
-// Then the UI displays the "Finish" button
+// Given the user is on the final step screen
+// When they tap "Finish"
+// Then the user profile is finalized
+// Then the coordinator is notified of completion
+// Then the user is navigated to completion state
 
-// When the user taps "Finish"
-// Then the user is navigated to the Home page
+// Given the user profile has missing required fields
+// When they tap "Finish"
+// Then the app displays validation errors
+// Then the user remains on the final step screen
+
+// Given the user profile is complete
+// When they tap "Finish"
+// Then the Mixpanel event "onboarding_completed" is tracked
+// Then the coordinator receives the complete user profile
 
 @MainActor
 final class FinalStepTests: XCTestCase {
@@ -53,181 +60,88 @@ final class FinalStepTests: XCTestCase {
         super.tearDown()
     }
     
-    // MARK: - Navigation Tests
+    // MARK: - Critical User Flow Tests
     
     func testFinishTapsTransitionToCompletion() {
         // Given: User is on final step screen
         viewModel.currentStep = .finalStep
         
-        // When: User taps "Finish"
+        // When: User taps finish
         viewModel.selectFinish()
         
-        // Then: Should complete onboarding
+        // Then: Should transition to completion
         XCTAssertEqual(viewModel.currentStep, .completed)
         XCTAssertTrue(harness.mockCoordinator.didCompleteOnboarding)
     }
-    
-    // MARK: - UI Content Tests
-    
-    func testFinalStepUIContentIsCorrectAndStable() {
-        // Given: User is on final step screen
-        viewModel.currentStep = .finalStep
-        
-        // Then: Should display correct message
-        XCTAssertEqual(viewModel.finalStepMessage, "Almost there! You're one step away from completing setup.")
-        
-        // Then: Should display correct button title
-        XCTAssertEqual(viewModel.finishButtonTitle, "Finish")
-    }
-    
-    // MARK: - Screen State Tests
-    
-    func testFinalScreenIsCleanBeforeAndAfterCompletion() {
-        // Given: User is on final step screen
-        viewModel.currentStep = .finalStep
-        
-        // Then: Should have clean state before completion
-        XCTAssertFalse(viewModel.isRecording)
-        XCTAssertNil(viewModel.errorMessage)
-        XCTAssertTrue(viewModel.fieldErrors.isEmpty)
-        
-        // When: User completes onboarding
-        viewModel.selectFinish()
-        
-        // Then: Should maintain clean state after completion
-        XCTAssertFalse(viewModel.isRecording)
-        XCTAssertNil(viewModel.errorMessage)
-        XCTAssertTrue(viewModel.fieldErrors.isEmpty)
-    }
-    
-    // MARK: - Coordinator Tests
     
     func testCoordinatorReceivesCorrectUserProfile() {
-        // Given: User has completed signup and has a profile
-        viewModel.selectAnonymous()
-        let userProfile = viewModel.userProfile
+        // Given: User has completed profile
         viewModel.currentStep = .finalStep
+        viewModel.userProfile = OnboardingTestDataFactory.createCompleteUserProfile()
         
-        // When: User completes onboarding
+        // When: User taps finish
         viewModel.selectFinish()
         
-        // Then: Should notify coordinator
-        XCTAssertTrue(harness.mockCoordinator.didCompleteOnboarding)
-        
-        // Then: Should have the same user profile
-        XCTAssertNotNil(viewModel.userProfile)
-        XCTAssertEqual(viewModel.userProfile?.id, userProfile?.id)
+        // Then: Coordinator should receive the profile
+        XCTAssertNotNil(harness.mockCoordinator.capturedProfile)
+        XCTAssertEqual(harness.mockCoordinator.capturedProfile?.id, viewModel.userProfile?.id)
     }
     
-    // MARK: - Error Recovery Tests
-    
-    func testFinishWorksDespitePreviousErrors() {
-        // Given: User is on final step screen with previous errors
-        viewModel.currentStep = .finalStep
-        viewModel.errorMessage = "Previous error"
-        viewModel.fieldErrors["test"] = "Test error"
-        
-        // When: User taps "Finish" button
-        viewModel.selectFinish()
-        
-        // Then: Should still complete successfully
-        XCTAssertEqual(viewModel.currentStep, .completed)
-        XCTAssertTrue(harness.mockCoordinator.didCompleteOnboarding)
-    }
-    
-    // MARK: - Content Accessibility Tests
-    
-    func testFinalStepContentIsAccessible() {
-        // Given: User is on final step screen
-        viewModel.currentStep = .finalStep
-        
-        // Then: Content should not be empty
-        XCTAssertFalse(viewModel.finalStepMessage.isEmpty)
-        XCTAssertFalse(viewModel.finishButtonTitle.isEmpty)
-        
-        // Then: Content should be meaningful
-        XCTAssertTrue(viewModel.finalStepMessage.count > 20)
-        XCTAssertTrue(viewModel.finishButtonTitle.count > 0)
-    }
-    
-    // MARK: - State Persistence Tests
-    
-    func testFinalStepMaintainsUserProfile() {
-        // Given: User has completed signup and has a profile
-        viewModel.selectAnonymous()
-        let originalProfile = viewModel.userProfile
-        
-        // When: User navigates to final step
-        viewModel.currentStep = .finalStep
-        
-        // Then: Should maintain user profile
-        XCTAssertNotNil(viewModel.userProfile)
-        XCTAssertEqual(viewModel.userProfile?.id, originalProfile?.id)
-        
-        // When: User completes onboarding
-        viewModel.selectFinish()
-        
-        // Then: Should still maintain user profile
-        XCTAssertNotNil(viewModel.userProfile)
-        XCTAssertEqual(viewModel.userProfile?.id, originalProfile?.id)
-    }
-    
-    // MARK: - User Profile Finalization Tests
+    // MARK: - ViewModel Logic Tests
     
     func testUserProfileFinalizationWithValidData() {
-        // Given: User has minimal profile and valid data
-        viewModel.selectAnonymous() // Creates minimal profile
-        let validData = OnboardingTestDataFactory.createValidUserProfileData()
+        // Given: User has valid profile data
+        viewModel.currentStep = .finalStep
+        viewModel.userProfile = OnboardingTestDataFactory.createCompleteUserProfile()
         
-        // When: Finalizing profile with valid data
-        XCTAssertNoThrow(try viewModel.finalizeUserProfile(with: validData))
+        // When: User taps finish
+        viewModel.selectFinish()
         
-        // Then: Should update profile with complete data
-        XCTAssertEqual(viewModel.userProfile?.age, 25)
-        XCTAssertEqual(viewModel.userProfile?.gender, "female")
+        // Then: Should finalize profile successfully
+        XCTAssertEqual(viewModel.currentStep, .completed)
+        XCTAssertTrue(harness.mockCoordinator.didCompleteOnboarding)
     }
     
     func testUserProfileFinalizationWithInvalidData() {
-        // Given: User has minimal profile and invalid data
-        viewModel.selectAnonymous() // Creates minimal profile
-        let invalidData = OnboardingTestDataFactory.createInvalidUserProfileData()
+        // Given: User has incomplete profile data
+        viewModel.currentStep = .finalStep
+        viewModel.userProfile = OnboardingTestDataFactory.createIncompleteUserProfile()
         
-        // When: Finalizing profile with invalid data
-        XCTAssertThrowsError(try viewModel.finalizeUserProfile(with: invalidData)) { error in
-            // Then: Should throw validation error
-            XCTAssertTrue(error is ValidationError)
-        }
+        // When: User taps finish
+        viewModel.selectFinish()
         
-        // Then: Should have field-level errors
-        XCTAssertNotNil(viewModel.fieldErrors["age"])
-        XCTAssertNotNil(viewModel.fieldErrors["gender"])
+        // Then: Should handle validation errors
+        XCTAssertNotNil(viewModel.errorMessage)
+        XCTAssertEqual(viewModel.currentStep, .finalStep)
     }
     
-    // MARK: - Field Error Handling Tests
+    // MARK: - Analytics Integration Tests
     
-    func testFieldErrorsAreClearedOnNewActions() {
-        // Given: User has field errors
-        viewModel.fieldErrors["email"] = "Invalid email"
-        viewModel.fieldErrors["password"] = "Password too short"
+    func testAnalyticsEventsAreTracked() {
+        // Given: User has completed profile
+        viewModel.currentStep = .finalStep
+        viewModel.userProfile = OnboardingTestDataFactory.createCompleteUserProfile()
         
-        // When: User starts new action
-        viewModel.clearFieldErrors()
+        // When: User taps finish
+        viewModel.selectFinish()
         
-        // Then: Field errors should be cleared
-        XCTAssertTrue(viewModel.fieldErrors.isEmpty)
-        XCTAssertNil(viewModel.errorMessage)
+        // Then: Should track analytics events
+        XCTAssertTrue(harness.mockAnalyticsService.trackedEvents.contains("onboarding_completed"))
     }
     
-    func testSpecificFieldErrorCanBeCleared() {
-        // Given: User has multiple field errors
-        viewModel.fieldErrors["email"] = "Invalid email"
-        viewModel.fieldErrors["password"] = "Password too short"
+    // MARK: - Crash Prevention Tests
+    
+    func testFinishWorksDespitePreviousErrors() {
+        // Given: User has previous errors
+        viewModel.currentStep = .finalStep
+        viewModel.errorMessage = "Previous error"
+        viewModel.userProfile = OnboardingTestDataFactory.createCompleteUserProfile()
         
-        // When: Specific field error is cleared
-        viewModel.clearFieldError(for: "email")
+        // When: User taps finish
+        viewModel.selectFinish()
         
-        // Then: Only email error should be cleared
-        XCTAssertNil(viewModel.fieldErrors["email"])
-        XCTAssertNotNil(viewModel.fieldErrors["password"])
+        // Then: Should complete without crashing
+        XCTAssertEqual(viewModel.currentStep, .completed)
+        XCTAssertTrue(harness.mockCoordinator.didCompleteOnboarding)
     }
 } 

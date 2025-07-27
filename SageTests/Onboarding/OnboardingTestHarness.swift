@@ -213,7 +213,7 @@ class MockAudioUploader: AudioUploaderProtocol {
     }
 }
 
-class MockOnboardingCoordinator: OnboardingFlowCoordinating {
+class MockOnboardingCoordinator: OnboardingFlowCoordinating, OnboardingCoordinatorProtocol {
     var didCompleteOnboarding = false
     var didTransitionToLogin = false
     var didComplete = false
