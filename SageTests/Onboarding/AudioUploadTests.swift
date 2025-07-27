@@ -92,8 +92,9 @@ final class AudioUploadTests: XCTestCase {
     // MARK: - ViewModel Logic Tests
     
     func testUploadUsesCorrectMode() {
-        // Given: Recording is completed and ready for upload
+        // Given: Recording is completed and ready for upload with user profile
         harness.mockAudioUploader.shouldSucceed = true
+        viewModel.userProfile = OnboardingTestDataFactory.createMinimalUserProfile()
         
         // When: Upload completes successfully
         viewModel.handleVocalTestUploadResult(.success(()))
@@ -106,8 +107,9 @@ final class AudioUploadTests: XCTestCase {
     // MARK: - Analytics Integration Tests
     
     func testAnalyticsEventsAreTracked() {
-        // Given: User has completed signup
+        // Given: User has completed signup with profile
         viewModel.selectAnonymous()
+        viewModel.userProfile = OnboardingTestDataFactory.createMinimalUserProfile()
         
         // When: Upload completes successfully
         viewModel.handleVocalTestUploadResult(.success(()))
