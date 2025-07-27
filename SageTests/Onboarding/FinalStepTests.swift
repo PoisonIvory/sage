@@ -105,7 +105,7 @@ final class FinalStepTests: XCTestCase {
     func testUserProfileFinalizationWithInvalidData() {
         // Given: User has incomplete profile data
         viewModel.currentStep = .finalStep
-        viewModel.userProfile = OnboardingTestDataFactory.createIncompleteUserProfile()
+        viewModel.userProfile = OnboardingTestDataFactory.createCompleteUserProfile(age: 0, gender: "")
         
         // When: User taps finish
         viewModel.selectFinish()
