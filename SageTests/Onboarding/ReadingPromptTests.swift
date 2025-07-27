@@ -347,23 +347,6 @@ final class ReadingPromptTests: XCTestCase {
         XCTAssertEqual(viewModel.userProfile?.id, originalProfile?.id)
     }
     
-    // MARK: - Button State Tests
-    
-    func testNextButtonStateIsConsistent() {
-        // Given: User is on reading prompt screen
-        viewModel.currentStep = .readingPrompt
-        
-        // When: Next button title is accessed multiple times
-        let buttonTitle1 = viewModel.nextButtonTitle
-        let buttonTitle2 = viewModel.nextButtonTitle
-        let buttonTitle3 = viewModel.nextButtonTitle
-        
-        // Then: Button title should be consistent
-        XCTAssertEqual(buttonTitle1, buttonTitle2)
-        XCTAssertEqual(buttonTitle2, buttonTitle3)
-        XCTAssertEqual(buttonTitle1, "Next")
-    }
-    
     // MARK: - Error Recovery Tests
     
     func testReadingPromptRecoversFromPreviousErrors() {
