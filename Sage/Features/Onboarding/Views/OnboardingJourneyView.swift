@@ -7,6 +7,7 @@ import SwiftUI
 struct OnboardingJourneyView: View {
     @StateObject private var viewModel: OnboardingJourneyViewModel
     @Environment(\.dismiss) private var dismiss
+    var onComplete: (() -> Void)? = nil
     
     init(
         analyticsService: AnalyticsServiceProtocol = AnalyticsService.shared,
@@ -68,7 +69,9 @@ struct OnboardingJourneyView: View {
                 // Onboarding completed - coordinator handles navigation
                 Color.clear
                     .onAppear {
-                        // Coordinator will handle navigation to home
+                        if let onComplete = onComplete {
+                            onComplete()
+                        }
                     }
             }
         }

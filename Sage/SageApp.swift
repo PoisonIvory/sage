@@ -137,7 +137,11 @@ struct SageApp: App {
                         audioRecorder: OnboardingAudioRecorder(),
                         audioUploader: AudioUploader(),
                         coordinator: nil,
-                        dateProvider: SystemDateProvider()
+                        dateProvider: SystemDateProvider(),
+                        onComplete: {
+                            print("SageApp: Onboarding complete, navigating to home")
+                            currentScreen = .browse
+                        }
                     )
                     .onAppear { print("SageApp: OnboardingJourneyView is now visible") }
                 }
