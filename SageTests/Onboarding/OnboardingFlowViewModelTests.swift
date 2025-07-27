@@ -23,34 +23,25 @@ import Mixpanel
 
 @MainActor
 class OnboardingFlowViewModelTests: XCTestCase {
-    var mockCoordinator: MockOnboardingCoordinator!
-    var mockUserProfileRepository: MockUserProfileRepository!
-    var mockAnalyticsService: MockAnalyticsService!
-    var mockAuthService: MockAuthService!
+    private var harness: OnboardingTestHarness!
     
     override func setUp() {
         super.setUp()
-        mockCoordinator = MockOnboardingCoordinator()
-        mockUserProfileRepository = MockUserProfileRepository()
-        mockAnalyticsService = MockAnalyticsService()
-        mockAuthService = MockAuthService()
+        harness = OnboardingTestHarness()
     }
     
     override func tearDown() {
-        mockCoordinator?.reset()
-        mockCoordinator = nil
-        mockUserProfileRepository = nil
-        mockAnalyticsService = nil
-        mockAuthService = nil
+        harness.resetAllMocks()
+        harness = nil
         super.tearDown()
     }
     
     func createViewModel() -> OnboardingFlowViewModel {
         return OnboardingFlowViewModel(
-            coordinator: mockCoordinator,
-            userProfileRepository: mockUserProfileRepository,
-            analyticsService: mockAnalyticsService,
-            authService: mockAuthService
+            coordinator: harness.mockCoordinator,
+            userProfileRepository: harness.mockUserProfileRepository,
+            analyticsService: harness.mockAnalyticsService,
+            authService: harness.mockAuthService
         )
     }
     
@@ -61,7 +52,7 @@ class OnboardingFlowViewModelTests: XCTestCase {
         let viewModel = createViewModel()
         
         // Then: Should have default values
-        XCTAssertEqual(viewModel.currentStep, .welcome)
+        XCTAssertEqual(viewModel.currentStep, .signupMethod)
         XCTAssertNil(viewModel.selectedSignupMethod)
         XCTAssertNil(viewModel.userProfile)
         XCTAssertEqual(viewModel.userProfileData, UserProfileData())
@@ -72,73 +63,61 @@ class OnboardingFlowViewModelTests: XCTestCase {
     }
     
     func testUserSelectsGetStarted() {
-        // Given: User is on welcome screen
+        // Given: User is on signup method screen
         let viewModel = createViewModel()
         
         // When: User selects "Get Started"
         viewModel.selectGetStarted()
         
-        // Then: Should navigate to signup method selection (Create Account screen)
-        XCTAssertEqual(viewModel.currentStep, .signupMethod)
-        XCTAssertFalse(mockCoordinator.didTransitionToLogin)
+        // Then: Should navigate to explainer screen
+        XCTAssertEqual(viewModel.currentStep, .explainer)
+        XCTAssertFalse(harness.mockCoordinator.didTransitionToLogin)
     }
     
     func testUserSelectsIAlreadyHaveAccount() {
-        // Given: User is on welcome screen
+        // Given: User is on signup method screen
         let viewModel = createViewModel()
         
         // When: User selects "I already have an account"
         viewModel.selectIAlreadyHaveAccount()
         
         // Then: Should transition to login flow (not continue onboarding)
-        XCTAssertTrue(mockCoordinator.didTransitionToLogin)
-        XCTAssertEqual(viewModel.currentStep, .welcome) // Stays on welcome since we're transitioning out
+        XCTAssertTrue(harness.mockCoordinator.didTransitionToLogin)
+        XCTAssertEqual(viewModel.currentStep, .signupMethod) // Stays on signup method since we're transitioning out
     }
     
     // MARK: - Create Account Screen Tests
     
     func testUserSelectsContinueAnonymously() async {
-        // Given: User is on Create Account screen (after selecting "Get Started")
+        // Given: User is on signup method screen
         let viewModel = createViewModel()
-        viewModel.selectGetStarted()
         
         // When: User selects "Continue Anonymously"
         viewModel.selectAnonymous()
         
-        // Then: Should navigate to user profile creation (async operation)
-        // Wait a moment for the async operation to complete
-        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
-        
-        XCTAssertEqual(viewModel.currentStep, .userProfileCreation)
+        // Then: Should navigate to explainer screen
+        XCTAssertEqual(viewModel.currentStep, .explainer)
         XCTAssertTrue(viewModel.isAnonymous)
     }
     
     func testUserSelectsEmailSignup() async {
-        // Given: User is on Create Account screen (after selecting "Get Started")
+        // Given: User is on signup method screen
         let viewModel = createViewModel()
-        viewModel.selectGetStarted()
         
         // When: User selects email signup (enters email/password and taps "Sign Up")
         viewModel.selectEmail()
         
-        // Then: Should navigate to user profile creation (async operation)
-        // Wait a moment for the async operation to complete
-        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
-        
-        XCTAssertEqual(viewModel.currentStep, .userProfileCreation)
+        // Then: Should navigate to explainer screen
+        XCTAssertEqual(viewModel.currentStep, .explainer)
         XCTAssertFalse(viewModel.isAnonymous)
     }
     
     // MARK: - Profile Creation Tests
     
     func testUserCompletesProfileWithValidData() async {
-        // Given: User is on user profile creation (after selecting signup method)
+        // Given: User is on signup method screen
         let viewModel = createViewModel()
-        viewModel.selectGetStarted()
         viewModel.selectAnonymous()
-        
-        // Wait for async operation to complete
-        try? await Task.sleep(nanoseconds: 100_000_000) // 0.1 seconds
         
         // Set valid user info
         viewModel.userInfo = UserInfo(name: "Test User", age: 25, gender: "female")
@@ -148,14 +127,13 @@ class OnboardingFlowViewModelTests: XCTestCase {
         
         // Then: Should complete onboarding successfully
         XCTAssertEqual(viewModel.currentStep, .completed)
-        XCTAssertTrue(mockCoordinator.didComplete)
-        XCTAssertNotNil(mockCoordinator.capturedProfile)
+        XCTAssertTrue(harness.mockCoordinator.didComplete)
+        XCTAssertNotNil(harness.mockCoordinator.capturedProfile)
     }
     
     func testUserCompletesProfileWithInvalidData() {
-        // Given: User is on user info form with invalid data
+        // Given: User is on signup method screen with invalid data
         let viewModel = createViewModel()
-        viewModel.selectGetStarted()
         viewModel.selectAnonymous()
         viewModel.userInfo = UserInfo(name: "", age: 0, gender: "")
         
@@ -166,8 +144,6 @@ class OnboardingFlowViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.validationErrors.isEmpty)
         XCTAssertNotEqual(viewModel.currentStep, .completed)
     }
-    
-
     
     // MARK: - Loading State Tests
     
@@ -184,26 +160,5 @@ class OnboardingFlowViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isLoading)
         XCTAssertFalse(viewModel.operationInProgress)
         XCTAssertNil(viewModel.errorMessage)
-    }
-    
-
-}
-
-// MARK: - Mock Classes for Testing
-class MockUserProfileRepository: UserProfileRepositoryProtocol {
-    func fetchUserProfile(withId id: String, completion: @escaping (UserProfile?) -> Void) {
-        completion(nil) // Return nil for testing
-    }
-}
-
-class MockAnalyticsService: AnalyticsServiceProtocol {
-    func track(_ name: String, properties: [String: MixpanelType]?, origin: String?) {
-        print("MockAnalyticsService: Tracked event '\(name)' with properties: \(properties ?? [:])")
-    }
-}
-
-class MockAuthService: AuthServiceProtocol {
-    var currentUserId: String? {
-        return "test-user-id"
     }
 } 

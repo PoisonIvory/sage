@@ -22,20 +22,7 @@ enum OnboardingAnalyticsEvent: String {
 }
 
 /// Onboarding steps for the onboarding flow
-/// - loginSignupChoice: User chooses login or signup
-/// - signupMethod: User chooses [anonymous, email] signup
-/// - userInfoForm (if email signup): User enters profile info
-/// - completed: Onboarding is complete
-///
-/// See DATA_STANDARDS.md §2.2 for onboarding flow requirements.
-enum OnboardingStep: String, Equatable {
-    case welcome = "welcome"
-    case loginSignupChoice = "login_signup_choice"
-    case signupMethod = "signup_method"
-    case userProfileCreation = "user_profile_creation"
-    case userInfoForm = "user_info_form"
-    case completed = "completed"
-}
+// OnboardingStep is defined in OnboardingTypes.swift
 
 /// Protocol for onboarding flow actions (for testability)
 protocol OnboardingFlowCoordinating: AnyObject {
@@ -66,20 +53,12 @@ protocol OnboardingFlowCoordinating: AnyObject {
 // - The profile is enriched as onboarding progresses
 
 // MARK: - Protocols for Dependency Injection
-protocol UserProfileRepositoryProtocol {
-    func fetchUserProfile(withId id: String, completion: @escaping (UserProfile?) -> Void)
-}
-protocol AnalyticsServiceProtocol {
-    func track(_ name: String, properties: [String: MixpanelType]?, origin: String?)
-}
-protocol AuthServiceProtocol {
-    var currentUserId: String? { get }
-}
+// Protocols are defined in OnboardingProtocols.swift and AuthService.swift
 
 @MainActor
 final class OnboardingFlowViewModel: ObservableObject {
     // MARK: - Published State (UI Layer)
-    @Published var currentStep: OnboardingStep = .welcome
+    @Published var currentStep: OnboardingStep = .signupMethod
     @Published private(set) var selectedSignupMethod: SignupMethod?
     @Published private(set) var userProfile: UserProfile?
     @Published private(set) var userProfileData: UserProfileData = UserProfileData()
@@ -287,7 +266,7 @@ final class OnboardingFlowViewModel: ObservableObject {
         let newProfile = createNewUserProfile(userId: userId)
         self.userProfile = newProfile
         self.selectedSignupMethod = method
-        self.currentStep = .userProfileCreation
+        self.currentStep = .explainer
         self.trackSignupMethodSelected(userId: userId, method: method)
         
         // Automatically track onboarding started when new profile is created

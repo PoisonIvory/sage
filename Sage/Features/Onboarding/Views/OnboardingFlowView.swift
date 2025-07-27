@@ -40,34 +40,19 @@ struct OnboardingFlowView: View {
     var body: some View {
         VStack {
             switch viewModel.currentStep {
-            case .welcome:
-                WelcomeView(
-                    onBegin: { 
-                        viewModel.currentStep = .loginSignupChoice
-                    }
-                )
-            case .loginSignupChoice:
-                LoginSignupChoiceView(
-                    onLogin: { viewModel.selectIAlreadyHaveAccount() },
-                    onSignup: { viewModel.selectGetStarted() }
-                )
             case .signupMethod:
                 SignupMethodView(
                     onAnonymous: { viewModel.selectAnonymous() },
                     onEmail: { viewModel.selectEmail() }
                 )
-            case .userProfileCreation:
-                UserInfoFormView(
-                    isAnonymous: viewModel.isAnonymous,
-                    userInfo: $viewModel.userInfo,
-                    onComplete: { viewModel.completeUserInfo() }
-                )
-            case .userInfoForm:
-                UserInfoFormView(
-                    isAnonymous: viewModel.isAnonymous,
-                    userInfo: $viewModel.userInfo,
-                    onComplete: { viewModel.completeUserInfo() }
-                )
+            case .explainer:
+                Text("Explainer Screen - Let's run some quick tests")
+            case .vocalTest:
+                Text("Vocal Test Screen - Please say 'ahh' for 10 seconds")
+            case .readingPrompt:
+                Text("Reading Prompt Screen")
+            case .finalStep:
+                Text("Final Step Screen - Almost there!")
             case .completed:
                 Text("Onboarding Complete! Navigating to Home...")
             }
@@ -93,18 +78,7 @@ struct OnboardingFlowView: View {
     }
 }
 
-/// Mock AuthService for dependency injection
-/// 
-/// Provides current user authentication state for the onboarding flow.
-/// In a real implementation, this would integrate with Firebase Auth.
-///
-/// - SeeAlso: `CODE_DOCUMENTATION_RULES.md` §4.1 for mock documentation standards
-class AuthService: AuthServiceProtocol {
-    var currentUserId: String? {
-        // In a real implementation, this would return Firebase Auth current user ID
-        return Auth.auth().currentUser?.uid
-    }
-}
+// AuthService is defined in AuthService.swift
 
 
 
@@ -128,47 +102,14 @@ extension OnboardingFlowView {
     /// - SideEffects: Creates mock services for testing
     /// - SeeAlso: `CODE_DOCUMENTATION_RULES.md` §4.1 for mock documentation standards
     static func createForTesting() -> OnboardingFlowView {
+        // Note: For actual testing, use OnboardingTestHarness instead of direct mock instantiation
         return OnboardingFlowView(
             coordinator: nil,
-            userProfileRepository: MockUserProfileRepository(),
-            analyticsService: MockAnalyticsService(),
-            authService: MockAuthService()
+            userProfileRepository: UserProfileRepository(),
+            analyticsService: AnalyticsService.shared,
+            authService: AuthService()
         )
     }
 }
 
-/// Mock UserProfileRepository for testing
-///
-/// Provides controlled responses for testing user profile operations.
-/// Tracks method calls and returns predefined results.
-///
-/// - SeeAlso: `CODE_DOCUMENTATION_RULES.md` §4.1 for mock documentation standards
-class MockUserProfileRepository: UserProfileRepositoryProtocol {
-    func fetchUserProfile(withId id: String, completion: @escaping (UserProfile?) -> Void) {
-        completion(nil) // Return nil for testing
-    }
-}
-
-/// Mock AnalyticsService for testing
-///
-/// Tracks analytics events without sending them to external services.
-/// Useful for testing analytics integration.
-///
-/// - SeeAlso: `CODE_DOCUMENTATION_RULES.md` §4.1 for mock documentation standards
-class MockAnalyticsService: AnalyticsServiceProtocol {
-    func track(_ name: String, properties: [String: MixpanelType]?, origin: String?) {
-        print("MockAnalyticsService: Tracked event '\(name)' with properties: \(properties ?? [:])")
-    }
-}
-
-/// Mock AuthService for testing
-///
-/// Provides controlled authentication state for testing.
-/// Returns predefined user ID for consistent test behavior.
-///
-/// - SeeAlso: `CODE_DOCUMENTATION_RULES.md` §4.1 for mock documentation standards
-class MockAuthService: AuthServiceProtocol {
-    var currentUserId: String? {
-        return "test-user-id"
-    }
-} 
+// Mock classes are defined in OnboardingTestHarness.swift 
