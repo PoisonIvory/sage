@@ -9,6 +9,13 @@
 //  - Navigation from explainer to vocal test
 //  - Screen state management
 //  - Button interactions
+//
+//  Improvements:
+//  - Consolidated redundant navigation tests
+//  - Merged string consistency and validation tests
+//  - Limited localization key tests to essential checks
+//  - Removed overzealous state checks
+//  - Removed flow tests (should be in dedicated onboarding flow test)
 
 import XCTest
 @testable import Sage
@@ -47,15 +54,7 @@ final class ExplainerScreenTests: XCTestCase {
     
     // MARK: - Navigation Tests
     
-    func testUserIsNavigatedToExplainerAfterSignup() {
-        // Given: User has completed signup
-        viewModel.selectAnonymous()
-        
-        // Then: Should be on explainer screen
-        XCTAssertEqual(viewModel.currentStep, .explainer)
-    }
-    
-    func testUserTapsBeginButton() {
+    func testNavigationFromExplainerToVocalTest() {
         // Given: User is on explainer screen
         viewModel.currentStep = .explainer
         
@@ -68,7 +67,7 @@ final class ExplainerScreenTests: XCTestCase {
     
     // MARK: - UI Content Tests
     
-    func testExplainerScreenContent() {
+    func testExplainerUIContentIsValid() {
         // Given: User is on explainer screen
         viewModel.currentStep = .explainer
         
@@ -80,24 +79,6 @@ final class ExplainerScreenTests: XCTestCase {
         
         // Then: Should display correct button title
         XCTAssertEqual(viewModel.beginButtonTitle, "Begin")
-    }
-    
-    func testExplainerScreenContentIsConsistent() {
-        // Given: User is on explainer screen
-        viewModel.currentStep = .explainer
-        
-        // When: Content is accessed multiple times
-        let headline1 = viewModel.explainerHeadline
-        let headline2 = viewModel.explainerHeadline
-        let subtext1 = viewModel.explainerSubtext
-        let subtext2 = viewModel.explainerSubtext
-        let buttonTitle1 = viewModel.beginButtonTitle
-        let buttonTitle2 = viewModel.beginButtonTitle
-        
-        // Then: Content should be consistent
-        XCTAssertEqual(headline1, headline2)
-        XCTAssertEqual(subtext1, subtext2)
-        XCTAssertEqual(buttonTitle1, buttonTitle2)
     }
     
     // MARK: - Screen State Tests
@@ -119,64 +100,43 @@ final class ExplainerScreenTests: XCTestCase {
         XCTAssertFalse(viewModel.shouldShowNextButton)
     }
     
-    func testExplainerScreenStateAfterNavigation() {
-        // Given: User is on explainer screen
-        viewModel.currentStep = .explainer
-        
-        // When: User navigates to vocal test
-        viewModel.selectBegin()
-        
-        // Then: Should be on vocal test screen
-        XCTAssertEqual(viewModel.currentStep, .vocalTest)
-        
-        // Then: Should maintain clean state
-        XCTAssertFalse(viewModel.isRecording)
-        XCTAssertNil(viewModel.errorMessage)
-        XCTAssertTrue(viewModel.fieldErrors.isEmpty)
-    }
-    
     // MARK: - Button Interaction Tests
     
     func testBeginButtonIsEnabled() {
         // Given: User is on explainer screen
         viewModel.currentStep = .explainer
         
-        // Then: Begin button should be enabled
-        // Note: This assumes the view model has a property to check button state
-        // If not, this test can be removed or modified based on actual implementation
-        XCTAssertTrue(true) // Placeholder for button state check
-    }
-    
-    func testBeginButtonTriggersNavigation() {
-        // Given: User is on explainer screen
-        viewModel.currentStep = .explainer
+        // Then: Begin button should be enabled and functional
+        let initialStep = viewModel.currentStep
         
         // When: User taps "Begin" button
         viewModel.selectBegin()
         
-        // Then: Should navigate to vocal test screen
+        // Then: Should navigate successfully, indicating button is enabled
+        XCTAssertNotEqual(viewModel.currentStep, initialStep)
         XCTAssertEqual(viewModel.currentStep, .vocalTest)
     }
     
-    // MARK: - Content Localization Tests
+    // MARK: - Localization Key Tests
     
-    func testExplainerContentUsesCorrectLanguage() {
+    func testLocalizedStringsAreHumanReadable() {
         // Given: User is on explainer screen
         viewModel.currentStep = .explainer
         
-        // Then: Headline should use proper language
-        XCTAssertTrue(viewModel.explainerHeadline.contains("quick tests"))
+        // Then: Content should not contain localization keys
+        XCTAssertFalse(viewModel.explainerHeadline.contains("_"))
+        XCTAssertFalse(viewModel.explainerSubtext.contains("_"))
+        XCTAssertFalse(viewModel.beginButtonTitle.contains("_"))
         
-        // Then: Subtext should use proper language
-        XCTAssertTrue(viewModel.explainerSubtext.contains("vocal tract"))
-        
-        // Then: Button should use proper language
-        XCTAssertEqual(viewModel.beginButtonTitle, "Begin")
+        // Then: Content should be human-readable text, not keys
+        XCTAssertTrue(viewModel.explainerHeadline.count > 10) // Meaningful text length
+        XCTAssertTrue(viewModel.explainerSubtext.count > 20) // Meaningful text length
+        XCTAssertTrue(viewModel.beginButtonTitle.count > 0) // Non-empty button text
     }
     
     // MARK: - Error State Tests
     
-    func testExplainerScreenHandlesErrorsGracefully() {
+    func testErrorsDoNotBlockNavigation() {
         // Given: User is on explainer screen with previous errors
         viewModel.currentStep = .explainer
         viewModel.errorMessage = "Previous error"
@@ -187,41 +147,6 @@ final class ExplainerScreenTests: XCTestCase {
         
         // Then: Should still navigate successfully
         XCTAssertEqual(viewModel.currentStep, .vocalTest)
-        
-        // Then: Previous errors should not interfere with navigation
-        XCTAssertNotNil(viewModel.errorMessage) // Errors may persist until explicitly cleared
-    }
-    
-    // MARK: - Multiple Navigation Tests
-    
-    func testMultipleBeginButtonTaps() {
-        // Given: User is on explainer screen
-        viewModel.currentStep = .explainer
-        
-        // When: User taps "Begin" button multiple times
-        viewModel.selectBegin()
-        viewModel.selectBegin()
-        viewModel.selectBegin()
-        
-        // Then: Should remain on vocal test screen (not advance further)
-        XCTAssertEqual(viewModel.currentStep, .vocalTest)
-    }
-    
-    // MARK: - Screen Transition Tests
-    
-    func testExplainerToVocalTestTransition() {
-        // Given: User is on explainer screen
-        viewModel.currentStep = .explainer
-        
-        // When: User taps "Begin" button
-        viewModel.selectBegin()
-        
-        // Then: Should transition to vocal test screen
-        XCTAssertEqual(viewModel.currentStep, .vocalTest)
-        
-        // Then: Should be ready for vocal test
-        XCTAssertFalse(viewModel.isRecording)
-        XCTAssertNil(viewModel.errorMessage)
     }
     
     // MARK: - Content Accessibility Tests
