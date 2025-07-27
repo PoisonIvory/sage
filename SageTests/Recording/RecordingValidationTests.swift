@@ -7,12 +7,11 @@
 //  Unit tests for recording validation using TDD principles
 //  Tests audio quality validation and data integrity
 
-import Testing
+import XCTest
 @testable import Sage
 
-struct RecordingValidationTests {
-    
-    @Test func shouldRejectRecording_withShortDuration() async throws {
+class RecordingValidationTests: XCTestCase {
+    func testRejectRecording_withShortDuration() async throws {
         // Given: Recording with duration too short
         let recording = Recording(
             userID: "U1",
@@ -31,16 +30,14 @@ struct RecordingValidationTests {
             frameFeatures: nil,
             summaryFeatures: nil
         )
-        
         // When: Recording is validated
         let result = RecordingValidator.validateFull(recording: recording)
-        
         // Then: Should be invalid due to short duration
-        #expect(!result.isValid)
-        #expect(result.reasons.contains { $0.contains("Duration too short") })
+        XCTAssertFalse(result.isValid)
+        XCTAssertTrue(result.reasons.contains { $0.contains("Duration too short") })
     }
     
-    @Test func shouldRejectRecording_withTooMuchSilence() async throws {
+    func testRejectRecording_withTooMuchSilence() async throws {
         // Given: Recording with 50% silence
         let frames: [[String: AnyCodable]] = (0..<100).map { i in
             [
@@ -66,16 +63,14 @@ struct RecordingValidationTests {
             frameFeatures: frames,
             summaryFeatures: nil
         )
-        
         // When: Recording is validated
         let result = RecordingValidator.validateFull(recording: recording)
-        
         // Then: Should be invalid due to too much silence
-        #expect(!result.isValid)
-        #expect(result.reasons.contains { $0.contains("Too much silence") })
+        XCTAssertFalse(result.isValid)
+        XCTAssertTrue(result.reasons.contains { $0.contains("Too much silence") })
     }
     
-    @Test func shouldRejectRecording_withClipping() async throws {
+    func testRejectRecording_withClipping() async throws {
         // Given: Recording with 2% clipped frames
         let frames: [[String: AnyCodable]] = (0..<100).map { i in
             [
@@ -101,16 +96,14 @@ struct RecordingValidationTests {
             frameFeatures: frames,
             summaryFeatures: nil
         )
-        
         // When: Recording is validated
         let result = RecordingValidator.validateFull(recording: recording)
-        
         // Then: Should be invalid due to clipping
-        #expect(!result.isValid)
-        #expect(result.reasons.contains { $0.contains("Clipping detected") })
+        XCTAssertFalse(result.isValid)
+        XCTAssertTrue(result.reasons.contains { $0.contains("Clipping detected") })
     }
     
-    @Test func shouldAcceptValidRecording() async throws {
+    func testAcceptValidRecording() async throws {
         // Given: Recording with good quality
         let frames: [[String: AnyCodable]] = (0..<100).map { i in
             [
@@ -136,16 +129,14 @@ struct RecordingValidationTests {
             frameFeatures: frames,
             summaryFeatures: nil
         )
-        
         // When: Recording is validated
         let result = RecordingValidator.validateFull(recording: recording)
-        
         // Then: Should be valid
-        #expect(result.isValid)
-        #expect(result.reasons.isEmpty)
+        XCTAssertTrue(result.isValid)
+        XCTAssertTrue(result.reasons.isEmpty)
     }
     
-    @Test func shouldValidateSchemaExport() async throws {
+    func testValidateSchemaExport() async throws {
         // Given: Valid recording for export
         let frames: [[String: AnyCodable]] = (0..<10).map { i in
             [
@@ -171,16 +162,23 @@ struct RecordingValidationTests {
             frameFeatures: frames,
             summaryFeatures: nil
         )
-        
         // When: Recording is uploaded
         let uploader = RecordingUploaderService()
+        let expectation = XCTestExpectation(description: "Upload completion")
         try uploader.uploadRecording(recording) { result in
             // Then: Should upload successfully
-            #expect(result.isSuccess)
+            switch result {
+            case .success:
+                XCTAssertTrue(true) // Success case
+            case .failure(let error):
+                XCTFail("Upload failed with error: \(error)")
+            }
+            expectation.fulfill()
         }
+        await fulfillment(of: [expectation], timeout: 5.0)
     }
     
-    @Test func shouldValidateReferenceSampleQA() async throws {
+    func testValidateReferenceSampleQA() async throws {
         // Given: Recording for reference sample QA
         let recording = Recording(
             userID: "U6",
@@ -199,12 +197,10 @@ struct RecordingValidationTests {
             frameFeatures: nil,
             summaryFeatures: nil
         )
-        
         // When: Recording is validated against reference
         let uploader = RecordingUploaderService()
         let discrepancies = uploader.validateAgainstReference(recording: recording, reference: recording)
-        
         // Then: Should have no discrepancies
-        #expect(discrepancies.isEmpty)
+        XCTAssertTrue(discrepancies.isEmpty)
     }
 } 

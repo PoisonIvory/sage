@@ -66,7 +66,7 @@ struct ContentView: View {
             }
             Button("Track Onboarding Complete Event") {
                 AnalyticsService.shared.track(
-                    AnalyticsEvent.onboardingComplete,
+                    AnalyticsEvent.onboardingCompleted,
                     properties: [
                         "duration": 42.0,
                         "source": "ContentView",

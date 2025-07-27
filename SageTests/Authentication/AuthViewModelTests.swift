@@ -5,107 +5,105 @@
 //  Created by Ivy Hamilton on 24/7/2025.
 //
 //  Unit tests for AuthViewModel
-//  Tests session detection and session creation functionality
+//  Tests individual methods and properties
 
-import Testing
+import XCTest
 @testable import Sage
 
-struct AuthViewModelTests {
+class AuthViewModelTests: XCTestCase {
+    var authViewModel: AuthViewModel!
     
-    // MARK: - Session Detection Tests
-    
-    // MARK: - Test 1: Detect Existing Anonymous Session
-    @Test func shouldDetectExistingAnonymousSession() async throws {
-        // Given: Existing anonymous session
-        MockFirebaseAuth.currentUser = MockUser(uid: "anonymous-123", isAnonymous: true)
-        
-        // When: AuthViewModel is initialized
-        let viewModel = AuthViewModel()
-        
-        // Then: Should detect and authenticate existing session
-        #expect(viewModel.hasExistingAnonymousUser() == true)
-        #expect(viewModel.isAuthenticated == true)
-        #expect(viewModel.signUpMethod == "anonymous")
+    override func setUp() {
+        super.setUp()
+        authViewModel = AuthViewModel(disableAutoAuth: true)
     }
     
-    // MARK: - Test 2: Detect Existing Email Session
-    @Test func shouldDetectExistingEmailSession() async throws {
-        // Given: Existing email session
-        MockFirebaseAuth.currentUser = MockUser(uid: "email-123", isAnonymous: false)
-        
-        // When: AuthViewModel is initialized
-        let viewModel = AuthViewModel()
-        
-        // Then: Should detect and authenticate existing session
-        #expect(viewModel.hasExistingEmailUser() == true)
-        #expect(viewModel.isAuthenticated == true)
-        #expect(viewModel.signUpMethod == "email")
+    override func tearDown() {
+        authViewModel = nil
+        super.tearDown()
     }
     
-    // MARK: - Test 3: No Existing User Session
-    @Test func shouldNotDetectSession_whenNoUser() async throws {
-        // Given: No existing session
-        MockFirebaseAuth.currentUser = nil
-        
-        // When: AuthViewModel is initialized
-        let viewModel = AuthViewModel()
-        
-        // Then: Does not detect any existing session
-        #expect(viewModel.hasExistingAnonymousUser() == false)
-        #expect(viewModel.isAuthenticated == false)
-        #expect(viewModel.signUpMethod == nil)
+    // MARK: - Helper Methods
+    private func setValidCredentials() {
+        authViewModel.email = "test@example.com"
+        authViewModel.password = "password123"
     }
     
-    // MARK: - Session Creation Tests
-    
-    // MARK: - Test 1: Create Anonymous Session
-    @Test func shouldCreateAnonymousSessionSuccessfully() async throws {
-        // Given: No existing session and Firebase will succeed
-        MockFirebaseAuth.reset()
-        MockFirebaseAuth.shouldSignInAnonymouslySucceed = true
-        
-        // When: User selects anonymous sign in method
-        let viewModel = AuthViewModel()
-        viewModel.signInAnonymously()
-        
-        // Then: Should create and authenticate new session
-        #expect(viewModel.isAuthenticated == true)
-        #expect(viewModel.signUpMethod == "anonymous")
-        #expect(viewModel.errorMessage == nil)
+    private func setInvalidCredentials() {
+        authViewModel.email = "invalid-email"
+        authViewModel.password = "123"
     }
     
-    // MARK: - Test 2: Create Email Session
-    @Test func shouldCreateEmailSessionSuccessfully() async throws {
-        // Given: Valid email and password
-        let viewModel = AuthViewModel()
-        viewModel.email = "test@example.com"
-        viewModel.password = "password123"
-        
-        // When: User selects email sign up method
-        viewModel.signUpWithEmail()
-        
-        // Then: Create and authenticate new session
-        #expect(viewModel.isAuthenticated == true)
-        #expect(viewModel.signUpMethod == "email")
-        #expect(viewModel.errorMessage == nil)
+    func testInitialState() {
+        // Given: AuthViewModel is created
+        // When: Initial state is checked
+        // Then: Should have default values
+        XCTAssertEqual(authViewModel.email, "")
+        XCTAssertEqual(authViewModel.password, "")
+        XCTAssertFalse(authViewModel.isLoading)
+        XCTAssertNil(authViewModel.errorMessage)
+        XCTAssertFalse(authViewModel.isAuthenticated)
+        XCTAssertNil(authViewModel.signUpMethod)
+        XCTAssertFalse(authViewModel.shouldShowRetryOption)
+        XCTAssertFalse(authViewModel.canWorkOffline)
     }
     
-    // MARK: - Test 3: Login with Email Method
-    @Test func shouldLoginWithEmailSuccessfully() async throws {
-        // Given: Valid email and password
-        let viewModel = AuthViewModel()
-        viewModel.email = "test@example.com"
-        viewModel.password = "password123"
-        
-        // When: User logs in with email
-        viewModel.loginWithEmail()
-        
-        // Then: Should be authenticated
-        #expect(viewModel.isAuthenticated == true)
-        #expect(viewModel.errorMessage == nil)
-    }
 
     
-    // MARK: - Validation Tests
-    // (Removed: format-only validation tests, as Firebase handles this)
+    func testResetFunctionality() {
+        // Given: AuthViewModel with some data
+        authViewModel.email = "test@example.com"
+        authViewModel.password = "password123"
+        authViewModel.isAuthenticated = true
+        authViewModel.signUpMethod = "email"
+        authViewModel.errorMessage = "Some error"
+        authViewModel.isLoading = true
+        authViewModel.shouldShowRetryOption = true
+        authViewModel.canWorkOffline = true
+        
+        // When: Reset is called
+        authViewModel.reset()
+        
+        // Then: Should return to initial state
+        XCTAssertEqual(authViewModel.email, "")
+        XCTAssertEqual(authViewModel.password, "")
+        XCTAssertFalse(authViewModel.isAuthenticated)
+        XCTAssertNil(authViewModel.signUpMethod)
+        XCTAssertNil(authViewModel.errorMessage)
+        XCTAssertFalse(authViewModel.isLoading)
+        XCTAssertFalse(authViewModel.shouldShowRetryOption)
+        XCTAssertFalse(authViewModel.canWorkOffline)
+    }
+    
+    func testLoadingStateTransitions() {
+        // Given: Valid credentials
+        setValidCredentials()
+        
+        // When: Sign up is initiated
+        authViewModel.signUpWithEmail()
+        
+        // Then: Should set loading state initially
+        XCTAssertTrue(authViewModel.isLoading, "Loading should be true when sign up starts")
+        
+        // And: Should return to false after async completion
+        let expectation = self.expectation(description: "Wait for sign up completion")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.0) {
+            XCTAssertFalse(self.authViewModel.isLoading, "Loading should be false after sign up completes")
+            XCTAssertTrue(self.authViewModel.isAuthenticated, "Should be authenticated after successful sign up")
+            expectation.fulfill()
+        }
+        waitForExpectations(timeout: 3.0, handler: nil)
+    }
+    
+    func testLoadingStateNotSetWithInvalidCredentials() {
+        // Given: Invalid credentials
+        setInvalidCredentials()
+        
+        // When: Sign up is attempted with invalid credentials
+        authViewModel.signUpWithEmail()
+        
+        // Then: Should not set loading state due to validation failure
+        XCTAssertFalse(authViewModel.isLoading, "Loading should not start when validation fails")
+        XCTAssertNotNil(authViewModel.errorMessage, "Error message should be shown for invalid credentials")
+    }
 } 

@@ -11,6 +11,7 @@
 		CA6F2AE22E34E2710060DA83 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = CA6F2AE12E34E2710060DA83 /* FirebaseAuth */; };
 		CA6F2AE42E34E2710060DA83 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = CA6F2AE32E34E2710060DA83 /* FirebaseCore */; };
 		CA6F2AE62E34E2710060DA83 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = CA6F2AE52E34E2710060DA83 /* FirebaseFirestore */; };
+		CA7BE6BD2E35210B00B315CE /* TestPlan.xctestplan in Resources */ = {isa = PBXBuildFile; fileRef = CA7BE6BC2E35210B00B315CE /* TestPlan.xctestplan */; };
 		CA9F4FE72E33498400B66700 /* DeviceKit in Frameworks */ = {isa = PBXBuildFile; productRef = CA9F4FE62E33498400B66700 /* DeviceKit */; };
 		CA9F50132E33AE8D00B66700 /* Mixpanel in Frameworks */ = {isa = PBXBuildFile; productRef = CA9F50122E33AE8D00B66700 /* Mixpanel */; };
 		CA9F508D2E34DBE400B66700 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CA9F508C2E34DBE400B66700 /* GoogleService-Info.plist */; };
@@ -34,6 +35,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		CA7BE6BC2E35210B00B315CE /* TestPlan.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = TestPlan.xctestplan; sourceTree = "<group>"; };
 		CA9F508C2E34DBE400B66700 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		CAFB08AC2E32BE28000001D1 /* Sage.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Sage.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CAFB08BF2E32BE2A000001D1 /* SageTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SageTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -92,6 +94,7 @@
 		CAFB08A32E32BE28000001D1 = {
 			isa = PBXGroup;
 			children = (
+				CA7BE6BC2E35210B00B315CE /* TestPlan.xctestplan */,
 				CAFB08AE2E32BE28000001D1 /* Sage */,
 				CAFB08C22E32BE2A000001D1 /* SageTests */,
 				CAFB08CC2E32BE2A000001D1 /* SageUITests */,
@@ -242,6 +245,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				CA9F508D2E34DBE400B66700 /* GoogleService-Info.plist in Resources */,
+				CA7BE6BD2E35210B00B315CE /* TestPlan.xctestplan in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

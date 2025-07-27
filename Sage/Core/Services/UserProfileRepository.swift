@@ -5,7 +5,7 @@ import Foundation
 import FirebaseFirestore
 
 /// Repository for saving UserProfile to Firestore, compliant with DATA_DICTIONARY.md and DATA_STANDARDS.md §2.3.
-class UserProfileRepository {
+class UserProfileRepository: UserProfileRepositoryProtocol {
     private let db = Firestore.firestore()
     private let collection = "users"
 
@@ -22,6 +22,40 @@ class UserProfileRepository {
                 print("UserProfileRepository: User profile saved for id=\(profile.id)")
             }
             completion(error)
+        }
+    }
+    
+    /// Fetches a UserProfile from Firestore by user ID.
+    /// - Parameters:
+    ///   - id: The user ID to fetch the profile for
+    ///   - completion: Completion handler with optional UserProfile
+    /// - SeeAlso: DATA_DICTIONARY.md, DATA_STANDARDS.md §2.3
+    func fetchUserProfile(withId id: String, completion: @escaping (UserProfile?) -> Void) {
+        db.collection(collection).document(id).getDocument { document, error in
+            if let error = error {
+                print("UserProfileRepository: Failed to fetch user profile: \(error)")
+                completion(nil)
+                return
+            }
+            
+            guard let document = document, document.exists,
+                  let data = document.data() else {
+                print("UserProfileRepository: No user profile found for id=\(id)")
+                completion(nil)
+                return
+            }
+            
+            do {
+                let jsonData = try JSONSerialization.data(withJSONObject: data)
+                let decoder = JSONDecoder()
+                decoder.dateDecodingStrategy = .iso8601
+                let profile = try decoder.decode(UserProfile.self, from: jsonData)
+                print("UserProfileRepository: Successfully fetched user profile for id=\(id)")
+                completion(profile)
+            } catch {
+                print("UserProfileRepository: Failed to decode user profile: \(error)")
+                completion(nil)
+            }
         }
     }
 }

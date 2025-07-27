@@ -372,5 +372,5 @@ When generating or updating code, documentation, or workflow, always check the F
 Thank you for contributing to Sage. Your work helps advance research-grade, privacy-first health technology.
 
 ### Onboarding UX
-- The onboarding flow opens with an unskippable 'Voice Hero' manifesto screen (`VoiceHeroView`), featuring a clinical, conviction-driven message, animated line-art mouth/voice motif, and accessible, dynamic type layout. Sets the tone for Sage's approach to quantifying symptoms.
+- The onboarding flow is a 3-stage flow with a user explainer, an initial session, then ask for additional information (age, gender, diagnosis, medication, etc. ) to customize their voice summary.
 

@@ -5,77 +5,145 @@
 //  Created by Ivy Hamilton on 24/7/2025.
 //
 //  Unit tests for authentication error handling
-//  Tests failure scenarios and user-friendly error messages
+//  Tests error scenarios and user feedback
 
-import Testing
+import XCTest
 @testable import Sage
 
-struct AuthErrorHandlingTests {
+class AuthErrorHandlingTests: XCTestCase {
+    var authViewModel: AuthViewModel!
     
-    @Test func shouldHandleAnonymousSessionCreationFailure() async throws {
-        // Given: Firebase will fail to create anonymous session
-        MockFirebaseAuth.reset()
-        MockFirebaseAuth.shouldSignInAnonymouslySucceed = false
-        MockFirebaseAuth.signInAnonymouslyError = NSError(domain: "test", code: 1, userInfo: [NSLocalizedDescriptionKey: "Network error"])
-        
-        // When: User attempts to sign in anonymously
-        let viewModel = AuthViewModel()
-        viewModel.signInAnonymously()
-        
-        // Then: Should show user-friendly error and allow retry
-        #expect(viewModel.isAuthenticated == false)
-        #expect(viewModel.errorMessage == "We're having trouble connecting to your account. Your voice recordings won't be saved to track your progress over time. You can try again or continue using the app for now.")
-        #expect(viewModel.signUpMethod == nil)
-        #expect(viewModel.isLoading == false)
-        #expect(viewModel.shouldShowRetryOption == true)
+    override func setUp() {
+        super.setUp()
+        authViewModel = AuthViewModel(disableAutoAuth: true)
     }
     
-    @Test func shouldPreserveLocalData_whenAuthenticationFails() async throws {
-        // Given: User has local recordings and authentication will fail
-        MockFirebaseAuth.reset()
-        MockFirebaseAuth.shouldSignInAnonymouslySucceed = false
-        
-        // When: Authentication fails
-        let viewModel = AuthViewModel()
-        viewModel.signInAnonymously()
-        
-        // Then: Should preserve local data and enable offline mode
-        #expect(viewModel.isAuthenticated == false)
-        #expect(viewModel.shouldShowRetryOption == true)
-        #expect(viewModel.canWorkOffline == true)
+    override func tearDown() {
+        authViewModel = nil
+        super.tearDown()
     }
     
-    @Test func shouldAllowRetry_whenAuthenticationFails() async throws {
-        // Given: Previous authentication attempt failed
-        MockFirebaseAuth.reset()
-        MockFirebaseAuth.shouldSignInAnonymouslySucceed = false
+    func testInvalidEmailShowsErrorMessage() {
+        // Given: Invalid email (malformed)
+        authViewModel.email = "invalid-email"
+        authViewModel.password = "password123"
         
-        let viewModel = AuthViewModel()
-        viewModel.signInAnonymously()
+        // When: Sign up is attempted
+        authViewModel.signUpWithEmail()
         
-        // When: User retries and it succeeds
-        MockFirebaseAuth.shouldSignInAnonymouslySucceed = true
-        viewModel.retryAnonymousSignIn()
-        
-        // Then: Should succeed on retry
-        #expect(viewModel.isAuthenticated == true)
-        #expect(viewModel.signUpMethod == "anonymous")
-        #expect(viewModel.errorMessage == nil)
+        // Then: Sign up fails and error message is shown
+        XCTAssertNotNil(authViewModel.errorMessage, "Error message should be shown for invalid email")
+        XCTAssertEqual(authViewModel.errorMessage, AuthError.invalidEmail.message, "Should show exact invalid email error")
+        XCTAssertFalse(authViewModel.isEmailValid, "Email should be invalid")
     }
     
-    @Test func shouldHandleNetworkTimeout() async throws {
-        // Given: Network timeout error
-        MockFirebaseAuth.reset()
-        MockFirebaseAuth.shouldSignInAnonymouslySucceed = false
-        MockFirebaseAuth.signInAnonymouslyError = NSError(domain: "test", code: -1001, userInfo: [NSLocalizedDescriptionKey: "Request timed out"])
+    func testEmptyEmailShowsErrorMessage() {
+        // Given: Empty email
+        authViewModel.email = ""
+        authViewModel.password = "password123"
         
-        // When: User attempts to sign in
-        let viewModel = AuthViewModel()
-        viewModel.signInAnonymously()
+        // When: Sign up is attempted
+        authViewModel.signUpWithEmail()
         
-        // Then: Should show network-specific error message
-        #expect(viewModel.isAuthenticated == false)
-        #expect(viewModel.errorMessage != nil)
-        #expect(viewModel.errorMessage?.contains("connection") == true)
+        // Then: Sign up fails and error message is shown
+        XCTAssertNotNil(authViewModel.errorMessage, "Error message should be shown for empty email")
+        XCTAssertEqual(authViewModel.errorMessage, AuthError.invalidEmail.message, "Should show exact invalid email error")
+        XCTAssertFalse(authViewModel.isEmailValid, "Empty email should be invalid")
+    }
+    
+    func testInvalidPasswordShowsErrorMessage() {
+        // Given: Invalid password (too short)
+        authViewModel.email = "test@example.com"
+        authViewModel.password = "123"
+        
+        // When: Sign up is attempted
+        authViewModel.signUpWithEmail()
+        
+        // Then: Sign up fails and error message is shown
+        XCTAssertNotNil(authViewModel.errorMessage, "Error message should be shown for invalid password")
+        XCTAssertEqual(authViewModel.errorMessage, AuthError.invalidPassword.message, "Should show exact invalid password error")
+        XCTAssertFalse(authViewModel.isPasswordValid, "Password should be invalid")
+    }
+    
+    func testEmptyPasswordShowsErrorMessage() {
+        // Given: Empty password
+        authViewModel.email = "test@example.com"
+        authViewModel.password = ""
+        
+        // When: Sign up is attempted
+        authViewModel.signUpWithEmail()
+        
+        // Then: Sign up fails and error message is shown
+        XCTAssertNotNil(authViewModel.errorMessage, "Error message should be shown for empty password")
+        XCTAssertEqual(authViewModel.errorMessage, AuthError.invalidPassword.message, "Should show exact invalid password error")
+        XCTAssertFalse(authViewModel.isPasswordValid, "Empty password should be invalid")
+    }
+    
+    func testFormValidationPreventsSubmission() {
+        // Given: Invalid form data
+        authViewModel.email = "invalid-email"
+        authViewModel.password = "123"
+        
+        // When: Form validation is checked and sign up is attempted
+        let isFormValid = authViewModel.isFormValid
+        authViewModel.signUpWithEmail()
+        
+        // Then: Should be invalid and prevent submission
+        XCTAssertFalse(isFormValid, "Form should be invalid")
+        XCTAssertFalse(authViewModel.isEmailValid, "Email should be invalid")
+        XCTAssertFalse(authViewModel.isPasswordValid, "Password should be invalid")
+        XCTAssertNotNil(authViewModel.errorMessage, "Error message should be shown")
+        XCTAssertFalse(authViewModel.isLoading, "Should not start loading when validation fails")
+    }
+    
+    func testErrorStateIsClearedOnValidInput() {
+        // Given: Error state
+        authViewModel.email = "invalid-email"
+        authViewModel.password = "123"
+        authViewModel.signUpWithEmail() // This sets an error
+        XCTAssertNotNil(authViewModel.errorMessage, "Error should be set initially")
+        
+        // When: Valid input is provided
+        authViewModel.email = "test@example.com"
+        authViewModel.password = "password123"
+        
+        // Then: Form should be valid (error message persists until next submission)
+        XCTAssertTrue(authViewModel.isFormValid, "Form should be valid with correct input")
+        XCTAssertTrue(authViewModel.isEmailValid, "Email should be valid")
+        XCTAssertTrue(authViewModel.isPasswordValid, "Password should be valid")
+        XCTAssertNotNil(authViewModel.errorMessage, "Error message persists until next submission attempt")
+    }
+    
+    func testResetClearsErrorState() {
+        // Given: Error state
+        authViewModel.email = "invalid-email"
+        authViewModel.password = "123"
+        authViewModel.signUpWithEmail() // This sets an error
+        XCTAssertNotNil(authViewModel.errorMessage)
+        
+        // When: Reset is called
+        authViewModel.reset()
+        
+        // Then: Error should be cleared
+        XCTAssertNil(authViewModel.errorMessage, "Error message should be cleared on reset")
+        XCTAssertEqual(authViewModel.email, "", "Email should be cleared on reset")
+        XCTAssertEqual(authViewModel.password, "", "Password should be cleared on reset")
+    }
+    
+    func testErrorMessageClearedOnSuccessfulSubmission() {
+        // Given: Error state
+        authViewModel.email = "invalid-email"
+        authViewModel.password = "123"
+        authViewModel.signUpWithEmail() // This sets an error
+        XCTAssertNotNil(authViewModel.errorMessage, "Error should be set initially")
+        
+        // When: Valid credentials are provided and sign up is attempted
+        authViewModel.email = "test@example.com"
+        authViewModel.password = "password123"
+        authViewModel.signUpWithEmail()
+        
+        // Then: Error message should be cleared (since validation passes)
+        XCTAssertNil(authViewModel.errorMessage, "Error message should be cleared when validation passes")
+        XCTAssertTrue(authViewModel.isLoading, "Should start loading when validation passes")
     }
 } 

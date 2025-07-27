@@ -18,14 +18,13 @@ struct UserInfoFormView: View {
     var body: some View {
         VStack(spacing: SageSpacing.large) {
             SageSectionHeader(title: "Tell Us About You")
-            Text("We use this info to personalize your experience. Your privacy is always protected.")
+            Text("We only need your age for research purposes. Your privacy is always protected.")
                 .font(SageTypography.body)
                 .foregroundColor(SageColors.espressoBrown)
                 .multilineTextAlignment(.center)
             SageTextField(
-                placeholder: "Name",
-                text: $userInfo.name,
-                error: nameError
+                placeholder: "Name (optional)",
+                text: $userInfo.name
             )
             #if os(iOS)
             SageTextField(
@@ -47,21 +46,20 @@ struct UserInfoFormView: View {
             )
             SageButton(title: "Continue") {
                 print("UserInfoFormView: Continue button tapped with name=\(userInfo.name), ageText=\(ageText), gender=\(userInfo.gender)")
-                // Validate per DATA_STANDARDS.md §2.3
-                nameError = userInfo.name.isEmpty ? "Name is required." : nil
-                ageError = ageText.isEmpty || Int(ageText) == nil ? "Valid age is required." : nil
-                if nameError == nil && ageError == nil {
+                // Validate per DATA_STANDARDS.md §2.3 - only age is required
+                ageError = ageText.isEmpty || Int(ageText) == nil ? "Valid age is required for research purposes." : nil
+                if ageError == nil {
                     userInfo.age = Int(ageText) ?? 0
                     print("UserInfoFormView: Form complete, calling onComplete() with age=\(userInfo.age)")
                     onComplete()
                 } else {
-                    print("UserInfoFormView: Missing or invalid required fields")
+                    print("UserInfoFormView: Missing or invalid age")
                     showAlert = true
                 }
             }
         }
         .alert(isPresented: $showAlert) {
-            Alert(title: Text("Missing Info"), message: Text("Please enter your name and a valid age."), dismissButton: .default(Text("OK")))
+            Alert(title: Text("Age Required"), message: Text("Please enter your age for research purposes."), dismissButton: .default(Text("OK")))
         }
         .onAppear {
             ageText = userInfo.age > 0 ? String(userInfo.age) : ""
