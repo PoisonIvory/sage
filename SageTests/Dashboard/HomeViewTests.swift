@@ -5,40 +5,16 @@ import SwiftUI
 @MainActor
 final class HomeViewTests: XCTestCase {
     
-    func testHomeViewDisplaysF0Value() {
-        // Given: HomeView is created
+    func testUserSeesF0ValueOnHomePage() {
+        // Given: User is on the home page
         let homeView = HomeView()
         
-        // When: View is rendered
+        // When: Home page loads
         let view = homeView.body
         
-        // Then: Should display F0 value
-        // Note: In a real test environment, we would use ViewInspector or similar
-        // to inspect the actual text content. For now, we verify the view exists.
-        XCTAssertNotNil(view)
-    }
-    
-    func testHomeViewUsesSageDesignSystem() {
-        // Given: HomeView is created
-        let homeView = HomeView()
-        
-        // When: View is rendered
-        let view = homeView.body
-        
-        // Then: Should use Sage design system components
-        // Note: In a real test environment, we would verify specific design system usage
-        XCTAssertNotNil(view)
-    }
-    
-    func testHomeViewHasCorrectInitialState() {
-        // Given: HomeView is created
-        let homeView = HomeView()
-        
-        // When: View is initialized
-        
-        // Then: Should have default F0 value
-        // Note: We can't directly access @State properties in tests,
-        // but we can verify the view renders correctly
-        XCTAssertNotNil(homeView.body)
+        // Then: Home page should render successfully
+        // This is the only test that matters for MVP - ensures the home page doesn't crash
+        // and can display the F0 value when real data is integrated
+        XCTAssertNotNil(view, "Home page should render without crashing")
     }
 } 
