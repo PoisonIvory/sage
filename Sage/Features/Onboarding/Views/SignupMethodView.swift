@@ -89,9 +89,9 @@ struct SignupMethodView<ViewModel: SignupMethodSelecting>: View {
                         SageTextField(
                             placeholder: "Email",
                             text: $viewModel.email,
+                            error: viewModel.fieldErrors["email"],
                             keyboardType: .emailAddress,
-                            autocapitalization: .none,
-                            error: viewModel.fieldErrors["email"]
+                            autocapitalization: .never
                         )
                         
                         SageTextField(
