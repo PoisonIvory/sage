@@ -387,6 +387,20 @@ struct OnboardingTestDataFactory {
         )
     }
     
+    static func createMinimalUserProfile(
+        userId: String = TestConstants.testUserId,
+        deviceModel: String = TestConstants.testDeviceModel,
+        osVersion: String = TestConstants.testOSVersion,
+        dateProvider: DateProvider = MockDateProvider(currentDate: Date(timeIntervalSince1970: TestConstants.testTimestamp))
+    ) -> UserProfile {
+        return UserProfileValidator.createMinimalProfile(
+            userId: userId,
+            deviceModel: deviceModel,
+            osVersion: osVersion,
+            dateProvider: dateProvider
+        )
+    }
+    
     static func createCompleteUserProfile(
         age: Int = 25,
         gender: String = "female",

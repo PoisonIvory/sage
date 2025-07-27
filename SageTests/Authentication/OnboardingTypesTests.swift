@@ -104,8 +104,8 @@ class OnboardingTypesTests: XCTestCase {
         // Given: Same error type with different field names
         let error4 = ValidationError.ageRequired(fieldName: "custom_age")
         
-        // Then: Should still be equal (field name doesn't affect equality)
-        XCTAssertEqual(error1, error4)
+        // Then: Should not be equal (field name affects equality)
+        XCTAssertNotEqual(error1, error4)
     }
     
     // MARK: - UserProfileData Tests

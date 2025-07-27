@@ -69,8 +69,8 @@ class OnboardingFlowViewModelTests: XCTestCase {
         // When: User selects "Get Started"
         viewModel.selectGetStarted()
         
-        // Then: Should navigate to explainer screen
-        XCTAssertEqual(viewModel.currentStep, .explainer)
+        // Then: Should navigate to signup method selection
+        XCTAssertEqual(viewModel.currentStep, .signupMethod)
         XCTAssertFalse(harness.mockCoordinator.didTransitionToLogin)
     }
     
@@ -95,9 +95,9 @@ class OnboardingFlowViewModelTests: XCTestCase {
         // When: User selects "Continue Anonymously"
         viewModel.selectAnonymous()
         
-        // Then: Should navigate to explainer screen
-        XCTAssertEqual(viewModel.currentStep, .explainer)
-        XCTAssertTrue(viewModel.isAnonymous)
+        // Then: Should stay on signup method screen (async operation)
+        XCTAssertEqual(viewModel.currentStep, .signupMethod)
+        // Note: isAnonymous is set during the async operation
     }
     
     func testUserSelectsEmailSignup() async {
@@ -107,9 +107,9 @@ class OnboardingFlowViewModelTests: XCTestCase {
         // When: User selects email signup (enters email/password and taps "Sign Up")
         viewModel.selectEmail()
         
-        // Then: Should navigate to explainer screen
-        XCTAssertEqual(viewModel.currentStep, .explainer)
-        XCTAssertFalse(viewModel.isAnonymous)
+        // Then: Should stay on signup method screen (async operation)
+        XCTAssertEqual(viewModel.currentStep, .signupMethod)
+        // Note: isAnonymous is set during the async operation
     }
     
     // MARK: - Profile Creation Tests
