@@ -2,18 +2,6 @@ import Foundation
 import SwiftUI
 import Mixpanel
 
-/// Analytics events for onboarding journey
-enum OnboardingAnalyticsEvent: String {
-    case onboardingStarted = "Onboarding Started"
-    case onboardingCompleted = "Onboarding Completed"
-    case signupMethodSelected = "Signup Method Selected"
-    case profileEnriched = "Profile Enriched"
-    case loginSelected = "Login Selected"
-    case signupSelected = "Signup Selected"
-    case vocalTestCompleted = "Vocal Test Completed"
-    case vocalTestUploaded = "Vocal Test Uploaded"
-}
-
 /// ViewModel for the new GWT-compliant onboarding journey
 /// - Implements all behavior specified in OnboardingJourneyTests.swift
 /// - Uses dependency injection for testability
