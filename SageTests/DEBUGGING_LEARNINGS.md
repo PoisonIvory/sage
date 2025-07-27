@@ -3,10 +3,13 @@
 ## 📋 Table of Contents
 - [Overview](#-overview)
 - [Common Debugging Patterns](#-common-debugging-patterns)
+- [Communication & Requirements Gaps](#-communication--requirements-gaps)
+- [When Not to Write a Test](#-when-not-to-write-a-test)
 - [Best Practices for Future Development](#-best-practices-for-future-development)
+- [Concurrency Debugging](#-concurrency-debugging)
 - [Pre-Testing Checklist](#-pre-testing-checklist)
 - [Common Fixes We've Applied](#-common-fixes-weve-applied)
-- [Concurrency & Threading](#-concurrency--threading)
+- [Enforcement & Automation](#-enforcement--automation)
 - [Tooling & Automation](#-tooling--automation)
 - [MVP vs Post-MVP Considerations](#-mvp-vs-post-mvp-considerations)
 - [Expected Benefits](#-expected-benefits)
@@ -30,7 +33,9 @@ This document captures the key learnings from our debugging sessions and retrosp
 - Tests expecting async behavior where methods are synchronous
 - Tests expecting UI text validation that doesn't exist
 
-**Solution**: Always verify actual implementation behavior before writing tests.
+**Root Cause**: ViewModel design lacks clear contracts or documentation. Product requirements are ambiguous or not properly translated into technical specifications.
+
+**Solution**: Always verify actual implementation behavior before writing tests. Document ViewModel contracts explicitly.
 
 ### 2. State Management Assumptions
 
@@ -42,7 +47,9 @@ This document captures the key learnings from our debugging sessions and retrosp
 - Tests expecting analytics events without setting up user profiles
 - Tests setting mock properties instead of ViewModel state
 
-**Solution**: Set up state directly on ViewModels rather than relying on mocks.
+**Root Cause**: Inconsistent state management patterns across ViewModels. Lack of clear state ownership and initialization contracts.
+
+**Solution**: Set up state directly on ViewModels rather than relying on mocks. Establish consistent state management patterns.
 
 ### 3. Mock Behavior Assumptions
 
@@ -53,7 +60,9 @@ This document captures the key learnings from our debugging sessions and retrosp
 - Tests not understanding that `simulateRecordingCompletion` triggers different flow than manual stop
 - Tests expecting mock properties to automatically set ViewModel state
 
-**Solution**: Understand and document mock behavior explicitly.
+**Root Cause**: Mock design doesn't reflect real implementation behavior. Test data factories lack proper validation and documentation.
+
+**Solution**: Understand and document mock behavior explicitly. Validate test data factory inputs.
 
 ### 4. Protocol/Interface Drift
 
@@ -65,7 +74,9 @@ This document captures the key learnings from our debugging sessions and retrosp
 - Wrong method names (`startRecording` vs `startVocalTest`)
 - Wrong enum cases (`SignupErrorType.invalidEmail` doesn't exist)
 
-**Solution**: Implement contract testing and keep tests in sync with implementation.
+**Root Cause**: Lack of contract testing and interface versioning. Changes made without updating all dependent code.
+
+**Solution**: Implement contract testing and keep tests in sync with implementation. Use interface versioning for breaking changes.
 
 ### 5. Method Length & Complexity Pattern
 
@@ -77,7 +88,9 @@ This document captures the key learnings from our debugging sessions and retrosp
 - `validateFull()` in `RecordingValidator` handles multiple validation types in one method
 - `process_audio_file()` combines file parsing, download, processing, and storage
 
-**Solution**: Break down long methods into smaller, focused helper methods.
+**Root Cause**: Lack of clear separation of concerns. Methods grow organically without refactoring. Missing architectural boundaries.
+
+**Solution**: Break down long methods into smaller, focused helper methods. Establish clear architectural boundaries.
 
 ### 6. Missing Helper Method Pattern
 
@@ -89,7 +102,9 @@ This document captures the key learnings from our debugging sessions and retrosp
 - Validation logic is scattered across multiple methods
 - UI content strings are hardcoded instead of centralized
 
-**Solution**: Extract common patterns into reusable helper methods.
+**Root Cause**: Lack of code review focus on DRY principles. Missing patterns library or shared utilities.
+
+**Solution**: Extract common patterns into reusable helper methods. Establish patterns library.
 
 ### 7. Inconsistent Error Handling Pattern
 
@@ -101,7 +116,72 @@ This document captures the key learnings from our debugging sessions and retrosp
 - Some errors are logged, others are silently ignored
 - Error recovery strategies vary between components
 
+**Root Cause**: No established error handling strategy or patterns. Different developers use different approaches.
+
 **Solution**: Establish consistent error handling patterns and centralize error management.
+
+## 🗣️ Communication & Requirements Gaps
+
+### 8. Requirements Drift Pattern
+
+**Problem**: Tests assume unverified requirements or behavior that doesn't match actual implementation.
+
+**Examples We Encountered**:
+- Tests expect auth errors to prevent profile creation, but implementation always creates profiles
+- Tests expect validation in completion methods, but implementation doesn't validate
+- Tests expect specific error messages that don't exist in production code
+
+**Root Cause**: Product/engineering miscommunication. Requirements not properly translated into technical specifications. Behavior assumptions not validated.
+
+**Solution**: 
+- Add inline docstrings summarizing actual behavior
+- Ensure behavior is reviewed by tech/product before tests are written
+- Create behavior contracts that are shared between product and engineering
+- Use BDD (Behavior Driven Development) to align requirements with tests
+
+### 9. Specification Ambiguity Pattern
+
+**Problem**: Requirements are vague or open to interpretation, leading to different implementations and test expectations.
+
+**Examples We Encountered**:
+- "Handle errors gracefully" - different interpretations of what "graceful" means
+- "Validate user input" - unclear what validation rules apply
+- "Show appropriate feedback" - no definition of what's appropriate
+
+**Root Cause**: Product requirements lack specificity. Missing acceptance criteria or edge case definitions.
+
+**Solution**:
+- Write specific acceptance criteria for each requirement
+- Define edge cases and error scenarios explicitly
+- Use concrete examples in requirements
+- Create shared understanding between product and engineering
+
+## 🚫 When Not to Write a Test
+
+Not all code needs tests, and not all test failures are worth fixing. Focus testing efforts on high-value areas:
+
+### **Don't Test These (Low ROI)**:
+- [ ] **Static UI strings** - These rarely change and don't affect functionality
+- [ ] **Temporary screens** - Features that will be removed or significantly changed
+- [ ] **Features under heavy change** - Wait until the feature stabilizes
+- [ ] **Internals without external effect** - Private methods that don't impact user experience
+- [ ] **Third-party library behavior** - Test your integration, not the library itself
+- [ ] **Configuration values** - Constants and configuration that don't affect logic
+
+### **Do Test These (High ROI)**:
+- [x] **User-facing behavior** - What users actually experience
+- [x] **Business logic** - Core application functionality
+- [x] **Error handling** - How the app responds to failures
+- [x] **Data validation** - Input validation and data integrity
+- [x] **Integration points** - How components work together
+- [x] **State transitions** - How the app moves between states
+
+### **Test Fatigue Analysis**:
+Before writing a test, ask:
+1. **Will this test prevent a real bug?**
+2. **Will this test help with refactoring?**
+3. **Is the behavior stable enough to test?**
+4. **Is the test cost (writing + maintaining) worth the benefit?**
 
 ## 🛠️ Best Practices for Future Development
 
@@ -297,6 +377,105 @@ var explainerHeadline: String {
 }
 ```
 
+## 🔄 Concurrency Debugging
+
+### Common Concurrency Pitfalls
+
+**Problem**: Swift Concurrency introduces new debugging challenges that traditional testing doesn't catch.
+
+**Examples We Encountered**:
+- Tests failed because method wasn't marked `@MainActor`
+- UI state mutated off-main-thread
+- `async let` side effects not properly awaited
+- Background thread issues in ViewModels
+
+### 1. @MainActor Violations
+
+```swift
+// ❌ BAD: Missing @MainActor
+final class OnboardingJourneyViewModel: ObservableObject {
+    @Published var currentStep: OnboardingStep = .signupMethod
+    
+    func selectGetStarted() {
+        // This can cause race conditions if called from background thread
+        currentStep = .explainer
+    }
+}
+
+// ✅ GOOD: Proper @MainActor usage
+@MainActor
+final class OnboardingJourneyViewModel: ObservableObject {
+    @Published var currentStep: OnboardingStep = .signupMethod
+    
+    func selectGetStarted() {
+        // Safe on main thread
+        currentStep = .explainer
+    }
+}
+```
+
+### 2. Background Thread Issues in ViewModels
+
+```swift
+// ❌ BAD: UI updates from background thread
+func loadUserProfile() {
+    Task.detached {
+        let profile = await userProfileRepository.fetchProfile()
+        // This will crash: UI updates must be on main thread
+        self.userProfile = profile
+    }
+}
+
+// ✅ GOOD: Proper main thread handling
+func loadUserProfile() {
+    Task.detached {
+        let profile = await userProfileRepository.fetchProfile()
+        await MainActor.run {
+            self.userProfile = profile
+        }
+    }
+}
+```
+
+### 3. Async Let Side Effects
+
+```swift
+// ❌ BAD: Unhandled async let side effects
+func processData() async {
+    async let userData = fetchUserData()
+    async let analyticsData = fetchAnalyticsData()
+    
+    // Side effects not properly awaited
+    let result = await (userData, analyticsData)
+}
+
+// ✅ GOOD: Proper async let handling
+func processData() async {
+    async let userData = fetchUserData()
+    async let analyticsData = fetchAnalyticsData()
+    
+    // All side effects properly awaited
+    let (user, analytics) = await (userData, analyticsData)
+    await processResults(user, analytics)
+}
+```
+
+### 4. Test Concurrency Issues
+
+```swift
+// ❌ BAD: Test not handling async properly
+func testAsyncOperation() {
+    viewModel.performAsyncOperation()
+    XCTAssertEqual(viewModel.result, expectedValue) // Race condition
+}
+
+// ✅ GOOD: Proper async test
+func testAsyncOperation() async {
+    await viewModel.performAsyncOperation()
+    XCTAssertEqual(viewModel.result, expectedValue)
+}
+```
+
 ## 📋 Pre-Testing Checklist
 
 Before writing any test, verify:
@@ -311,6 +490,8 @@ Before writing any test, verify:
 - [ ] **[Reuse]** Are there repeated patterns that could be extracted?
 - [ ] **[Consistency]** Does error handling follow established patterns?
 - [ ] **[Content]** Are strings centralized or hardcoded?
+- [ ] **[ROI]** Is this test worth writing and maintaining?
+- [ ] **[Concurrency]** Are there any threading concerns?
 
 ## 🔧 Common Fixes We've Applied
 
@@ -410,33 +591,75 @@ private func trackAnalyticsEvent(_ eventName: String, properties: [String: Any])
 }
 ```
 
-## 🔄 Concurrency & Threading
+## 🔒 Enforcement & Automation
 
-### Rule: Use @MainActor for UI-Bound Logic
+### SwiftLint Rules
 
-**Why**: UI-bound logic in ViewModels should be `@MainActor` to avoid race conditions or thread violations.
+```yaml
+# .swiftlint.yml
+function_body_length:
+  warning: 20
+  error: 30
+
+type_body_length:
+  warning: 300
+  error: 500
+
+cyclomatic_complexity:
+  warning: 10
+  error: 15
+
+custom_rules:
+  main_actor_violation:
+    name: "MainActor Violation"
+    regex: '@Published.*func.*\{'
+    message: "Published properties should be in @MainActor classes"
+```
+
+### Custom Test Helpers
 
 ```swift
-// ✅ GOOD: @MainActor for UI-bound ViewModels
-@MainActor
-final class OnboardingJourneyViewModel: ObservableObject {
-    @Published var currentStep: OnboardingStep = .signupMethod
-    @Published var errorMessage: String?
+// XCTestCase extension for common test patterns
+extension XCTestCase {
+    func assertMainActor<T>(_ block: @escaping () -> T) async -> T {
+        await MainActor.run {
+            block()
+        }
+    }
     
-    func selectGetStarted() {
-        // UI updates are safe on main thread
-        currentStep = .explainer
+    func assertAnalyticsTracked(_ event: String, in mock: MockAnalyticsService) {
+        XCTAssertTrue(mock.trackedEvents.contains(event), 
+                      "Expected analytics event '\(event)' to be tracked")
+    }
+    
+    func assertUserProfileCreated(in viewModel: OnboardingJourneyViewModel) {
+        XCTAssertNotNil(viewModel.userProfile, 
+                       "Expected user profile to be created")
     }
 }
+```
 
-// ✅ GOOD: @MainActor for test classes that interact with ViewModels
-@MainActor
-class OnboardingFlowTests: XCTestCase {
-    func testUserSelectsGetStarted() {
-        let viewModel = createViewModel()
-        viewModel.selectGetStarted()
-        XCTAssertEqual(viewModel.currentStep, .explainer)
-    }
+### Method Line-Length Script
+
+```bash
+#!/bin/bash
+# check_method_length.sh
+find . -name "*.swift" -exec grep -l "func.*{" {} \; | while read file; do
+    echo "Checking $file..."
+    # Count lines in each method and flag those over 20
+    # Implementation details...
+done
+```
+
+### Snapshot Testing
+
+```swift
+// Snapshot tests for UI consistency
+func testOnboardingFlowSnapshot() {
+    let viewModel = createViewModel()
+    let view = OnboardingFlowView(viewModel: viewModel)
+    
+    assertSnapshot(matching: view, as: .image)
 }
 ```
 
@@ -488,6 +711,7 @@ func XCTAssertUserProfileCreated(in viewModel: OnboardingJourneyViewModel) {
 - [x] **Basic Error Handling**: Consistent error messages
 - [x] **Test Data Validation**: Validate factory method inputs
 - [x] **State Management**: Set state directly on ViewModels
+- [x] **Concurrency Safety**: Proper @MainActor usage
 
 ### Post-MVP Enhancements (Phase In Later)
 - [ ] **Analytics Consistency**: Centralized analytics helpers
@@ -495,6 +719,7 @@ func XCTAssertUserProfileCreated(in viewModel: OnboardingJourneyViewModel) {
 - [ ] **Advanced Tooling**: SwiftLint, Sourcery, SwiftFormat
 - [ ] **Comprehensive Error Handling**: Custom error types and recovery
 - [ ] **Performance Optimization**: Lazy loading, caching strategies
+- [ ] **Advanced Concurrency**: Structured concurrency patterns
 
 ## 🎯 Expected Benefits
 
@@ -509,6 +734,7 @@ By following these practices:
 - **Better reusability** through helper method extraction
 - **Consistent error handling** across the codebase
 - **Centralized UI content** for easier localization and updates
+- **Reduced concurrency bugs** through proper @MainActor usage
 
 ## 📚 Resources
 

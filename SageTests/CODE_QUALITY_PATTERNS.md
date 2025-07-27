@@ -9,7 +9,10 @@
 - [State Management Patterns](#-state-management-patterns)
 - [Analytics Patterns](#-analytics-patterns)
 - [Concurrency & Threading](#-concurrency--threading)
+- [Communication & Requirements](#-communication--requirements)
+- [When Not to Refactor](#-when-not-to-refactor)
 - [Tooling & Automation](#-tooling--automation)
+- [Enforcement & Automation](#-enforcement--automation)
 - [MVP vs Post-MVP Considerations](#-mvp-vs-post-mvp-considerations)
 - [Code Review Checklist](#-code-review-checklist)
 - [Implementation Strategy](#-implementation-strategy)
@@ -25,6 +28,8 @@ This document outlines the code quality patterns and best practices we've identi
 ### Rule: Keep Methods Under 20 Lines
 
 **Why**: Long methods are harder to test, debug, and maintain. They often handle multiple responsibilities.
+
+**Root Cause**: Methods grow organically without refactoring. Lack of clear separation of concerns. Missing architectural boundaries.
 
 **Examples from our codebase**:
 
@@ -88,6 +93,8 @@ private func requestPermissionAndRecord() {
 
 **Why**: Methods should do one thing well. Multiple responsibilities make testing and debugging harder.
 
+**Root Cause**: Lack of clear architectural boundaries. Methods grow to handle multiple concerns without refactoring.
+
 ```swift
 // ❌ BAD: Multiple responsibilities in one method
 func processUserSignup() {
@@ -126,6 +133,8 @@ private func navigateToNextStep() { /* 3 lines */ }
 ### Avoiding Repetition in Analytics
 
 **Problem**: Analytics tracking methods repeat the same pattern.
+
+**Root Cause**: Lack of code review focus on DRY principles. Missing patterns library or shared utilities.
 
 ```swift
 // ❌ BAD: Repeated pattern
@@ -172,6 +181,8 @@ private func trackOnboardingStarted() {
 
 **Problem**: Validation logic is scattered across multiple methods.
 
+**Root Cause**: No centralized validation strategy. Each method implements its own validation rules.
+
 ```swift
 // ❌ BAD: Validation scattered
 func selectAnonymous() {
@@ -213,6 +224,8 @@ func selectEmail() {
 ### Standardizing Error Handling
 
 **Problem**: Error handling is inconsistent across the codebase.
+
+**Root Cause**: No established error handling strategy or patterns. Different developers use different approaches.
 
 ```swift
 // ❌ BAD: Inconsistent error handling
@@ -277,6 +290,8 @@ func method2() {
 
 **Problem**: UI strings are hardcoded throughout the codebase.
 
+**Root Cause**: No localization strategy or string management system. Strings added ad-hoc during development.
+
 ```swift
 // ❌ BAD: Hardcoded strings
 var explainerHeadline: String {
@@ -316,6 +331,8 @@ var explainerSubtext: String {
 ### Validating Test Setup Inputs
 
 **Problem**: Factory methods crash with invalid inputs.
+
+**Root Cause**: Test data factories lack proper validation and documentation. No clear contracts for valid inputs.
 
 ```swift
 // ❌ BAD: No input validation
@@ -361,6 +378,8 @@ static func createCompleteUserProfile(
 
 **Problem**: Tests set mock properties instead of ViewModel state.
 
+**Root Cause**: Inconsistent state management patterns across ViewModels. Lack of clear state ownership.
+
 ```swift
 // ❌ BAD: Setting mock properties
 harness.mockMicrophonePermissionManager.permissionGranted = true
@@ -374,6 +393,8 @@ viewModel.startVocalTest() // ViewModel uses its own state
 ### Pattern: State Validation
 
 **Problem**: Tests don't validate that state is properly set up.
+
+**Root Cause**: No established patterns for state validation in tests.
 
 ```swift
 // ❌ BAD: No state validation
@@ -401,6 +422,8 @@ func testVocalTestRecording() {
 ### Pattern: Consistent Analytics Tracking
 
 **Problem**: Analytics tracking is inconsistent and error-prone.
+
+**Root Cause**: No established analytics patterns or helper methods. Each developer implements tracking differently.
 
 ```swift
 // ❌ BAD: Inconsistent analytics
@@ -446,6 +469,8 @@ private func trackOnboardingStarted() {
 
 **Why**: UI-bound logic in ViewModels should be `@MainActor` to avoid race conditions or thread violations.
 
+**Root Cause**: Lack of understanding of Swift Concurrency. Missing @MainActor annotations on UI-bound classes.
+
 ```swift
 // ✅ GOOD: @MainActor for UI-bound ViewModels
 @MainActor
@@ -469,6 +494,84 @@ class OnboardingFlowTests: XCTestCase {
     }
 }
 ```
+
+### Background Thread Issues
+
+**Problem**: UI state mutated off-main-thread causing crashes.
+
+**Root Cause**: Async operations not properly handled with MainActor.
+
+```swift
+// ❌ BAD: UI updates from background thread
+func loadUserProfile() {
+    Task.detached {
+        let profile = await userProfileRepository.fetchProfile()
+        // This will crash: UI updates must be on main thread
+        self.userProfile = profile
+    }
+}
+
+// ✅ GOOD: Proper main thread handling
+func loadUserProfile() {
+    Task.detached {
+        let profile = await userProfileRepository.fetchProfile()
+        await MainActor.run {
+            self.userProfile = profile
+        }
+    }
+}
+```
+
+## 🗣️ Communication & Requirements
+
+### Requirements Drift Pattern
+
+**Problem**: Code assumes unverified requirements or behavior that doesn't match actual implementation.
+
+**Root Cause**: Product/engineering miscommunication. Requirements not properly translated into technical specifications.
+
+**Solution**: 
+- Add inline docstrings summarizing actual behavior
+- Ensure behavior is reviewed by tech/product before implementation
+- Create behavior contracts that are shared between product and engineering
+- Use BDD (Behavior Driven Development) to align requirements with code
+
+### Specification Ambiguity Pattern
+
+**Problem**: Requirements are vague or open to interpretation, leading to different implementations.
+
+**Root Cause**: Product requirements lack specificity. Missing acceptance criteria or edge case definitions.
+
+**Solution**:
+- Write specific acceptance criteria for each requirement
+- Define edge cases and error scenarios explicitly
+- Use concrete examples in requirements
+- Create shared understanding between product and engineering
+
+## 🚫 When Not to Refactor
+
+Not all code needs refactoring, and not all refactoring provides value. Focus refactoring efforts on high-impact areas:
+
+### **Don't Refactor These (Low ROI)**:
+- [ ] **Working code under heavy change** - Wait until the feature stabilizes
+- [ ] **Third-party library integrations** - Unless you control the library
+- [ ] **Legacy code that's being replaced** - Focus on the replacement
+- [ ] **Performance-critical code** - Unless you have performance issues
+- [ ] **Code that's rarely touched** - Low maintenance burden
+
+### **Do Refactor These (High ROI)**:
+- [x] **Frequently modified code** - High maintenance burden
+- [x] **Bug-prone areas** - Code that causes frequent issues
+- [x] **Hard to test code** - Code that's difficult to unit test
+- [x] **Performance bottlenecks** - Code that affects app performance
+- [x] **Onboarding pain points** - Code that's hard for new developers to understand
+
+### **Refactoring ROI Analysis**:
+Before refactoring, ask:
+1. **Will this refactoring prevent bugs?**
+2. **Will this refactoring improve maintainability?**
+3. **Is the code stable enough to refactor?**
+4. **Is the refactoring cost worth the benefit?**
 
 ## 🛠️ Tooling & Automation
 
@@ -509,6 +612,78 @@ func XCTAssertUserProfileCreated(in viewModel: OnboardingJourneyViewModel) {
 }
 ```
 
+## 🔒 Enforcement & Automation
+
+### SwiftLint Rules
+
+```yaml
+# .swiftlint.yml
+function_body_length:
+  warning: 20
+  error: 30
+
+type_body_length:
+  warning: 300
+  error: 500
+
+cyclomatic_complexity:
+  warning: 10
+  error: 15
+
+custom_rules:
+  main_actor_violation:
+    name: "MainActor Violation"
+    regex: '@Published.*func.*\{'
+    message: "Published properties should be in @MainActor classes"
+```
+
+### Custom Test Helpers
+
+```swift
+// XCTestCase extension for common test patterns
+extension XCTestCase {
+    func assertMainActor<T>(_ block: @escaping () -> T) async -> T {
+        await MainActor.run {
+            block()
+        }
+    }
+    
+    func assertAnalyticsTracked(_ event: String, in mock: MockAnalyticsService) {
+        XCTAssertTrue(mock.trackedEvents.contains(event), 
+                      "Expected analytics event '\(event)' to be tracked")
+    }
+    
+    func assertUserProfileCreated(in viewModel: OnboardingJourneyViewModel) {
+        XCTAssertNotNil(viewModel.userProfile, 
+                       "Expected user profile to be created")
+    }
+}
+```
+
+### Method Line-Length Script
+
+```bash
+#!/bin/bash
+# check_method_length.sh
+find . -name "*.swift" -exec grep -l "func.*{" {} \; | while read file; do
+    echo "Checking $file..."
+    # Count lines in each method and flag those over 20
+    # Implementation details...
+done
+```
+
+### Snapshot Testing
+
+```swift
+// Snapshot tests for UI consistency
+func testOnboardingFlowSnapshot() {
+    let viewModel = createViewModel()
+    let view = OnboardingFlowView(viewModel: viewModel)
+    
+    assertSnapshot(matching: view, as: .image)
+}
+```
+
 ## 🎯 MVP vs Post-MVP Considerations
 
 ### Essential for MVP (Implement Now)
@@ -517,6 +692,8 @@ func XCTAssertUserProfileCreated(in viewModel: OnboardingJourneyViewModel) {
 - [x] **@MainActor**: Use for UI-bound ViewModels
 - [x] **Basic Error Handling**: Consistent error messages
 - [x] **Test Data Validation**: Validate factory method inputs
+- [x] **State Management**: Set state directly on ViewModels
+- [x] **Concurrency Safety**: Proper @MainActor usage
 
 ### Post-MVP Enhancements (Phase In Later)
 - [ ] **Analytics Consistency**: Centralized analytics helpers
@@ -524,6 +701,7 @@ func XCTAssertUserProfileCreated(in viewModel: OnboardingJourneyViewModel) {
 - [ ] **Advanced Tooling**: SwiftLint, Sourcery, SwiftFormat
 - [ ] **Comprehensive Error Handling**: Custom error types and recovery
 - [ ] **Performance Optimization**: Lazy loading, caching strategies
+- [ ] **Advanced Concurrency**: Structured concurrency patterns
 
 ## 📋 Code Review Checklist
 
@@ -540,6 +718,7 @@ When reviewing code, check for:
 - [ ] **[Test Data]** Factory methods validate inputs?
 - [ ] **[Documentation]** Complex methods documented?
 - [ ] **[MainActor]** UI-bound ViewModels use @MainActor?
+- [ ] **[ROI]** Is this refactoring worth the effort?
 
 ### ❌ Don'ts
 - [ ] **[Anti-Pattern]** Methods over 50 lines?
@@ -551,6 +730,7 @@ When reviewing code, check for:
 - [ ] **[Anti-Pattern]** Inconsistent analytics tracking?
 - [ ] **[Anti-Pattern]** Factory methods without input validation?
 - [ ] **[Anti-Pattern]** Missing @MainActor on UI-bound ViewModels?
+- [ ] **[Anti-Pattern]** Refactoring stable, working code unnecessarily?
 
 ## 🚀 Implementation Strategy
 
