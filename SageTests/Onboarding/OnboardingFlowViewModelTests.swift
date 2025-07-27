@@ -115,9 +115,9 @@ class OnboardingFlowViewModelTests: XCTestCase {
     // MARK: - Profile Creation Tests
     
     func testUserCompletesProfileWithValidData() async {
-        // Given: User is on signup method screen
+        // Given: User is on signup method screen with profile
         let viewModel = createViewModel()
-        viewModel.selectAnonymous()
+        viewModel.userProfile = OnboardingTestDataFactory.createMinimalUserProfile()
         
         // Set valid user info
         viewModel.userInfo = UserInfo(name: "Test User", age: 25, gender: "female")

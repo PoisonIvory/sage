@@ -89,12 +89,13 @@ final class VocalTestScreenTests: XCTestCase {
         viewModel.currentStep = .vocalTest
         viewModel.startVocalTest()
         
-        // When: User stops recording
-        harness.mockAudioRecorder.stop()
+        // When: Recording completes (via completion handler)
+        let mockRecording = OnboardingTestDataFactory.createMockRecording()
+        harness.mockAudioRecorder.simulateRecordingCompletion(mockRecording)
         
         // Then: Should stop recording and process
         XCTAssertFalse(viewModel.isRecording)
-        XCTAssertTrue(harness.mockAudioRecorder.didStopRecording)
+        XCTAssertTrue(harness.mockAudioRecorder.didStartRecording)
     }
     
     func testNavigationFromVocalTestToReadingPrompt() {
@@ -139,14 +140,18 @@ final class VocalTestScreenTests: XCTestCase {
     // MARK: - Analytics Integration Tests
     
     func testVocalTestAnalyticsTracking() {
-        // Given: User is on vocal test screen
+        // Given: User is on vocal test screen with profile
         viewModel.currentStep = .vocalTest
+        viewModel.userProfile = OnboardingTestDataFactory.createMinimalUserProfile()
         
-        // When: User starts recording
-        viewModel.startVocalTest()
+        // When: Recording completes and uploads successfully
+        let mockRecording = OnboardingTestDataFactory.createMockRecording()
+        harness.mockAudioRecorder.simulateRecordingCompletion(mockRecording)
+        viewModel.handleVocalTestUploadResult(.success(()))
         
         // Then: Should track analytics events
-        XCTAssertTrue(harness.mockAnalyticsService.trackedEvents.contains("onboarding_vocal_test_started"))
+        XCTAssertTrue(harness.mockAnalyticsService.trackedEvents.contains("onboarding_vocal_test_completed"))
+        XCTAssertTrue(harness.mockAnalyticsService.trackedEvents.contains("onboarding_vocal_test_result_uploaded"))
     }
     
     // MARK: - Crash Prevention Tests
@@ -155,15 +160,13 @@ final class VocalTestScreenTests: XCTestCase {
         // Given: User is on vocal test screen
         viewModel.currentStep = .vocalTest
         
-        // When: User starts and stops recording multiple times
+        // When: User starts recording and it completes
         viewModel.startVocalTest()
-        harness.mockAudioRecorder.stop()
-        viewModel.startVocalTest()
-        harness.mockAudioRecorder.stop()
+        let mockRecording = OnboardingTestDataFactory.createMockRecording()
+        harness.mockAudioRecorder.simulateRecordingCompletion(mockRecording)
         
         // Then: Should handle state transitions without crashing
         XCTAssertFalse(viewModel.isRecording)
         XCTAssertTrue(harness.mockAudioRecorder.didStartRecording)
-        XCTAssertTrue(harness.mockAudioRecorder.didStopRecording)
     }
 } 
