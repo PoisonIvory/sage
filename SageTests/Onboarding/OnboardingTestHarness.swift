@@ -11,6 +11,20 @@ import XCTest
 import Mixpanel
 @testable import Sage
 
+// MARK: - Test Constants
+
+enum TestConstants {
+    static let testUserId = "test-user-id"
+    static let testDeviceModel = "Test Device"
+    static let testOSVersion = "Test OS"
+    static let testAppVersion = "1.0"
+    static let testEmail = "test@example.com"
+    static let testPassword = "password123"
+    static let testRecordingDuration: TimeInterval = 10.0
+    static let testRecordingTask = "onboarding_vocal_test"
+    static let testTimestamp: TimeInterval = 1234567890
+}
+
 // MARK: - Mock Classes
 
 class MockAnalyticsService: AnalyticsServiceProtocol {
@@ -38,8 +52,24 @@ class MockAnalyticsService: AnalyticsServiceProtocol {
     }
     
     func assertEventContainsProperty(_ event: String, key: String, value: MixpanelType) -> Bool {
-        guard let properties = trackedProperties[event] else { return false }
-        return properties[key] == value
+        guard let properties = trackedProperties[event] else { 
+            print("Event '\(event)' not found in tracked events: \(trackedEvents)")
+            return false 
+        }
+        let actualValue = properties[key]
+        if !areMixpanelTypesEqual(actualValue, value) {
+            print("Mismatch: expected \(value), got \(String(describing: actualValue)) for key \(key) in event \(event)")
+            return false
+        }
+        return true
+    }
+    
+    private func areMixpanelTypesEqual(_ lhs: MixpanelType?, _ rhs: MixpanelType?) -> Bool {
+        // Handle MixpanelType comparison safely
+        if let lhs = lhs, let rhs = rhs {
+            return String(describing: lhs) == String(describing: rhs)
+        }
+        return lhs == nil && rhs == nil
     }
     
     func assertEventContainsUserID(_ event: String, expectedUserID: String) -> Bool {
@@ -70,12 +100,12 @@ class MockAnalyticsService: AnalyticsServiceProtocol {
 }
 
 class MockAuthService: AuthServiceProtocol {
-    var currentUserId: String? = "test-user-id"
+    var currentUserId: String? = TestConstants.testUserId
     var shouldReturnError = false
     var errorType: SignupErrorType = .networkRequestFailed
     
     func reset() {
-        currentUserId = "test-user-id"
+        currentUserId = TestConstants.testUserId
         shouldReturnError = false
         errorType = .networkRequestFailed
     }
@@ -85,35 +115,40 @@ class MockUserProfileRepository: UserProfileRepositoryProtocol {
     var didFetchProfile = false
     var shouldReturnProfile = false
     var mockProfile: UserProfile?
+    var fetchUserProfileHandler: ((String) -> UserProfile?)?
     
     func fetchUserProfile(withId id: String, completion: @escaping (UserProfile?) -> Void) {
         didFetchProfile = true
-        if shouldReturnProfile {
-            completion(mockProfile)
-        } else {
-            completion(nil)
-        }
+        let result = fetchUserProfileHandler?(id) ?? (shouldReturnProfile ? mockProfile : nil)
+        completion(result)
     }
     
     func reset() {
         didFetchProfile = false
         shouldReturnProfile = false
         mockProfile = nil
+        fetchUserProfileHandler = nil
     }
 }
 
 class MockMicrophonePermissionManager: MicrophonePermissionManagerProtocol {
     var permissionGranted = true
     var didCheckPermission = false
+    var checkPermissionHandler: ((@escaping (Bool) -> Void) -> Void)?
     
     func checkPermission(completion: @escaping (Bool) -> Void) {
         didCheckPermission = true
-        completion(permissionGranted)
+        if let handler = checkPermissionHandler {
+            handler(completion)
+        } else {
+            completion(permissionGranted)
+        }
     }
     
     func reset() {
         permissionGranted = true
         didCheckPermission = false
+        checkPermissionHandler = nil
     }
 }
 
@@ -154,12 +189,15 @@ class MockAudioUploader: AudioUploaderProtocol {
     var shouldSucceed = true
     var errorType: UploadError = .networkError
     var lastUploadMode: UploadMode?
+    var uploadHandler: ((Recording, UploadMode, @escaping (Result<Void, Error>) -> Void) -> Void)?
     
     func uploadRecording(_ recording: Recording, mode: UploadMode, completion: @escaping (Result<Void, Error>) -> Void) {
         didUploadRecording = true
         lastUploadMode = mode
         
-        if shouldSucceed {
+        if let handler = uploadHandler {
+            handler(recording, mode, completion)
+        } else if shouldSucceed {
             completion(.success(()))
         } else {
             completion(.failure(errorType))
@@ -171,10 +209,11 @@ class MockAudioUploader: AudioUploaderProtocol {
         shouldSucceed = true
         errorType = .networkError
         lastUploadMode = nil
+        uploadHandler = nil
     }
 }
 
-class MockOnboardingCoordinator: OnboardingFlowCoordinating {
+class MockOnboardingCoordinator: OnboardingCoordinatorProtocol {
     var didCompleteOnboarding = false
     var didTransitionToLogin = false
     var didComplete = false
@@ -204,25 +243,37 @@ class MockDateProvider: DateProvider {
     init(currentDate: Date) {
         self.currentDate = currentDate
     }
-    
-    func now() -> Date {
-        return currentDate
-    }
+}
+
+// MARK: - Onboarding Mocks
+
+struct OnboardingMocks {
+    let analytics = MockAnalyticsService()
+    let auth = MockAuthService()
+    let userProfileRepository = MockUserProfileRepository()
+    let microphonePermissionManager = MockMicrophonePermissionManager()
+    let audioRecorder = MockAudioRecorder()
+    let audioUploader = MockAudioUploader()
+    let coordinator = MockOnboardingCoordinator()
+    let dateProvider = MockDateProvider(currentDate: Date(timeIntervalSince1970: TestConstants.testTimestamp))
 }
 
 // MARK: - Onboarding Test Harness
 
+@MainActor
 class OnboardingTestHarness {
     
     // MARK: - Shared Mocks
-    let mockAnalyticsService = MockAnalyticsService()
-    let mockAuthService = MockAuthService()
-    let mockMicrophonePermissionManager = MockMicrophonePermissionManager()
-    let mockAudioRecorder = MockAudioRecorder()
-    let mockAudioUploader = MockAudioUploader()
-    let mockCoordinator = MockOnboardingCoordinator()
-    let mockUserProfileRepository = MockUserProfileRepository()
-    let mockDateProvider = MockDateProvider(currentDate: Date(timeIntervalSince1970: 1234567890))
+    let mocks = OnboardingMocks()
+    
+    var mockAnalyticsService: MockAnalyticsService { mocks.analytics }
+    var mockAuthService: MockAuthService { mocks.auth }
+    var mockMicrophonePermissionManager: MockMicrophonePermissionManager { mocks.microphonePermissionManager }
+    var mockAudioRecorder: MockAudioRecorder { mocks.audioRecorder }
+    var mockAudioUploader: MockAudioUploader { mocks.audioUploader }
+    var mockCoordinator: MockOnboardingCoordinator { mocks.coordinator }
+    var mockUserProfileRepository: MockUserProfileRepository { mocks.userProfileRepository }
+    var mockDateProvider: MockDateProvider { mocks.dateProvider }
     
     // MARK: - Factory Methods
     
@@ -263,8 +314,8 @@ class OnboardingTestHarness {
     func setupForEmailSignup() -> OnboardingJourneyViewModel {
         let viewModel = makeViewModel()
         viewModel.currentStep = .signupMethod
-        viewModel.email = "test@example.com"
-        viewModel.password = "password123"
+        viewModel.email = TestConstants.testEmail
+        viewModel.password = TestConstants.testPassword
         return viewModel
     }
     
@@ -335,27 +386,31 @@ struct OnboardingTestDataFactory {
     static func createCompleteUserProfile(
         age: Int = 25,
         gender: String = "female",
-        userId: String = "test-user-id",
-        deviceModel: String = "Test Device",
-        osVersion: String = "Test OS",
-        dateProvider: DateProvider = MockDateProvider(currentDate: Date(timeIntervalSince1970: 1234567890))
+        userId: String = TestConstants.testUserId,
+        deviceModel: String = TestConstants.testDeviceModel,
+        osVersion: String = TestConstants.testOSVersion,
+        dateProvider: DateProvider = MockDateProvider(currentDate: Date(timeIntervalSince1970: TestConstants.testTimestamp))
     ) -> UserProfile {
         let data = createValidUserProfileData(age: age, gender: gender)
-        return try! UserProfileValidator.createCompleteProfile(
-            from: data,
-            userId: userId,
-            deviceModel: deviceModel,
-            osVersion: osVersion,
-            dateProvider: dateProvider
-        )
+        do {
+            return try UserProfileValidator.createCompleteProfile(
+                from: data,
+                userId: userId,
+                deviceModel: deviceModel,
+                osVersion: osVersion,
+                dateProvider: dateProvider
+            )
+        } catch {
+            fatalError("Failed to create complete user profile: \(error)")
+        }
     }
     
     // MARK: - Recording Data
     
     static func createMockRecording(
-        userID: String = "test-user",
-        duration: TimeInterval = 10.0,
-        task: String = "onboarding_vocal_test"
+        userID: String = TestConstants.testUserId,
+        duration: TimeInterval = TestConstants.testRecordingDuration,
+        task: String = TestConstants.testRecordingTask
     ) -> Recording {
         return Recording(
             userID: userID,
@@ -367,9 +422,9 @@ struct OnboardingTestDataFactory {
             sampleRate: 48000,
             bitDepth: 24,
             channelCount: 1,
-            deviceModel: "Test Device",
-            osVersion: "Test OS",
-            appVersion: "1.0",
+            deviceModel: TestConstants.testDeviceModel,
+            osVersion: TestConstants.testOSVersion,
+            appVersion: TestConstants.testAppVersion,
             duration: duration,
             frameFeatures: [],
             summaryFeatures: nil
@@ -377,9 +432,9 @@ struct OnboardingTestDataFactory {
     }
     
     static func createMockRecordingWithTrimming(
-        userID: String = "test-user",
-        duration: TimeInterval = 10.0,
-        task: String = "onboarding_vocal_test",
+        userID: String = TestConstants.testUserId,
+        duration: TimeInterval = TestConstants.testRecordingDuration,
+        task: String = TestConstants.testRecordingTask,
         wasTrimmed: Bool = true
     ) -> Recording {
         let recording = createMockRecording(userID: userID, duration: duration, task: task)
@@ -412,16 +467,16 @@ struct OnboardingTestDataFactory {
     
     // MARK: - Date Providers
     
-    static func createMockDateProvider(date: Date = Date(timeIntervalSince1970: 1234567890)) -> MockDateProvider {
+    static func createMockDateProvider(date: Date = Date(timeIntervalSince1970: TestConstants.testTimestamp)) -> MockDateProvider {
         return MockDateProvider(currentDate: date)
     }
     
     // MARK: - Analytics Event Properties
     
     static func createExpectedAnalyticsProperties(
-        userID: String = "test-user-id",
+        userID: String = TestConstants.testUserId,
         method: String = "anonymous",
-        duration: TimeInterval = 10.0,
+        duration: TimeInterval = TestConstants.testRecordingDuration,
         mode: String = "onboarding",
         success: Bool = true
     ) -> [String: MixpanelType] {
