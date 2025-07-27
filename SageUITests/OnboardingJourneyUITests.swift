@@ -66,8 +66,10 @@ class OnboardingJourneyUITests: XCTestCase {
         app.launch()
 
         app.buttons["Get Started"].tap()
-        app.textFields["Email"].tap().typeText("test@example.com")
-        app.secureTextFields["Password"].tap().typeText("password123")
+        app.textFields["Email"].tap()
+        app.textFields["Email"].typeText("test@example.com")
+        app.secureTextFields["Password"].tap()
+        app.secureTextFields["Password"].typeText("password123")
         app.buttons["Sign Up"].tap()
 
         XCTAssertTrue(app.alerts["Error"].exists)
