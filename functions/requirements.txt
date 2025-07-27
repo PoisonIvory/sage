@@ -1,10 +1,20 @@
-opensmile==2.5.1
-praat-parselmouth==0.4.3
-librosa==0.10.1
-firebase-admin==6.2.0
-google-cloud-firestore==2.11.0
-numpy==1.24.3
-soundfile==0.12.1
-scipy==1.10.1
-requests==2.31.0
-# Add any other dependencies as needed for your environment
+# Core audio processing libraries
+soundfile
+numpy
+
+# Google Cloud services
+google-cloud-storage
+firebase-admin
+
+# Scientific computing
+scipy
+
+# Testing and development
+pytest
+pytest-cov
+
+# Performance monitoring (optional)
+psutil
+
+# Note: parselmouth and librosa have compatibility issues with Python 3.13
+# These will need to be installed separately or use Python 3.11/3.12
