@@ -22,7 +22,7 @@ protocol AudioRecorderProtocol {
 /// - Groups related UI state properties
 /// - Reduces property clutter in ViewModel
 /// - Provides clear state management
-struct RecordingUIState {
+struct RecordingUIState: Equatable {
     var showCountdown: Bool = false
     var showProgressBar: Bool = false
     var showWaveform: Bool = false

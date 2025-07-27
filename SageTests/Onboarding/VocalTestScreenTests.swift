@@ -76,21 +76,21 @@ final class VocalTestScreenTests: XCTestCase {
         viewModel.currentStep = .vocalTest
         
         // When: User starts recording
-        viewModel.startRecording()
+        viewModel.startVocalTest()
         
         // Then: Should request permission and start recording
-        XCTAssertTrue(harness.mockMicrophonePermissionManager.didRequestPermission)
+        XCTAssertTrue(harness.mockMicrophonePermissionManager.didCheckPermission)
         XCTAssertTrue(viewModel.isRecording)
-        XCTAssertEqual(viewModel.recordingState, .recording())
+        XCTAssertTrue(viewModel.recordingState.showCountdown)
     }
     
     func testVocalTestRecordingCompletion() {
         // Given: Recording is in progress
         viewModel.currentStep = .vocalTest
-        viewModel.startRecording()
+        viewModel.startVocalTest()
         
         // When: User stops recording
-        viewModel.stopRecording()
+        harness.mockAudioRecorder.stop()
         
         // Then: Should stop recording and process
         XCTAssertFalse(viewModel.isRecording)
@@ -114,10 +114,10 @@ final class VocalTestScreenTests: XCTestCase {
     
     func testMicrophonePermissionGrantedFlow() {
         // Given: Microphone permission is granted
-        harness.mockMicrophonePermissionManager.shouldGrantPermission = true
+        harness.mockMicrophonePermissionManager.permissionGranted = true
         
         // When: User starts recording
-        viewModel.startRecording()
+        viewModel.startVocalTest()
         
         // Then: Should start recording successfully
         XCTAssertTrue(viewModel.isRecording)
@@ -126,10 +126,10 @@ final class VocalTestScreenTests: XCTestCase {
     
     func testMicrophonePermissionDeniedFlow() {
         // Given: Microphone permission is denied
-        harness.mockMicrophonePermissionManager.shouldGrantPermission = false
+        harness.mockMicrophonePermissionManager.permissionGranted = false
         
         // When: User starts recording
-        viewModel.startRecording()
+        viewModel.startVocalTest()
         
         // Then: Should handle permission denial gracefully
         XCTAssertFalse(viewModel.isRecording)
@@ -143,7 +143,7 @@ final class VocalTestScreenTests: XCTestCase {
         viewModel.currentStep = .vocalTest
         
         // When: User starts recording
-        viewModel.startRecording()
+        viewModel.startVocalTest()
         
         // Then: Should track analytics events
         XCTAssertTrue(harness.mockAnalyticsService.trackedEvents.contains("onboarding_vocal_test_started"))
@@ -156,10 +156,10 @@ final class VocalTestScreenTests: XCTestCase {
         viewModel.currentStep = .vocalTest
         
         // When: User starts and stops recording multiple times
-        viewModel.startRecording()
-        viewModel.stopRecording()
-        viewModel.startRecording()
-        viewModel.stopRecording()
+        viewModel.startVocalTest()
+        harness.mockAudioRecorder.stop()
+        viewModel.startVocalTest()
+        harness.mockAudioRecorder.stop()
         
         // Then: Should handle state transitions without crashing
         XCTAssertFalse(viewModel.isRecording)
