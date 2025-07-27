@@ -98,7 +98,8 @@ final class AudioUploadTests: XCTestCase {
         // When: Upload completes successfully
         viewModel.handleVocalTestUploadResult(.success(()))
         
-        // Then: Should track analytics with onboarding mode
+        // Then: Should track both completion and upload analytics events
+        XCTAssertTrue(harness.mockAnalyticsService.trackedEvents.contains("onboarding_vocal_test_completed"))
         XCTAssertTrue(harness.mockAnalyticsService.trackedEvents.contains("onboarding_vocal_test_result_uploaded"))
     }
     

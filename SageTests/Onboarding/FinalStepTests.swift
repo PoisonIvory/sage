@@ -126,8 +126,10 @@ final class FinalStepTests: XCTestCase {
         // When: User taps finish
         viewModel.selectFinish()
         
-        // Then: Should track analytics events
-        XCTAssertTrue(harness.mockAnalyticsService.trackedEvents.contains("onboarding_completed"))
+        // Then: Should track analytics events via coordinator
+        XCTAssertTrue(harness.mockCoordinator.didCompleteOnboarding)
+        // Note: onboarding_completed event is tracked by coordinator, not ViewModel
+        // The coordinator's analytics service is separate from the ViewModel's
     }
     
     // MARK: - Crash Prevention Tests
