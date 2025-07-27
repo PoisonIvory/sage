@@ -91,6 +91,26 @@ struct SageApp: App {
     var body: some Scene {
         WindowGroup {
             screenForLaunchState()
+                .onAppear {
+                    checkAuthenticationState()
+                }
+                .onChange(of: authViewModel.isAuthenticated) { isAuthenticated in
+                    if isAuthenticated {
+                        print("SageApp: User authenticated, navigating to home")
+                        currentScreen = .browse
+                    }
+                }
+        }
+    }
+
+    private func checkAuthenticationState() {
+        print("SageApp: Checking authentication state")
+        if authViewModel.isAuthenticated {
+            print("SageApp: User is already authenticated, navigating to home")
+            currentScreen = .browse
+        } else {
+            print("SageApp: User not authenticated, showing welcome screen")
+            currentScreen = .welcome
         }
     }
 
