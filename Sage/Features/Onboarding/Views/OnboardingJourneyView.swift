@@ -17,7 +17,8 @@ struct OnboardingJourneyView: View {
         audioRecorder: AudioRecorderProtocol = OnboardingAudioRecorder(),
         audioUploader: AudioUploaderProtocol = AudioUploader(),
         coordinator: OnboardingCoordinatorProtocol? = nil,
-        dateProvider: DateProvider = SystemDateProvider()
+        dateProvider: DateProvider = SystemDateProvider(),
+        onComplete: (() -> Void)? = nil
     ) {
         self._viewModel = StateObject(wrappedValue: OnboardingJourneyViewModel(
             analyticsService: analyticsService,
@@ -29,6 +30,7 @@ struct OnboardingJourneyView: View {
             coordinator: coordinator,
             dateProvider: dateProvider
         ))
+        self.onComplete = onComplete
     }
     
     var body: some View {

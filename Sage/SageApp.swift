@@ -90,61 +90,65 @@ struct SageApp: App {
 
     var body: some Scene {
         WindowGroup {
-            Group {
-                switch currentScreen {
-                case .welcome:
-                    WelcomeView(
-                        onBrowse: {
-                            print("SageApp: Navigating to ContentView (browse mode)")
-                            currentScreen = .browse
-                        },
-                        onBegin: {
-                            print("SageApp: Navigating to SignUpView")
-                            currentScreen = .signup
-                        },
-                        onLogin: {
-                            print("SageApp: Navigating to LoginView")
-                            currentScreen = .login
-                        }
-                    )
-                    .onAppear { print("SageApp: WelcomeView is now visible") }
-                case .browse:
-                    ContentView()
-                        .environmentObject(authViewModel)
-                        .onAppear { print("SageApp: ContentView (browse mode) is now visible") }
-                case .signup:
-                    SignUpView(viewModel: authViewModel, onAuthenticated: {
-                        print("SageApp: SignUpView onAuthenticated triggered")
-                        // Check if user has any recordings
-                        if AudioRecorder.shared.recordings.isEmpty {
-                            print("SageApp: No recordings found, showing onboarding flow")
-                            currentScreen = .onboarding
-                        } else {
-                            print("SageApp: Recordings found, navigating to home")
-                            currentScreen = .browse
-                        }
-                    })
-                        .onAppear { print("SageApp: SignUpView is now visible") }
-                case .login:
-                    LoginView(viewModel: authViewModel)
-                        .onAppear { print("SageApp: LoginView is now visible") }
-                case .onboarding:
-                    OnboardingJourneyView(
-                        analyticsService: AnalyticsService.shared,
-                        authService: AuthService(),
-                        userProfileRepository: UserProfileRepository(),
-                        microphonePermissionManager: MicrophonePermissionManager(),
-                        audioRecorder: OnboardingAudioRecorder(),
-                        audioUploader: AudioUploader(),
-                        coordinator: nil,
-                        dateProvider: SystemDateProvider(),
-                        onComplete: {
-                            print("SageApp: Onboarding complete, navigating to home")
-                            currentScreen = .browse
-                        }
-                    )
-                    .onAppear { print("SageApp: OnboardingJourneyView is now visible") }
+            screenForLaunchState()
+        }
+    }
+
+    @ViewBuilder
+    private func screenForLaunchState() -> some View {
+        switch currentScreen {
+        case .welcome:
+            WelcomeView(
+                onBrowse: {
+                    print("SageApp: Navigating to ContentView (browse mode)")
+                    currentScreen = .browse
+                },
+                onBegin: {
+                    print("SageApp: Navigating to SignUpView")
+                    currentScreen = .signup
+                },
+                onLogin: {
+                    print("SageApp: Navigating to LoginView")
+                    currentScreen = .login
                 }
+            )
+            .onAppear { print("SageApp: WelcomeView is now visible") }
+        case .browse:
+            ContentView()
+                .environmentObject(authViewModel)
+                .onAppear { print("SageApp: ContentView (browse mode) is now visible") }
+        case .signup:
+            SignUpView(viewModel: authViewModel, onAuthenticated: {
+                print("SageApp: SignUpView onAuthenticated triggered")
+                if AudioRecorder.shared.recordings.isEmpty {
+                    print("SageApp: No recordings found, showing onboarding flow")
+                    currentScreen = .onboarding
+                } else {
+                    print("SageApp: Recordings found, navigating to home")
+                    currentScreen = .browse
+                }
+            })
+            .onAppear { print("SageApp: SignUpView is now visible") }
+        case .login:
+            LoginView(viewModel: authViewModel)
+                .onAppear { print("SageApp: LoginView is now visible") }
+        case .onboarding:
+            OnboardingJourneyView(
+                analyticsService: AnalyticsService.shared,
+                authService: AuthService(),
+                userProfileRepository: UserProfileRepository(),
+                microphonePermissionManager: MicrophonePermissionManager(),
+                audioRecorder: OnboardingAudioRecorder(),
+                audioUploader: AudioUploader(),
+                coordinator: nil,
+                dateProvider: SystemDateProvider(),
+                onComplete: {
+                    print("SageApp: Onboarding complete, navigating to home")
+                    currentScreen = .browse
+                }
+            )
+            .onAppear {
+                print("SageApp: OnboardingJourneyView is now visible")
             }
         }
     }
