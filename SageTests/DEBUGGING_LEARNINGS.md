@@ -53,6 +53,42 @@ This document captures the key learnings from our debugging sessions and retrosp
 
 **Solution**: Implement contract testing and keep tests in sync with implementation.
 
+### 5. **NEW: Method Length & Complexity Pattern**
+
+**Problem**: Methods become too long and handle multiple responsibilities, making them hard to test and debug.
+
+**Examples We Found**:
+- `OnboardingJourneyViewModel` has 500+ lines with many long methods
+- `analyze_recording()` in `functions/main.py` is 100+ lines handling multiple feature extraction tools
+- `validateFull()` in `RecordingValidator` handles multiple validation types in one method
+- `process_audio_file()` combines file parsing, download, processing, and storage
+
+**Solution**: Break down long methods into smaller, focused helper methods.
+
+### 6. **NEW: Missing Helper Method Pattern**
+
+**Problem**: Code repeats similar logic instead of extracting common patterns into helper methods.
+
+**Examples We Found**:
+- Analytics tracking methods repeat the same `guard let userId = userProfile?.id` pattern
+- Error handling repeats similar logging and error message creation
+- Validation logic is scattered across multiple methods
+- UI content strings are hardcoded instead of centralized
+
+**Solution**: Extract common patterns into reusable helper methods.
+
+### 7. **NEW: Inconsistent Error Handling Pattern**
+
+**Problem**: Error handling is inconsistent across the codebase, making debugging difficult.
+
+**Examples We Found**:
+- Some methods use `fatalError()` while others use `throw`
+- Error messages are sometimes hardcoded, sometimes localized
+- Some errors are logged, others are silently ignored
+- Error recovery strategies vary between components
+
+**Solution**: Establish consistent error handling patterns and centralize error management.
+
 ## 🛠️ Best Practices for Future Development
 
 ### 1. Test-First Development (TDD)
@@ -151,6 +187,102 @@ private func validateTestEnvironment() {
 }
 ```
 
+### 7. **NEW: Method Length Guidelines**
+
+```swift
+// ✅ GOOD: Methods under 20 lines, single responsibility
+private func validateAge(_ age: Int) -> ValidationResult {
+    guard age > 0 else {
+        return .failure(.ageRequired(fieldName: "age"))
+    }
+    guard age <= 120 else {
+        return .failure(.ageInvalid(fieldName: "age"))
+    }
+    return .success
+}
+
+// ❌ BAD: Methods over 50 lines with multiple responsibilities
+func processUserData() {
+    // 50+ lines of validation, processing, analytics, error handling
+    // Multiple responsibilities in one method
+}
+```
+
+### 8. **NEW: Helper Method Extraction**
+
+```swift
+// ✅ GOOD: Extract common patterns into helpers
+private func trackAnalyticsEvent(_ eventName: String, properties: [String: Any]) {
+    guard let userId = userProfile?.id else {
+        Logger.error("[ViewModel] Missing user ID during \(eventName) analytics")
+        return
+    }
+    
+    var eventProperties = properties
+    eventProperties["userID"] = userId
+    
+    analyticsService.track(eventName, properties: eventProperties, origin: "ViewModel")
+}
+
+// Usage:
+private func trackSignupMethodSelected(method: String) {
+    trackAnalyticsEvent("onboarding_signup_method_selected", properties: ["method": method])
+}
+
+private func trackOnboardingStarted() {
+    trackAnalyticsEvent("onboarding_started", properties: [
+        "signup_method": selectedSignupMethod?.rawValue ?? "unknown"
+    ])
+}
+```
+
+### 9. **NEW: Consistent Error Handling**
+
+```swift
+// ✅ GOOD: Centralized error handling
+enum ViewModelError: Error {
+    case missingUserProfile
+    case invalidInput(String)
+    case networkError(Error)
+    
+    var userMessage: String {
+        switch self {
+        case .missingUserProfile:
+            return "Unable to load user profile. Please try again."
+        case .invalidInput(let field):
+            return "Please check your \(field) and try again."
+        case .networkError:
+            return "Network error. Please check your connection."
+        }
+    }
+}
+
+private func handleError(_ error: Error) {
+    let viewModelError = mapToViewModelError(error)
+    errorMessage = viewModelError.userMessage
+    Logger.error("[ViewModel] Error: \(error.localizedDescription)")
+}
+```
+
+### 10. **NEW: UI Content Centralization**
+
+```swift
+// ✅ GOOD: Centralize UI strings
+struct OnboardingStrings {
+    static let explainerHeadline = "Let's run some quick tests"
+    static let explainerSubtext = "This helps us understand the unique physiology of your vocal tract."
+    static let vocalTestInstruction = "This test measures the rate and stability of vocal cord vibrations."
+    static let beginButtonTitle = "Begin"
+    static let nextButtonTitle = "Next"
+    static let finishButtonTitle = "Finish"
+}
+
+// Usage in ViewModel:
+var explainerHeadline: String {
+    return OnboardingStrings.explainerHeadline
+}
+```
+
 ## 📋 Pre-Testing Checklist
 
 Before writing any test, verify:
@@ -161,6 +293,10 @@ Before writing any test, verify:
 - [ ] **Error Handling**: How are errors actually handled?
 - [ ] **Async Behavior**: Is the method async or sync?
 - [ ] **Validation**: What validation actually exists?
+- [ ] **Method Length**: Is the method under 20 lines? If not, can it be broken down?
+- [ ] **Helper Methods**: Are there repeated patterns that could be extracted?
+- [ ] **Error Consistency**: Does error handling follow established patterns?
+- [ ] **UI Content**: Are strings centralized or hardcoded?
 
 ## 🔧 Common Fixes We've Applied
 
@@ -206,6 +342,60 @@ viewModel.handleVocalTestUploadResult(.success(()))
 viewModel.startVocalTest() // Without user profile
 ```
 
+### 5. **NEW: Method Refactoring**
+
+```swift
+// ✅ BEFORE: Long method with multiple responsibilities
+func processUserSignup() {
+    // 50+ lines of validation, profile creation, analytics, navigation
+}
+
+// ✅ AFTER: Broken down into focused methods
+func processUserSignup() {
+    guard validateSignupData() else { return }
+    createUserProfile()
+    trackSignupAnalytics()
+    navigateToNextStep()
+}
+
+private func validateSignupData() -> Bool { /* 5 lines */ }
+private func createUserProfile() { /* 10 lines */ }
+private func trackSignupAnalytics() { /* 8 lines */ }
+private func navigateToNextStep() { /* 3 lines */ }
+```
+
+### 6. **NEW: Helper Method Creation**
+
+```swift
+// ✅ BEFORE: Repeated analytics pattern
+private func trackSignupMethodSelected(method: String) {
+    guard let userId = userProfile?.id else {
+        Logger.error("[ViewModel] Missing user ID during signup method analytics")
+        return
+    }
+    analyticsService.track("onboarding_signup_method_selected", properties: ["method": method, "userID": userId], origin: "ViewModel")
+}
+
+private func trackOnboardingStarted() {
+    guard let userId = userProfile?.id else {
+        Logger.error("[ViewModel] Missing user ID during onboarding started analytics")
+        return
+    }
+    analyticsService.track("onboarding_started", properties: ["userID": userId, "signup_method": selectedSignupMethod?.rawValue ?? "unknown"], origin: "ViewModel")
+}
+
+// ✅ AFTER: Extracted helper method
+private func trackAnalyticsEvent(_ eventName: String, properties: [String: Any]) {
+    guard let userId = userProfile?.id else {
+        Logger.error("[ViewModel] Missing user ID during \(eventName) analytics")
+        return
+    }
+    var eventProperties = properties
+    eventProperties["userID"] = userId
+    analyticsService.track(eventName, properties: eventProperties, origin: "ViewModel")
+}
+```
+
 ## 🎯 Expected Benefits
 
 By following these practices:
@@ -215,6 +405,10 @@ By following these practices:
 - **Better code quality** through TDD practices
 - **Easier onboarding** for new developers with clear test patterns
 - **Reduced technical debt** from test-implementation drift
+- **Improved maintainability** through shorter, focused methods
+- **Better reusability** through helper method extraction
+- **Consistent error handling** across the codebase
+- **Centralized UI content** for easier localization and updates
 
 ## 📚 Resources
 

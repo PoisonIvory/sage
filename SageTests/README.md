@@ -98,17 +98,33 @@ xcodebuild test -project Sage.xcodeproj -scheme Sage -only-testing:SageTests/Aut
 
 ## Adding New Tests
 
-## 🚨 Important: Debugging Learnings
+## 🚨 Important: Debugging Learnings & Code Quality
 
-Before writing new tests, please review our [Debugging Learnings & Best Practices](./DEBUGGING_LEARNINGS.md) document. This contains:
+Before writing new tests or code, please review our documentation:
 
+### [Debugging Learnings & Best Practices](./DEBUGGING_LEARNINGS.md)
+Contains:
 - Common debugging patterns we've identified
 - Best practices for test development
 - Pre-testing checklist
 - Common fixes we've applied
 - Expected benefits of following these practices
 
-**Key Takeaway**: Always verify actual implementation behavior before writing tests, and set up state directly on ViewModels rather than relying on mocks.
+### [Code Quality Patterns & Best Practices](./CODE_QUALITY_PATTERNS.md)
+Contains:
+- Method length and complexity guidelines
+- Helper method extraction patterns
+- UI content centralization strategies
+- State management best practices
+- Analytics tracking consistency
+- Code review checklist
+
+**Key Takeaways**:
+- Always verify actual implementation behavior before writing tests
+- Set up state directly on ViewModels rather than relying on mocks
+- Keep methods under 20 lines with single responsibility
+- Extract common patterns into helper methods
+- Centralize UI strings and error handling
 
 When adding new functionality:
 
