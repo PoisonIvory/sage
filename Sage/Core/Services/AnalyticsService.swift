@@ -87,6 +87,32 @@ final class AnalyticsService: AnalyticsServiceProtocol {
     static let shared = AnalyticsService()
     private init() {}
 
+    /// Identifies a user in Mixpanel and sets their profile properties
+    ///
+    /// - Parameters:
+    ///   - userId: Unique user identifier
+    ///   - userProfile: User profile data to set
+    /// - Returns: Void
+    /// - SideEffects: Identifies user in Mixpanel and sets profile properties
+    func identifyUser(userId: String, userProfile: UserProfile) {
+        // Identify the user in Mixpanel
+        Mixpanel.mainInstance().identify(distinctId: userId)
+        
+        // Set user profile properties
+        Mixpanel.mainInstance().people.set([
+            "$name": userProfile.id,
+            "$email": userProfile.email ?? "",
+            "age": userProfile.age,
+            "gender": userProfile.gender,
+            "device_model": userProfile.deviceModel,
+            "os_version": userProfile.osVersion,
+            "created_at": userProfile.createdAt,
+            "signup_method": userProfile.signupMethod ?? "unknown"
+        ])
+        
+        print("[Analytics] Identified user: \(userId)")
+    }
+
     /// Tracks an analytics event with properties following MixPanel best practices
     ///
     /// - Parameters:

@@ -30,16 +30,19 @@ enum TestConstants {
 class MockAnalyticsService: AnalyticsServiceProtocol {
     var trackedEvents: [String] = []
     var trackedProperties: [String: [String: MixpanelType]] = [:]
-    var trackedOrigins: [String: String] = [:]
+    var identifiedUsers: [String] = []
+    var userProfiles: [String: UserProfile] = [:]
     
     func track(_ name: String, properties: [String: MixpanelType]?, origin: String?) {
         trackedEvents.append(name)
-        if let properties = properties {
-            trackedProperties[name] = properties
-        }
-        if let origin = origin {
-            trackedOrigins[name] = origin
-        }
+        trackedProperties[name] = properties ?? [:]
+        print("[MockAnalytics] Tracked event: \(name), properties: \(properties ?? [:])")
+    }
+    
+    func identifyUser(userId: String, userProfile: UserProfile) {
+        identifiedUsers.append(userId)
+        userProfiles[userId] = userProfile
+        print("[MockAnalytics] Identified user: \(userId)")
     }
     
     // Helper methods for testing

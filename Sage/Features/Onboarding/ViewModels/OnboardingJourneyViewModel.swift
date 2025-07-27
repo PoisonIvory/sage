@@ -248,6 +248,12 @@ final class OnboardingJourneyViewModel: ObservableObject {
             osVersion: UIDevice.current.systemVersion,
             dateProvider: dateProvider
         )
+        
+        // Identify user in analytics
+        if let profile = userProfile {
+            analyticsService.identifyUser(userId: userId, userProfile: profile)
+        }
+        
         Logger.debug("[OnboardingJourneyViewModel] Created minimal user profile for \(userId)")
     }
     
@@ -281,6 +287,9 @@ final class OnboardingJourneyViewModel: ObservableObject {
             
             userProfile = finalizedProfile
             Logger.debug("[OnboardingJourneyViewModel] User profile finalized successfully")
+            
+            // Update user identification in analytics with finalized profile
+            analyticsService.identifyUser(userId: finalizedProfile.id, userProfile: finalizedProfile)
             
             // Track profile finalization analytics
             trackProfileFinalized(profile: finalizedProfile)
