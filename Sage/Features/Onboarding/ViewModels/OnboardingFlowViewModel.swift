@@ -1,7 +1,6 @@
 import Foundation
 import Combine
 import SwiftUI
-import DeviceKit
 import FirebaseAuth
 import Mixpanel
 
