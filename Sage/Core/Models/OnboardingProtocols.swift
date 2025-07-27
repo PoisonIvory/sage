@@ -9,22 +9,13 @@ protocol AnalyticsServiceProtocol {
 }
 
 // AuthServiceProtocol is defined in AuthService.swift
+// MicrophonePermissionManagerProtocol is defined in MicrophonePermissionManager.swift
+// AudioRecorderProtocol is defined in AudioRecorderProtocol.swift
+// AudioUploaderProtocol is defined in AudioUploader.swift
 
 /// Protocol for user profile repository
 protocol UserProfileRepositoryProtocol {
     func fetchUserProfile(withId id: String, completion: @escaping (UserProfile?) -> Void)
-}
-
-/// Protocol for microphone permission management
-protocol MicrophonePermissionManagerProtocol {
-    func checkPermission(completion: @escaping (Bool) -> Void)
-}
-
-// AudioRecorderProtocol is defined in AudioRecorderProtocol.swift
-
-/// Protocol for audio upload
-protocol AudioUploaderProtocol {
-    func uploadRecording(_ recording: Recording, mode: UploadMode, completion: @escaping (Result<Void, Error>) -> Void)
 }
 
 // OnboardingCoordinatorProtocol is defined in OnboardingCoordinator.swift

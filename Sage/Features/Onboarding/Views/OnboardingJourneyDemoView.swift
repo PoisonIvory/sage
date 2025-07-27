@@ -38,16 +38,15 @@ struct OnboardingJourneyDemoView: View {
             Spacer()
         }
         .fullScreenCover(isPresented: $showOnboarding) {
-            let harness = OnboardingTestHarness()
             OnboardingJourneyView(
-                analyticsService: harness.mockAnalyticsService,
-                authService: harness.mockAuthService,
-                userProfileRepository: harness.mockUserProfileRepository,
-                microphonePermissionManager: harness.mockMicrophonePermissionManager,
-                audioRecorder: harness.mockAudioRecorder,
-                audioUploader: harness.mockAudioUploader,
-                coordinator: harness.mockCoordinator,
-                dateProvider: harness.mockDateProvider
+                analyticsService: AnalyticsService.shared,
+                authService: AuthService(),
+                userProfileRepository: UserProfileRepository(),
+                microphonePermissionManager: MicrophonePermissionManager(),
+                audioRecorder: OnboardingAudioRecorder(),
+                audioUploader: AudioUploader(),
+                coordinator: nil,
+                dateProvider: SystemDateProvider()
             )
         }
     }

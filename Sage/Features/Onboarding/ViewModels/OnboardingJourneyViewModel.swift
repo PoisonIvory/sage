@@ -2,6 +2,18 @@ import Foundation
 import SwiftUI
 import Mixpanel
 
+/// Analytics events for onboarding journey
+enum OnboardingAnalyticsEvent: String {
+    case onboardingStarted = "Onboarding Started"
+    case onboardingCompleted = "Onboarding Completed"
+    case signupMethodSelected = "Signup Method Selected"
+    case profileEnriched = "Profile Enriched"
+    case loginSelected = "Login Selected"
+    case signupSelected = "Signup Selected"
+    case vocalTestCompleted = "Vocal Test Completed"
+    case vocalTestUploaded = "Vocal Test Uploaded"
+}
+
 /// ViewModel for the new GWT-compliant onboarding journey
 /// - Implements all behavior specified in OnboardingJourneyTests.swift
 /// - Uses dependency injection for testability
@@ -18,12 +30,7 @@ final class OnboardingJourneyViewModel: ObservableObject {
     @Published var userProfile: UserProfile?
     @Published var errorMessage: String?
     @Published var successMessage: String?
-    @Published var isRecording: Bool = false {
-        didSet {
-            // Derive recordingState from isRecording to reduce duplication
-            recordingState = isRecording ? .recording() : .idle()
-        }
-    }
+    @Published var isRecording: Bool = false
     @Published var shouldShowNextButton: Bool = false
     
     // MARK: - Permission State
@@ -49,11 +56,8 @@ final class OnboardingJourneyViewModel: ObservableObject {
     // MARK: - Private State
     private var currentRecording: Recording?
     
-    // MARK: - Computed Properties
-    var recordingState: RecordingUIState {
-        // Derive from isRecording to eliminate state duplication
-        return isRecording ? .recording() : .idle()
-    }
+    // MARK: - Recording State
+    @Published var recordingState: RecordingUIState = .idle()
     
     // MARK: - Initialization
     init(
@@ -160,6 +164,7 @@ final class OnboardingJourneyViewModel: ObservableObject {
     func completeVocalTest() {
         Logger.debug("[OnboardingJourneyViewModel] Completing vocal test")
         isRecording = false
+        recordingState = .idle()
         
         if let recording = currentRecording {
             uploadRecording(recording)
@@ -236,6 +241,7 @@ final class OnboardingJourneyViewModel: ObservableObject {
             Logger.debug("[OnboardingJourneyViewModel] Cancelling recording due to navigation")
             audioRecorder.stop()
             isRecording = false
+            recordingState = .idle()
             currentRecording = nil
         }
     }
@@ -318,6 +324,7 @@ final class OnboardingJourneyViewModel: ObservableObject {
     private func beginRecording() {
         Logger.debug("[OnboardingJourneyViewModel] Beginning recording")
         isRecording = true
+        recordingState = .recording()
         
         // Use the AudioRecorderProtocol for controlled recording
         audioRecorder.start(duration: testRecordingDuration) { [weak self] recording in
