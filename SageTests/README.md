@@ -98,6 +98,18 @@ xcodebuild test -project Sage.xcodeproj -scheme Sage -only-testing:SageTests/Aut
 
 ## Adding New Tests
 
+## 🚨 Important: Debugging Learnings
+
+Before writing new tests, please review our [Debugging Learnings & Best Practices](./DEBUGGING_LEARNINGS.md) document. This contains:
+
+- Common debugging patterns we've identified
+- Best practices for test development
+- Pre-testing checklist
+- Common fixes we've applied
+- Expected benefits of following these practices
+
+**Key Takeaway**: Always verify actual implementation behavior before writing tests, and set up state directly on ViewModels rather than relying on mocks.
+
 When adding new functionality:
 
 1. **Create new test file** in appropriate category
