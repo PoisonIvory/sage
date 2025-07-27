@@ -87,7 +87,7 @@ final class VocalTestScreenTests: XCTestCase {
     func testVocalTestRecordingCompletion() {
         // Given: Recording is in progress with permission granted
         viewModel.currentStep = .vocalTest
-        harness.mockMicrophonePermissionManager.permissionGranted = true
+        viewModel.microphonePermissionStatus = .granted
         viewModel.startVocalTest()
         
         // When: Recording completes (via completion handler)
@@ -116,7 +116,7 @@ final class VocalTestScreenTests: XCTestCase {
     
     func testMicrophonePermissionGrantedFlow() {
         // Given: Microphone permission is granted
-        harness.mockMicrophonePermissionManager.permissionGranted = true
+        viewModel.microphonePermissionStatus = .granted
         
         // When: User starts recording
         viewModel.startVocalTest()
@@ -128,7 +128,7 @@ final class VocalTestScreenTests: XCTestCase {
     
     func testMicrophonePermissionDeniedFlow() {
         // Given: Microphone permission is denied
-        harness.mockMicrophonePermissionManager.permissionGranted = false
+        viewModel.microphonePermissionStatus = .denied
         
         // When: User starts recording
         viewModel.startVocalTest()
@@ -160,7 +160,7 @@ final class VocalTestScreenTests: XCTestCase {
     func testRecordingStateTransitions() {
         // Given: User is on vocal test screen with permission granted
         viewModel.currentStep = .vocalTest
-        harness.mockMicrophonePermissionManager.permissionGranted = true
+        viewModel.microphonePermissionStatus = .granted
         
         // When: User starts recording and it completes
         viewModel.startVocalTest()
