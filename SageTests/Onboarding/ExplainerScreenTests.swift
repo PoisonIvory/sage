@@ -32,6 +32,7 @@ import XCTest
 // Given the user taps the "Begin" button
 // Then the user is navigated to View 2
 
+@MainActor
 final class ExplainerScreenTests: XCTestCase {
     
     // MARK: - Test Properties

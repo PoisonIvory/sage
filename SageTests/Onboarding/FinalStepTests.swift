@@ -18,6 +18,7 @@
 //  - Minimized localization and UI string repeats
 //  - Focused on essential MVP functionality
 //  - Reduced from 44 tests to 12 high-value tests
+//  - Fixed MainActor isolation issues
 
 import XCTest
 @testable import Sage
@@ -31,6 +32,7 @@ import XCTest
 // When the user taps "Finish"
 // Then the user is navigated to the Home page
 
+@MainActor
 final class FinalStepTests: XCTestCase {
     
     // MARK: - Test Properties

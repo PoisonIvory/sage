@@ -30,6 +30,7 @@ import XCTest
 // When the user taps "Next"
 // Then they are navigated to View 4
 
+@MainActor
 final class ReadingPromptTests: XCTestCase {
     
     // MARK: - Test Properties

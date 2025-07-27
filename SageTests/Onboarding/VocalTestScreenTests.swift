@@ -46,6 +46,7 @@ import XCTest
 // Then the UI displays a progress bar
 // Then the UI optionally displays a waveform animation
 
+@MainActor
 final class VocalTestScreenTests: XCTestCase {
     
     // MARK: - Test Properties
