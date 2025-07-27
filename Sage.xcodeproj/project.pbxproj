@@ -14,7 +14,7 @@
 		CA7BE6BD2E35210B00B315CE /* TestPlan.xctestplan in Resources */ = {isa = PBXBuildFile; fileRef = CA7BE6BC2E35210B00B315CE /* TestPlan.xctestplan */; };
 		CA9F4FE72E33498400B66700 /* DeviceKit in Frameworks */ = {isa = PBXBuildFile; productRef = CA9F4FE62E33498400B66700 /* DeviceKit */; };
 		CA9F50132E33AE8D00B66700 /* Mixpanel in Frameworks */ = {isa = PBXBuildFile; productRef = CA9F50122E33AE8D00B66700 /* Mixpanel */; };
-		CA9F508D2E34DBE400B66700 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CA9F508C2E34DBE400B66700 /* GoogleService-Info.plist */; };
+		CAAE087F2E3681DB009521B9 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = CAAE087E2E3681DB009521B9 /* GoogleService-Info.plist */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -36,7 +36,7 @@
 
 /* Begin PBXFileReference section */
 		CA7BE6BC2E35210B00B315CE /* TestPlan.xctestplan */ = {isa = PBXFileReference; lastKnownFileType = text; path = TestPlan.xctestplan; sourceTree = "<group>"; };
-		CA9F508C2E34DBE400B66700 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
+		CAAE087E2E3681DB009521B9 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		CAFB08AC2E32BE28000001D1 /* Sage.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Sage.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CAFB08BF2E32BE2A000001D1 /* SageTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SageTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CAFB08C92E32BE2A000001D1 /* SageUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SageUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -94,12 +94,12 @@
 		CAFB08A32E32BE28000001D1 = {
 			isa = PBXGroup;
 			children = (
+				CAAE087E2E3681DB009521B9 /* GoogleService-Info.plist */,
 				CA7BE6BC2E35210B00B315CE /* TestPlan.xctestplan */,
 				CAFB08AE2E32BE28000001D1 /* Sage */,
 				CAFB08C22E32BE2A000001D1 /* SageTests */,
 				CAFB08CC2E32BE2A000001D1 /* SageUITests */,
 				CAFB08AD2E32BE28000001D1 /* Products */,
-				CA9F508C2E34DBE400B66700 /* GoogleService-Info.plist */,
 			);
 			sourceTree = "<group>";
 		};
@@ -244,8 +244,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				CA9F508D2E34DBE400B66700 /* GoogleService-Info.plist in Resources */,
 				CA7BE6BD2E35210B00B315CE /* TestPlan.xctestplan in Resources */,
+				CAAE087F2E3681DB009521B9 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -431,6 +431,8 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = sage;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We use your microphone to extract acoustic features from your speech and provide insights into your health.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -471,6 +473,8 @@
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = sage;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We use your microphone to extract acoustic features from your speech and provide insights into your health.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;

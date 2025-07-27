@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>NSMicrophoneUsageDescription</key>
-	<string>We use your microphone to extract speech features.</string>
+	<string>We use microphone to extract speech features. </string>
 	<key>CLIENT_ID</key>
 	<string>320910705318-p5lhcgit4mddhqjebk6fse67144t58o9.apps.googleusercontent.com</string>
 	<key>REVERSED_CLIENT_ID</key>
