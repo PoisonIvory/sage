@@ -9,23 +9,6 @@ protocol SignupMethodSelecting: ObservableObject {
     var fieldErrors: [String: String] { get }
 }
 
-// MARK: - OnboardingFlowViewModel Conformance
-extension OnboardingFlowViewModel: SignupMethodSelecting {
-    var email: String {
-        get { "" } // OnboardingFlowViewModel doesn't have email/password fields
-        set { }
-    }
-    
-    var password: String {
-        get { "" }
-        set { }
-    }
-    
-    var fieldErrors: [String: String] {
-        return [:] // OnboardingFlowViewModel doesn't have field errors
-    }
-}
-
 // MARK: - OnboardingJourneyViewModel Conformance
 extension OnboardingJourneyViewModel: SignupMethodSelecting {
     // Already has the required methods and properties

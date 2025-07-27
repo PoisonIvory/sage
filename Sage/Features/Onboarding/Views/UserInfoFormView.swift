@@ -1,5 +1,12 @@
 import SwiftUI
 
+/// Temporary UserInfo struct for onboarding form state (replace with domain model if needed)
+struct UserInfo {
+    var name: String = ""
+    var age: Int = 0
+    var gender: String = ""
+}
+
 /// UserInfoFormView collects user profile information during onboarding.
 /// - Complies with DATA_STANDARDS.md §2.3 (metadata collection) and DATA_DICTIONARY.md (field definitions).
 struct UserInfoFormView: View {
