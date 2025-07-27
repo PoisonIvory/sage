@@ -16,7 +16,11 @@ final class OnboardingAudioRecorder: AudioRecorderProtocol {
     }
     
     var isRecording: Bool {
-        return audioRecorder.isRecording
+        // Access isRecording through the AudioRecorder instance, not the protocol
+        if let audioRecorder = audioRecorder as? AudioRecorder {
+            return audioRecorder.isRecording
+        }
+        return false
     }
     
     func start(duration: TimeInterval, completion: @escaping (Recording) -> Void) {

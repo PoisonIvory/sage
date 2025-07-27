@@ -103,7 +103,7 @@ final class OnboardingFlowViewModel: ObservableObject {
     /// - Parameter method: The selected signup method (anonymous or email)
     /// - Returns: The result of the operation (created, exists, or error)
     func selectSignupMethod(_ method: SignupMethod) async -> SignupResult {
-        guard !operationInProgress else { return .error(OnboardingError.concurrentOperation) }
+        guard !operationInProgress else { return .error(SignupErrorType.networkRequestFailed) }
         operationInProgress = true
         isLoading = true
         errorMessage = nil
@@ -119,7 +119,7 @@ final class OnboardingFlowViewModel: ObservableObject {
             errorMessage = "Unable to check your account status. Please try again."
             isLoading = false
             operationInProgress = false
-            return .error(error)
+            return .error(SignupErrorType.networkRequestFailed)
         }
     }
 
@@ -182,10 +182,10 @@ final class OnboardingFlowViewModel: ObservableObject {
         // Note: Name is not required for true anonymity
         // Only age is required for research purposes (demographic data)
         if userProfileData.age <= 0 {
-            errors.append(.ageRequired)
+            errors.append(.ageRequired())
         }
         if userProfileData.age < 13 || userProfileData.age > 120 {
-            errors.append(.ageInvalid)
+            errors.append(.ageInvalid())
         }
         // Then: Return all validation errors found
         print("OnboardingFlowViewModel: validation completed with \(errors.count) errors")
@@ -246,7 +246,7 @@ final class OnboardingFlowViewModel: ObservableObject {
         return await withCheckedContinuation { continuation in
             userProfileRepository.fetchUserProfile(withId: userId) { [weak self] profile in
                 guard let self = self else { 
-                    continuation.resume(returning: .error(OnboardingError.concurrentOperation))
+                    continuation.resume(returning: .error(SignupErrorType.networkRequestFailed))
                     return 
                 }
                 self.userProfile = profile
@@ -283,7 +283,7 @@ final class OnboardingFlowViewModel: ObservableObject {
             id: userId,
             age: defaultAge,
             gender: defaultGender,
-            deviceModel: Device.current.description,
+            deviceModel: UIDevice.current.model,
             osVersion: UIDevice.current.systemVersion,
             createdAt: ISO8601DateFormatter().string(from: Date())
         )
@@ -309,17 +309,17 @@ final class OnboardingFlowViewModel: ObservableObject {
         
         // Age validation
         if data.age <= 0 {
-            errors.append(.ageRequired)
+            errors.append(.ageRequired())
         }
         if data.age < 13 || data.age > 120 {
-            errors.append(.ageInvalid)
+            errors.append(.ageInvalid())
         }
         
         // Gender validation (if provided)
         if !data.gender.isEmpty {
             let validGenders = ["male", "female", "other", "prefer not to say"]
             if !validGenders.contains(data.gender.lowercased()) {
-                errors.append(.genderInvalid)
+                errors.append(.genderInvalid())
             }
         }
         

@@ -75,8 +75,8 @@ class OnboardingTypesTests: XCTestCase {
     func testValidationErrorDescriptions() {
         // Given: Validation errors
         // Then: Should have user-friendly descriptions
-        XCTAssertEqual(ValidationError.ageRequired.errorDescription, "Age is required for research purposes")
-        XCTAssertEqual(ValidationError.ageInvalid.errorDescription, "Age must be between 13 and 120")
+        XCTAssertEqual(ValidationError.ageRequired().errorDescription, "Age is required for research purposes")
+        XCTAssertEqual(ValidationError.ageInvalid().errorDescription, "Age must be between 13 and 120")
     }
     
     func testValidationErrorEquality() {
