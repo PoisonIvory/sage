@@ -99,15 +99,13 @@ final class AnalyticsService: AnalyticsServiceProtocol {
         Mixpanel.mainInstance().identify(distinctId: userId)
         
         // Set user profile properties
-        Mixpanel.mainInstance().people.set([
+        Mixpanel.mainInstance().people.set(properties: [
             "$name": userProfile.id,
-            "$email": userProfile.email ?? "",
             "age": userProfile.age,
             "gender": userProfile.gender,
             "device_model": userProfile.deviceModel,
             "os_version": userProfile.osVersion,
-            "created_at": userProfile.createdAt,
-            "signup_method": userProfile.signupMethod ?? "unknown"
+            "created_at": userProfile.createdAt
         ])
         
         print("[Analytics] Identified user: \(userId)")
