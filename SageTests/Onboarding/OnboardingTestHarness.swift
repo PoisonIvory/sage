@@ -51,7 +51,7 @@ class MockAnalyticsService: AnalyticsServiceProtocol {
     }
     
     func getOrigin(for event: String) -> String? {
-        return trackedOrigins[event]
+        return trackedProperties[event]?["origin"] as? String
     }
     
     func assertEventContainsProperty(_ event: String, key: String, value: MixpanelType) -> Bool {
@@ -98,7 +98,8 @@ class MockAnalyticsService: AnalyticsServiceProtocol {
     func reset() {
         trackedEvents.removeAll()
         trackedProperties.removeAll()
-        trackedOrigins.removeAll()
+        identifiedUsers.removeAll()
+        userProfiles.removeAll()
     }
 }
 
