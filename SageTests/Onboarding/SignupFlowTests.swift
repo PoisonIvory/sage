@@ -200,7 +200,7 @@ final class SignupFlowTests: XCTestCase {
     func testInvalidEmailFormatError() {
         // Given: User provides invalid email format
         harness.mockAuthService.shouldReturnError = true
-        harness.mockAuthService.errorType = .invalidEmail
+        harness.mockAuthService.errorType = .invalidCredentials
         viewModel.email = "invalid-email"
         viewModel.password = "password123"
         
@@ -215,7 +215,7 @@ final class SignupFlowTests: XCTestCase {
     func testWeakPasswordError() {
         // Given: User provides weak password
         harness.mockAuthService.shouldReturnError = true
-        harness.mockAuthService.errorType = .weakPassword
+        harness.mockAuthService.errorType = .invalidCredentials
         viewModel.email = "test@example.com"
         viewModel.password = "123"
         
