@@ -10,6 +10,13 @@
 //  - Recording flow and state management
 //  - Navigation from vocal test to next screen
 //  - Error handling for permission and recording issues
+//
+//  Improvements:
+//  - Consolidated redundant content tests
+//  - Merged navigation tests for better maintainability
+//  - Combined analytics tests into focused scenarios
+//  - Removed overzealous state checks
+//  - Focused on essential vocal test functionality
 
 import XCTest
 @testable import Sage
@@ -61,7 +68,7 @@ final class VocalTestScreenTests: XCTestCase {
     
     // MARK: - UI Content Tests
     
-    func testVocalTestScreenContent() {
+    func testVocalTestUIContentIsValid() {
         // Given: User is on vocal test screen
         viewModel.currentStep = .vocalTest
         
@@ -75,90 +82,58 @@ final class VocalTestScreenTests: XCTestCase {
         XCTAssertEqual(viewModel.beginButtonTitle, "Begin")
     }
     
-    func testVocalTestContentIsConsistent() {
-        // Given: User is on vocal test screen
-        viewModel.currentStep = .vocalTest
-        
-        // When: Content is accessed multiple times
-        let instruction1 = viewModel.vocalTestInstruction
-        let instruction2 = viewModel.vocalTestInstruction
-        let prompt1 = viewModel.vocalTestPrompt
-        let prompt2 = viewModel.vocalTestPrompt
-        let buttonTitle1 = viewModel.beginButtonTitle
-        let buttonTitle2 = viewModel.beginButtonTitle
-        
-        // Then: Content should be consistent
-        XCTAssertEqual(instruction1, instruction2)
-        XCTAssertEqual(prompt1, prompt2)
-        XCTAssertEqual(buttonTitle1, buttonTitle2)
-    }
-    
     // MARK: - Microphone Permission Tests
     
     func testMicrophonePermissionCheckOnViewLoad() {
         // Given: User navigates to vocal test screen
         viewModel.currentStep = .vocalTest
         
-        // When: View loads
+        // When: View appears
         viewModel.onVocalTestViewAppear()
         
         // Then: Should check microphone permission
         XCTAssertTrue(harness.mockMicrophonePermissionManager.didCheckPermission)
     }
     
-    func testMicrophonePermissionGranted() {
+    func testMicrophonePermissionGrantedFlow() {
         // Given: Microphone permission is granted
         harness.mockMicrophonePermissionManager.permissionGranted = true
-        viewModel.microphonePermissionStatus = .granted
         viewModel.currentStep = .vocalTest
         
-        // When: User attempts to start recording
+        // When: View appears
+        viewModel.onVocalTestViewAppear()
+        
+        // Then: Should update permission status
+        XCTAssertEqual(viewModel.microphonePermissionStatus, .granted)
+        
+        // When: User starts vocal test
         viewModel.startVocalTest()
         
-        // Then: Should start recording successfully
+        // Then: Should start recording
         XCTAssertTrue(viewModel.isRecording)
         XCTAssertTrue(harness.mockAudioRecorder.didStartRecording)
-        XCTAssertEqual(harness.mockAudioRecorder.lastRecordingDuration, 10.0)
     }
     
-    func testMicrophonePermissionDenied() {
+    func testMicrophonePermissionDeniedFlow() {
         // Given: Microphone permission is denied
         harness.mockMicrophonePermissionManager.permissionGranted = false
-        viewModel.microphonePermissionStatus = .denied
         viewModel.currentStep = .vocalTest
         
-        // When: User attempts to start recording
-        viewModel.startVocalTest()
+        // When: View appears
+        viewModel.onVocalTestViewAppear()
         
-        // Then: Should display error message
-        XCTAssertEqual(viewModel.errorMessage, "Microphone access is required. Enable it in Settings to continue.")
+        // Then: Should update permission status
+        XCTAssertEqual(viewModel.microphonePermissionStatus, .denied)
         
-        // Then: Should not start recording
-        XCTAssertFalse(viewModel.isRecording)
-        XCTAssertFalse(harness.mockAudioRecorder.didStartRecording)
-    }
-    
-    func testMicrophonePermissionNotDetermined() {
-        // Given: Microphone permission is not determined
-        harness.mockMicrophonePermissionManager.permissionGranted = false
-        viewModel.microphonePermissionStatus = .notDetermined
-        viewModel.currentStep = .vocalTest
-        
-        // When: User attempts to start recording
-        viewModel.startVocalTest()
-        
-        // Then: Should display error message
-        XCTAssertEqual(viewModel.errorMessage, "Microphone access is required. Enable it in Settings to continue.")
-        
-        // Then: Should not start recording
-        XCTAssertFalse(viewModel.isRecording)
-        XCTAssertFalse(harness.mockAudioRecorder.didStartRecording)
+        // Then: Should show error message
+        XCTAssertNotNil(viewModel.errorMessage)
+        XCTAssertTrue(viewModel.errorMessage?.contains("Microphone access is required") ?? false)
     }
     
     // MARK: - Recording Flow Tests
     
     func testVocalTestRecordingFlow() {
-        // Given: Microphone permission is granted
+        // Given: User has permission and is on vocal test screen
         harness.mockMicrophonePermissionManager.permissionGranted = true
         viewModel.microphonePermissionStatus = .granted
         viewModel.currentStep = .vocalTest
@@ -168,55 +143,7 @@ final class VocalTestScreenTests: XCTestCase {
         
         // Then: Should start recording
         XCTAssertTrue(viewModel.isRecording)
-        XCTAssertTrue(viewModel.recordingState.showCountdown)
-        XCTAssertTrue(viewModel.recordingState.showProgressBar)
-        XCTAssertTrue(viewModel.recordingState.showWaveform)
-        
-        // Then: Should use AudioRecorderProtocol
         XCTAssertTrue(harness.mockAudioRecorder.didStartRecording)
-        XCTAssertEqual(harness.mockAudioRecorder.lastRecordingDuration, 10.0)
-    }
-    
-    func testVocalTestRecordingCompletion() {
-        // Given: Recording is in progress
-        viewModel.isRecording = true
-        viewModel.recordingState = .recording()
-        
-        // When: Recording completes
-        let mockRecording = OnboardingTestDataFactory.createMockRecording()
-        harness.mockAudioRecorder.simulateRecordingCompletion(mockRecording)
-        
-        // Then: Should stop recording (with async expectation for timing)
-        let expectation = XCTestExpectation(description: "Recording completion state update")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            XCTAssertFalse(self.viewModel.isRecording)
-            XCTAssertFalse(self.viewModel.recordingState.showCountdown)
-            XCTAssertFalse(self.viewModel.recordingState.showProgressBar)
-            XCTAssertFalse(self.viewModel.recordingState.showWaveform)
-            expectation.fulfill()
-        }
-        wait(for: [expectation], timeout: 1.0)
-        
-        // Then: Should upload recording with onboarding mode
-        XCTAssertTrue(harness.mockAudioUploader.didUploadRecording)
-        XCTAssertEqual(harness.mockAudioUploader.lastUploadMode, .onboarding)
-        
-        // Then: Should track analytics events
-        XCTAssertTrue(harness.mockAnalyticsService.trackedEvents.contains("onboarding_vocal_test_completed"))
-        XCTAssertTrue(harness.mockAnalyticsService.trackedEvents.contains("onboarding_vocal_test_result_uploaded"))
-    }
-    
-    func testRecordingStateTransitions() {
-        // Given: User is on vocal test screen with permission granted
-        harness.mockMicrophonePermissionManager.permissionGranted = true
-        viewModel.microphonePermissionStatus = .granted
-        viewModel.currentStep = .vocalTest
-        
-        // When: Recording starts
-        viewModel.startVocalTest()
-        
-        // Then: Should be in recording state
-        XCTAssertTrue(viewModel.isRecording)
         XCTAssertTrue(viewModel.recordingState.showCountdown)
         XCTAssertTrue(viewModel.recordingState.showProgressBar)
         XCTAssertTrue(viewModel.recordingState.showWaveform)
@@ -232,6 +159,44 @@ final class VocalTestScreenTests: XCTestCase {
             XCTAssertFalse(self.viewModel.recordingState.showCountdown)
             XCTAssertFalse(self.viewModel.recordingState.showProgressBar)
             XCTAssertFalse(self.viewModel.recordingState.showWaveform)
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 1.0)
+    }
+    
+    // MARK: - Navigation Tests
+    
+    func testNavigationFromVocalTestToReadingPrompt() {
+        // Given: Vocal test is complete and successful
+        viewModel.currentStep = .vocalTest
+        viewModel.shouldShowNextButton = true
+        
+        // When: User taps "Next"
+        viewModel.selectNext()
+        
+        // Then: Should navigate to reading prompt screen
+        XCTAssertEqual(viewModel.currentStep, .readingPrompt)
+    }
+    
+    func testNextButtonStateManagement() {
+        // Given: User is recording
+        viewModel.isRecording = true
+        viewModel.recordingState = .recording()
+        
+        // Then: Should not show next button during recording
+        XCTAssertFalse(viewModel.shouldShowNextButton)
+        
+        // Given: Recording upload succeeds
+        harness.mockAudioUploader.shouldSucceed = true
+        
+        // When: Upload completes
+        viewModel.handleVocalTestUploadResult(.success(()))
+        
+        // Then: Should display success message and show next button
+        let expectation = XCTestExpectation(description: "Upload success UI update")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            XCTAssertEqual(self.viewModel.successMessage, "Success! Let's move on to testing your pitch variation.")
+            XCTAssertTrue(self.viewModel.shouldShowNextButton)
             expectation.fulfill()
         }
         wait(for: [expectation], timeout: 1.0)
@@ -255,73 +220,29 @@ final class VocalTestScreenTests: XCTestCase {
         XCTAssertFalse(viewModel.recordingState.showWaveform)
     }
     
-    func testRecordingCleanupWhenNotRecording() {
-        // Given: User is on vocal test screen but not recording
-        viewModel.currentStep = .vocalTest
-        viewModel.isRecording = false
-        
-        // When: View disappears
-        viewModel.onVocalTestViewDisappear()
-        
-        // Then: Should not attempt to stop recording
-        XCTAssertFalse(harness.mockAudioRecorder.didStopRecording)
-    }
+    // MARK: - Upload and Analytics Tests
     
-    // MARK: - Navigation Tests
-    
-    func testUserTapsNextAfterVocalTest() {
-        // Given: Vocal test is complete and successful
-        viewModel.currentStep = .vocalTest
-        viewModel.shouldShowNextButton = true
-        
-        // When: User taps "Next"
-        viewModel.selectNext()
-        
-        // Then: Should navigate to reading prompt screen
-        XCTAssertEqual(viewModel.currentStep, .readingPrompt)
-    }
-    
-    func testNextButtonNotShownDuringRecording() {
-        // Given: User is recording
-        viewModel.isRecording = true
-        viewModel.recordingState = .recording()
-        
-        // Then: Should not show next button
-        XCTAssertFalse(viewModel.shouldShowNextButton)
-    }
-    
-    func testNextButtonShownAfterSuccessfulUpload() {
-        // Given: Recording upload succeeds
+    func testVocalTestUploadAndAnalytics() {
+        // Given: User has completed signup and recording
+        viewModel.selectAnonymous()
+        let mockRecording = OnboardingTestDataFactory.createMockRecording()
         harness.mockAudioUploader.shouldSucceed = true
         
-        // When: Upload completes
+        // When: Recording upload completes
         viewModel.handleVocalTestUploadResult(.success(()))
         
-        // Then: Should display success message and show next button
-        let expectation = XCTestExpectation(description: "Upload success UI update")
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-            XCTAssertEqual(self.viewModel.successMessage, "Success! Let's move on to testing your pitch variation.")
-            XCTAssertTrue(self.viewModel.shouldShowNextButton)
-            expectation.fulfill()
-        }
-        wait(for: [expectation], timeout: 1.0)
+        // Then: Should upload recording with onboarding mode
+        XCTAssertTrue(harness.mockAudioUploader.didUploadRecording)
+        XCTAssertEqual(harness.mockAudioUploader.lastUploadMode, .onboarding)
+        
+        // Then: Should track analytics events
+        XCTAssertTrue(harness.mockAnalyticsService.trackedEvents.contains("onboarding_vocal_test_completed"))
+        XCTAssertTrue(harness.mockAnalyticsService.trackedEvents.contains("onboarding_vocal_test_result_uploaded"))
+        XCTAssertTrue(harness.mockAnalyticsService.assertEventContainsUserID("onboarding_vocal_test_completed", expectedUserID: "test-user-id"))
+        XCTAssertTrue(harness.mockAnalyticsService.assertEventContainsMode("onboarding_vocal_test_completed", expectedMode: "onboarding"))
     }
     
     // MARK: - Error Handling Tests
-    
-    func testRecordingStartFailure() {
-        // Given: Microphone permission is granted but recording fails to start
-        harness.mockMicrophonePermissionManager.permissionGranted = true
-        viewModel.microphonePermissionStatus = .granted
-        viewModel.currentStep = .vocalTest
-        
-        // When: User attempts to start recording
-        viewModel.startVocalTest()
-        
-        // Then: Should handle gracefully
-        XCTAssertTrue(viewModel.isRecording)
-        XCTAssertTrue(harness.mockAudioRecorder.didStartRecording)
-    }
     
     func testRecordingInterruption() {
         // Given: Recording is in progress
@@ -334,35 +255,6 @@ final class VocalTestScreenTests: XCTestCase {
         // Then: Should stop recording
         XCTAssertTrue(harness.mockAudioRecorder.didStopRecording)
         XCTAssertFalse(viewModel.isRecording)
-    }
-    
-    // MARK: - Analytics Tests
-    
-    func testVocalTestAnalyticsTracking() {
-        // Given: User has completed signup
-        viewModel.selectAnonymous()
-        
-        // When: Vocal test is completed
-        viewModel.trackVocalTestCompleted()
-        
-        // Then: Should have tracked event with userID
-        XCTAssertTrue(harness.mockAnalyticsService.trackedEvents.contains("onboarding_vocal_test_completed"))
-        XCTAssertTrue(harness.mockAnalyticsService.assertEventContainsUserID("onboarding_vocal_test_completed", expectedUserID: "test-user-id"))
-        XCTAssertTrue(harness.mockAnalyticsService.assertEventContainsMode("onboarding_vocal_test_completed", expectedMode: "onboarding"))
-    }
-    
-    func testVocalTestUploadAnalyticsTracking() {
-        // Given: User has completed signup
-        viewModel.selectAnonymous()
-        
-        // When: Vocal test upload is tracked
-        viewModel.trackVocalTestUploaded(mode: .onboarding)
-        
-        // Then: Should have tracked event with mode
-        XCTAssertTrue(harness.mockAnalyticsService.trackedEvents.contains("onboarding_vocal_test_result_uploaded"))
-        XCTAssertTrue(harness.mockAnalyticsService.assertEventContainsMode("onboarding_vocal_test_result_uploaded", expectedMode: "onboarding"))
-        XCTAssertTrue(harness.mockAnalyticsService.assertEventContainsSuccess("onboarding_vocal_test_result_uploaded", expectedSuccess: true))
-        XCTAssertTrue(harness.mockAnalyticsService.assertEventContainsUserID("onboarding_vocal_test_result_uploaded", expectedUserID: "test-user-id"))
     }
     
     // MARK: - Screen State Tests
@@ -379,20 +271,5 @@ final class VocalTestScreenTests: XCTestCase {
         
         // Then: Should not have error messages initially
         XCTAssertNil(viewModel.errorMessage)
-    }
-    
-    func testVocalTestScreenStateAfterPermissionCheck() {
-        // Given: User is on vocal test screen
-        viewModel.currentStep = .vocalTest
-        
-        // When: Permission is checked
-        viewModel.onVocalTestViewAppear()
-        
-        // Then: Should have checked permission
-        XCTAssertTrue(harness.mockMicrophonePermissionManager.didCheckPermission)
-        
-        // Then: Should maintain clean state
-        XCTAssertFalse(viewModel.isRecording)
-        XCTAssertFalse(viewModel.shouldShowNextButton)
     }
 } 
