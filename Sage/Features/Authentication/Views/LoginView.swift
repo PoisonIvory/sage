@@ -3,6 +3,14 @@ import SwiftUI
 struct LoginView: View {
     @ObservedObject var viewModel: AuthViewModel
 
+    private var isLoading: Bool {
+        if case .loading = viewModel.state { return true }
+        return false
+    }
+    private var errorMessage: String? {
+        if case let .failed(error) = viewModel.state { return error } else { return nil }
+    }
+
     var body: some View {
         VStack(spacing: 28) {
             SageSectionHeader(title: "Login")
@@ -11,23 +19,23 @@ struct LoginView: View {
                     SageTextField(
                         placeholder: "Email",
                         text: $viewModel.email,
-                        error: viewModel.errorMessage?.contains("email") == true ? viewModel.errorMessage : nil,
+                        error: errorMessage?.contains("email") == true ? errorMessage : nil,
                         keyboardType: .emailAddress
                     )
                     SageTextField(
                         placeholder: "Password",
                         text: $viewModel.password,
                         isSecure: true,
-                        error: viewModel.errorMessage?.contains("password") == true ? viewModel.errorMessage : nil
+                        error: errorMessage?.contains("password") == true ? errorMessage : nil
                     )
                     SageButton(title: "Login") {
                         print("LoginView: Login button tapped")
                         viewModel.loginWithEmail()
                     }
-                    .disabled(!viewModel.isFormValid || viewModel.isLoading)
+                    .disabled(!viewModel.isFormValid || isLoading)
                 }
             }
-            if viewModel.isLoading {
+            if isLoading {
                 SageProgressView().padding()
             }
             Spacer()

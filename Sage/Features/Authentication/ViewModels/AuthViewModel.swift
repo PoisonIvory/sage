@@ -1,6 +1,7 @@
 import Foundation
 import Combine
 import FirebaseAuth
+import os.log
 
 // MARK: - Error Constants
 enum AuthError: String, CaseIterable {
@@ -12,76 +13,115 @@ enum AuthError: String, CaseIterable {
     }
 }
 
+// MARK: - Auth State Enum
+enum AuthState: Equatable {
+    case idle
+    case loading
+    case authenticated(signUpMethod: String)
+    case failed(error: String)
+}
+
+// MARK: - Auth Protocol
+protocol AuthProtocol {
+    var currentUser: User? { get }
+    func signOut() throws
+    func signInAnonymously(completion: @escaping (AuthDataResult?, Error?) -> Void)
+    func signUpWithEmail(email: String, password: String, completion: @escaping (Bool, Error?) -> Void)
+}
+
+// MARK: - Firebase Auth Service
+class FirebaseAuthService: AuthProtocol {
+    private let auth = Auth.auth()
+    var currentUser: User? { auth.currentUser }
+    func signOut() throws { try auth.signOut() }
+    func signInAnonymously(completion: @escaping (AuthDataResult?, Error?) -> Void) {
+        auth.signInAnonymously(completion: completion)
+    }
+    func signUpWithEmail(email: String, password: String, completion: @escaping (Bool, Error?) -> Void) {
+        auth.createUser(withEmail: email, password: password) { result, error in
+            completion(result != nil, error)
+        }
+    }
+}
+
 class AuthViewModel: ObservableObject {
     @Published var email: String = ""
     @Published var password: String = ""
-    @Published var isLoading: Bool = false
-    @Published var isCheckingSession: Bool = false
-    @Published var errorMessage: String?
-    @Published var isAuthenticated: Bool = false
+    @Published var state: AuthState = .idle
     @Published var signUpMethod: String? // "anonymous" or "email"
     @Published var shouldShowRetryOption: Bool = false
     @Published var canWorkOffline: Bool = false
 
-    init(disableAutoAuth: Bool = false) {
-        print("AuthViewModel: Initializing")
-        if !disableAutoAuth {
+    private let auth: AuthProtocol
+    private var hasExplicitlySignedOut: Bool = false
+
+    init(disableAutoAuth: Bool = false, auth: AuthProtocol = FirebaseAuthService()) {
+        self.auth = auth
+        os_log("AuthViewModel: Initializing")
+        if !disableAutoAuth && !hasExplicitlySignedOut {
             checkExistingAuthentication()
         }
     }
 
     // MARK: - Email/Password Auth
     func signUpWithEmail() {
-        print("AuthViewModel: Sign Up button tapped with email=\(email)")
+        clearSignOutFlag() // Clear flag when user explicitly signs up
+        os_log("AuthViewModel: Attempting sign up with email: %{public}@", email)
         guard isEmailValid, isPasswordValid else {
             if !isEmailValid {
-                errorMessage = AuthError.invalidEmail.message
+                state = .failed(error: AuthError.invalidEmail.message)
             } else if !isPasswordValid {
-                errorMessage = AuthError.invalidPassword.message
+                state = .failed(error: AuthError.invalidPassword.message)
             }
-            print("AuthViewModel: Invalid email or password")
+            os_log("AuthViewModel: Invalid email or password")
             return
         }
-        errorMessage = nil // Clear any previous error messages
-        isLoading = true
-        // Replace with Firebase Auth or your AuthManager
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            self.isLoading = false
-            self.handleAuthenticationSuccess(signUpMethod: "email")
+        state = .loading
+        auth.signUpWithEmail(email: email, password: password) { [weak self] success, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    self?.state = .failed(error: error.localizedDescription)
+                    os_log("AuthViewModel: Sign up failed: %{public}@", error.localizedDescription)
+                } else if success {
+                    self?.handleAuthenticationSuccess(signUpMethod: "email")
+                } else {
+                    self?.state = .failed(error: "Unknown error during sign up")
+                }
+            }
         }
     }
 
     func loginWithEmail() {
-        print("AuthViewModel: Login button tapped with email=\(email)")
+        clearSignOutFlag() // Clear flag when user explicitly logs in
+        os_log("AuthViewModel: Attempting login with email: %{public}@", email)
         guard isEmailValid, isPasswordValid else {
             if !isEmailValid {
-                errorMessage = AuthError.invalidEmail.message
+                state = .failed(error: AuthError.invalidEmail.message)
             } else if !isPasswordValid {
-                errorMessage = AuthError.invalidPassword.message
+                state = .failed(error: AuthError.invalidPassword.message)
             }
-            print("AuthViewModel: Invalid email or password")
+            os_log("AuthViewModel: Invalid email or password")
             return
         }
-        errorMessage = nil // Clear any previous error messages
-        isLoading = true
-        // Replace with Firebase Auth or your AuthManager
+        state = .loading
+        // TODO: Extract login logic to service as well
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
-            self.isLoading = false
-            self.isAuthenticated = true
-            self.errorMessage = nil
-            print("AuthViewModel: Login successful, isAuthenticated=\(self.isAuthenticated)")
+            self.state = .authenticated(signUpMethod: "email")
+            self.signUpMethod = "email"
+            os_log("AuthViewModel: Login successful, isAuthenticated=true")
         }
     }
 
     // MARK: - Anonymous Auth
     func signInAnonymously() {
-        print("AuthViewModel: Continue Anonymously button tapped")
-        isLoading = true
-        Auth.auth().signInAnonymously { [weak self] authResult, error in
+        clearSignOutFlag() // Clear flag when user explicitly signs in anonymously
+        os_log("AuthViewModel: Attempting anonymous sign in")
+        state = .loading
+        auth.signInAnonymously { [weak self] authResult, error in
             DispatchQueue.main.async {
-                self?.isLoading = false
                 if let error = error {
-                    self?.handleAuthenticationFailure(error: error)
+                    self?.state = .failed(error: error.localizedDescription)
+                    os_log("AuthViewModel: Anonymous sign in failed: %{public}@", error.localizedDescription)
                 } else {
                     self?.handleAuthenticationSuccess(signUpMethod: "anonymous")
                 }
@@ -90,74 +130,66 @@ class AuthViewModel: ObservableObject {
     }
 
     func retryAnonymousSignIn() {
-        print("AuthViewModel: Retrying anonymous sign in")
+        os_log("AuthViewModel: Retrying anonymous sign in")
         shouldShowRetryOption = false
         signInAnonymously()
     }
 
     // MARK: - Persistent Authentication
-    /// Checks if there's an existing user session and automatically authenticates them
     func checkExistingAuthentication() {
-        print("AuthViewModel: Checking for existing user session")
-        isCheckingSession = true
+        os_log("AuthViewModel: Checking for existing user session, hasExplicitlySignedOut=%{public}@", hasExplicitlySignedOut ? "true" : "false")
+        if hasExplicitlySignedOut {
+            os_log("AuthViewModel: Skipping auto-authentication due to explicit sign out")
+            self.state = .idle
+            return
+        }
         
-        if let currentUser = Auth.auth().currentUser {
-            print("AuthViewModel: Found existing user session with UID: \(currentUser.uid)")
-            
+        if let currentUser = auth.currentUser {
+            os_log("AuthViewModel: Found existing user session with UID: %{public}@", currentUser.uid)
             if currentUser.isAnonymous {
-                print("AuthViewModel: Existing user session is anonymous, auto-authenticating")
-                self.isAuthenticated = true
+                self.state = .authenticated(signUpMethod: "anonymous")
                 self.signUpMethod = "anonymous"
-                print("AuthViewModel: Auto-authenticated anonymous user session")
+                os_log("AuthViewModel: Auto-authenticated anonymous user session")
             } else {
-                print("AuthViewModel: Existing user session is email-based, auto-authenticating")
-                self.isAuthenticated = true
+                self.state = .authenticated(signUpMethod: "email")
                 self.signUpMethod = "email"
-                print("AuthViewModel: Auto-authenticated email user session")
+                os_log("AuthViewModel: Auto-authenticated email user session")
             }
         } else {
-            print("AuthViewModel: No existing user session found")
-        }
-        
-        // Add a small delay to show the loading state
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-            self.isCheckingSession = false
+            os_log("AuthViewModel: No existing user session found")
+            self.state = .idle
         }
     }
 
-    /// Checks if there's an existing anonymous user session (for testing)
-    func hasExistingAnonymousUser() -> Bool {
-        if let currentUser = Auth.auth().currentUser {
-            return currentUser.isAnonymous
+    // MARK: - Sign Out
+    /// Signs out the current user and resets authentication state
+    /// If signOut fails, state is not reset to avoid hiding errors. Documented for clarity.
+    func signOut() {
+        do {
+            try auth.signOut()
+            hasExplicitlySignedOut = true
+            reset()
+            state = .idle
+            os_log("AuthViewModel: User signed out and state reset")
+        } catch {
+            state = .failed(error: "Failed to sign out: \(error.localizedDescription)")
+            os_log("AuthViewModel: Sign out failed: %{public}@", error.localizedDescription)
         }
-        return false
-    }
-
-    /// Checks if there's an existing email user session (for testing)
-    func hasExistingEmailUser() -> Bool {
-        if let currentUser = Auth.auth().currentUser {
-            return !currentUser.isAnonymous
-        }
-        return false
     }
 
     // MARK: - Helper Methods
+    private func clearSignOutFlag() {
+        hasExplicitlySignedOut = false
+        os_log("AuthViewModel: Sign out flag cleared - user explicitly signing in")
+    }
+
     private func handleAuthenticationSuccess(signUpMethod: String) {
-        isAuthenticated = true
-        errorMessage = nil
+        hasExplicitlySignedOut = false // Clear the flag when user explicitly signs in
+        state = .authenticated(signUpMethod: signUpMethod)
         self.signUpMethod = signUpMethod
         shouldShowRetryOption = false
         canWorkOffline = false
-        print("AuthViewModel: Authentication successful, method=\(signUpMethod)")
-    }
-
-    private func handleAuthenticationFailure(error: Error) {
-        isAuthenticated = false
-        errorMessage = "We're having trouble connecting to your account. Your voice recordings won't be saved to track your progress over time. You can try again or continue using the app for now."
-        signUpMethod = nil
-        shouldShowRetryOption = true
-        canWorkOffline = true
-        print("AuthViewModel: Authentication failed: \(error)")
+        os_log("AuthViewModel: Authentication successful, method=%{public}@", signUpMethod)
     }
 
     // MARK: - Validation
@@ -177,13 +209,10 @@ class AuthViewModel: ObservableObject {
     func reset() {
         email = ""
         password = ""
-        errorMessage = nil
-        isLoading = false
-        isCheckingSession = false
-        isAuthenticated = false
-        signUpMethod = nil
         shouldShowRetryOption = false
         canWorkOffline = false
-        print("AuthViewModel: Reset called")
+        signUpMethod = nil
+        // Don't clear hasExplicitlySignedOut here - it should persist until user explicitly signs in
+        os_log("AuthViewModel: Reset called")
     }
 } 

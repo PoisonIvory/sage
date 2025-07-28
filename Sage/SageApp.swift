@@ -94,10 +94,13 @@ struct SageApp: App {
                 .onAppear {
                     checkAuthenticationState()
                 }
-                .onChange(of: authViewModel.isAuthenticated) { isAuthenticated in
-                    if isAuthenticated {
+                .onChange(of: authViewModel.state) { state in
+                    if case .authenticated = state {
                         print("SageApp: User authenticated, navigating to home")
                         currentScreen = .browse
+                    } else if case .idle = state {
+                        print("SageApp: User logged out, navigating to welcome")
+                        currentScreen = .welcome
                     }
                 }
         }
@@ -105,7 +108,7 @@ struct SageApp: App {
 
     private func checkAuthenticationState() {
         print("SageApp: Checking authentication state")
-        if authViewModel.isAuthenticated {
+        if case .authenticated = authViewModel.state {
             print("SageApp: User is already authenticated, navigating to home")
             currentScreen = .browse
         } else {

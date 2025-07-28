@@ -128,7 +128,7 @@ final class SignupFlowTests: XCTestCase {
     func testSignupErrorHandling() {
         // Given: Signup fails due to network error
         harness.mockAuthService.shouldReturnError = true
-        harness.mockAuthService.errorType = .networkRequestFailed
+        harness.mockAuthService.errorType = SignupErrorType.networkRequestFailed
         viewModel.email = "test@example.com"
         viewModel.password = "password123"
         
@@ -146,7 +146,7 @@ final class SignupFlowTests: XCTestCase {
     func testInvalidCredentialsHandling() {
         // Given: User provides invalid credentials
         harness.mockAuthService.shouldReturnError = true
-        harness.mockAuthService.errorType = .invalidCredentials
+        harness.mockAuthService.errorType = SignupErrorType.invalidCredentials
         viewModel.email = "invalid-email"
         viewModel.password = "123"
         

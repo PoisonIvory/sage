@@ -9,18 +9,22 @@
 
 import XCTest
 @testable import Sage
+import Mocks.MockAuthService // Import the shared mock
 
 @MainActor
 class AuthViewModelTests: XCTestCase {
     var authViewModel: AuthViewModel!
+    var mockAuth: MockAuthService!
     
     override func setUp() {
         super.setUp()
-        authViewModel = AuthViewModel(disableAutoAuth: true)
+        mockAuth = MockAuthService()
+        authViewModel = AuthViewModel(disableAutoAuth: true, auth: mockAuth)
     }
     
     override func tearDown() {
         authViewModel = nil
+        mockAuth = nil
         super.tearDown()
     }
     
@@ -106,5 +110,37 @@ class AuthViewModelTests: XCTestCase {
         // Then: Should not set loading state due to validation failure
         XCTAssertFalse(authViewModel.isLoading, "Loading should not start when validation fails")
         XCTAssertNotNil(authViewModel.errorMessage, "Error message should be shown for invalid credentials")
+    }
+
+    func testSignOutResetsAuthenticationState() {
+        // Given: AuthViewModel is authenticated
+        authViewModel.isAuthenticated = true
+        authViewModel.email = "test@example.com"
+        authViewModel.password = "password123"
+        authViewModel.signUpMethod = "email"
+        
+        // When: User selects "Log Out and Restart"
+        authViewModel.signOut()
+        
+        // Then: Should reset authentication state and clear credentials
+        XCTAssertFalse(authViewModel.isAuthenticated)
+        XCTAssertEqual(authViewModel.email, "")
+        XCTAssertEqual(authViewModel.password, "")
+        XCTAssertNil(authViewModel.signUpMethod)
+        XCTAssertNil(authViewModel.errorMessage)
+        XCTAssertTrue(mockAuth.signOutCalled)
+    }
+
+    func testSignOutSetsErrorMessageOnFailure() {
+        // Given: AuthViewModel with a mock that throws on signOut
+        mockAuth.shouldFailSignOut = true
+        
+        // When: User selects "Log Out and Restart"
+        authViewModel.signOut()
+        
+        // Then: Should set error message
+        XCTAssertNotNil(authViewModel.errorMessage)
+        XCTAssertTrue(authViewModel.errorMessage?.contains("Failed to sign out") ?? false)
+        XCTAssertTrue(mockAuth.signOutCalled)
     }
 } 

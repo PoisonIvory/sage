@@ -43,7 +43,7 @@ struct ContentView: View {
                 }
 
             // Profile Tab
-            Text("Profile Page Placeholder")
+            ProfilePagePlaceholderView()
                 .tabItem {
                     Image(systemName: "person")
                     Text("Profile")

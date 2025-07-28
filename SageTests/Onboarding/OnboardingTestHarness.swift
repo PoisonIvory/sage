@@ -10,6 +10,7 @@
 import XCTest
 import Mixpanel
 @testable import Sage
+import Mocks.MockAuthService // Import the shared mock
 
 // MARK: - Test Constants
 
@@ -100,18 +101,6 @@ class MockAnalyticsService: AnalyticsServiceProtocol {
         trackedProperties.removeAll()
         identifiedUsers.removeAll()
         userProfiles.removeAll()
-    }
-}
-
-class MockAuthService: AuthServiceProtocol {
-    var currentUserId: String? = TestConstants.testUserId
-    var shouldReturnError = false
-    var errorType: SignupErrorType = .networkRequestFailed
-    
-    func reset() {
-        currentUserId = TestConstants.testUserId
-        shouldReturnError = false
-        errorType = .networkRequestFailed
     }
 }
 

@@ -5,6 +5,7 @@ numpy
 # Google Cloud services
 google-cloud-storage
 firebase-admin
+functions-framework
 
 # Scientific computing
 scipy
@@ -16,5 +17,5 @@ pytest-cov
 # Performance monitoring (optional)
 psutil
 
-# Note: parselmouth and librosa have compatibility issues with Python 3.13
-# These will need to be installed separately or use Python 3.11/3.12
+# Note: parselmouth will be installed separately if needed
+# The function has fallback mock implementation if parselmouth is unavailable

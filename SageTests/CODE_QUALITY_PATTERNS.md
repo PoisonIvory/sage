@@ -773,3 +773,23 @@ When reviewing code, check for:
 **Last Updated**: December 2024
 **Maintained By**: Development Team
 **Review Cycle**: Monthly 
+
+## Swift State & Refactor Patterns
+
+### Enum State Management
+- All stateful enums used in SwiftUI must conform to `Equatable` (and `Hashable` if used in navigation).
+- Use exhaustive pattern matching on state enums in all views and logic.
+
+### View Logic
+- Never use inline `if` statements in view modifier arguments. Use computed properties or closures for complex conditions.
+- Always update all usages of a removed or refactored property across the codebase in a single commit.
+
+### Single Source of Truth
+- Use a single `@StateObject` for shared state at the app root. Pass it down via `.environmentObject` or dependency injection.
+
+### Error Handling and Logging
+- Always reset error state at the start of any user-initiated flow.
+- Use `os_log` for all logging in production code.
+
+### Abstraction of External Dependencies
+- Never extend or directly use third-party SDKs in your ViewModels. Always wrap them in a protocol and provide a concrete implementation. 

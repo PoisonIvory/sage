@@ -15,7 +15,7 @@ struct AuthChoiceView: View {
                 SageSectionHeader(title: "Welcome to Sage")
                 
                 // Show loading indicator during existing session check
-                if viewModel.isCheckingSession {
+                if case .loading = viewModel.state {
                     VStack(spacing: 16) {
                         SageProgressView()
                         Text("Checking your session...")
@@ -45,14 +45,14 @@ struct AuthChoiceView: View {
                     }
                 }
                 
-                if let error = viewModel.errorMessage {
+                if case let .failed(error) = viewModel.state {
                     SageCard {
                         Text("Error: \(error)")
                             .font(SageTypography.caption)
                             .foregroundColor(SageColors.earthClay)
                     }
                 }
-                if viewModel.isLoading {
+                if case .loading = viewModel.state {
                     ProgressView().padding()
                 }
                 Spacer()
@@ -72,8 +72,8 @@ struct AuthChoiceView: View {
         .onAppear {
             handleViewAppeared()
         }
-        .onChange(of: viewModel.isAuthenticated) { isAuthenticated in
-            if isAuthenticated {
+        .onChange(of: viewModel.state) { state in
+            if case .authenticated = state {
                 handleAuthenticationSuccess()
             }
         }
@@ -92,7 +92,7 @@ struct AuthChoiceView: View {
     }
     
     private func checkExistingSession() {
-        if viewModel.isAuthenticated {
+        if case .authenticated = viewModel.state {
             print("AuthChoiceView: Already authenticated")
             handleAuthenticationSuccess()
         }

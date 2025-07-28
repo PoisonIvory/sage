@@ -749,3 +749,19 @@ By following these practices:
 **Last Updated**: December 2024
 **Maintained By**: Development Team
 **Review Cycle**: Monthly 
+
+## Swift Refactor & State Debugging Patterns
+
+### Refactor Safety
+- When refactoring a model or service, use global search to update all references. Compile and run tests after every major refactor.
+- If you remove a property, add a temporary `@available(*, unavailable)` stub to force compiler errors and catch all usages.
+
+### SwiftUI State Observation
+- Remember that `.onChange(of:)` and similar property wrappers require `Equatable` conformance.
+- Use computed properties for any derived state needed in view modifiers.
+
+### Pattern Matching
+- Prefer pattern matching on enums for all state-driven UI logic. Avoid duplicating state as booleans.
+
+### Testing
+- When changing a ViewModel’s API, update all test harnesses and mocks to match the new API. 

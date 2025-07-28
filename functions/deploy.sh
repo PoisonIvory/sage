@@ -58,38 +58,23 @@ pip install --upgrade pip
 echo "🔨 Installing build dependencies..."
 pip install setuptools wheel
 
-# Try to install requirements with updated versions
+# Install requirements
 echo "📚 Installing dependencies..."
-if [ -f "requirements_updated.txt" ]; then
-    echo "📋 Using updated requirements..."
-    pip install -r requirements_updated.txt
-else
-    echo "📋 Using original requirements..."
-    pip install -r requirements.txt
-fi
+echo "📋 Using requirements.txt..."
+pip install -r requirements.txt
 
 # Check if installation was successful
 if [ $? -eq 0 ]; then
     echo "✅ Dependencies installed successfully"
 else
-    echo "⚠️ Some dependencies failed to install. Trying with minimal requirements..."
-    
-    # Create minimal requirements for deployment
-    cat > requirements_minimal.txt << EOF
-# Minimal requirements for F0 processing
-firebase-admin>=6.2.0
-google-cloud-storage>=2.10.0
-numpy>=1.24.0
-parselmouth>=0.4.3
-soundfile>=0.12.1
-EOF
-    
-    pip install -r requirements_minimal.txt
+    echo "❌ Dependencies installation failed"
+    echo "💡 Check requirements.txt and Python version compatibility"
+    exit 1
 fi
 
 # Test the function locally
 echo "🧪 Testing function locally..."
-python3 test_f0_structure_simple.py
+python3 test_main_simple.py
 
 if [ $? -eq 0 ]; then
     echo "✅ Local tests passed"

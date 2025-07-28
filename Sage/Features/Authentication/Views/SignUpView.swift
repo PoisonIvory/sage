@@ -5,12 +5,20 @@ struct SignUpView: View {
     @State private var signUpSuccess = false
     let onAuthenticated: () -> Void
 
+    private var isLoading: Bool {
+        if case .loading = viewModel.state { return true }
+        return false
+    }
+    private var errorMessage: String? {
+        if case let .failed(error) = viewModel.state { return error } else { return nil }
+    }
+
     var body: some View {
         VStack(spacing: 28) {
             SageSectionHeader(title: "Create Account")
             
             // Show loading indicator during existing session check
-            if viewModel.isCheckingSession {
+            if isLoading {
                 VStack(spacing: 16) {
                     SageProgressView()
                     Text("Checking your session...")
@@ -24,19 +32,19 @@ struct SignUpView: View {
                         SageTextField(
                             placeholder: "Email",
                             text: $viewModel.email,
-                            error: viewModel.errorMessage?.contains("email") == true ? viewModel.errorMessage : nil,
+                            error: errorMessage?.contains("email") == true ? errorMessage : nil,
                             keyboardType: .emailAddress
                         )
                         SageTextField(
                             placeholder: "Password",
                             text: $viewModel.password,
                             isSecure: true,
-                            error: viewModel.errorMessage?.contains("password") == true ? viewModel.errorMessage : nil
+                            error: errorMessage?.contains("password") == true ? errorMessage : nil
                         )
                         SageButton(title: "Sign Up") {
                             handleSignUpTapped()
                         }
-                        .disabled(!viewModel.isFormValid || viewModel.isLoading)
+                        .disabled(!viewModel.isFormValid || isLoading)
                         
                         // Continue Anonymously button
                         Text("Continue Anonymously")
@@ -55,7 +63,7 @@ struct SignUpView: View {
                 }
             }
             
-            if viewModel.isLoading {
+            if isLoading {
                 SageProgressView().padding()
             }
             Spacer()
@@ -73,8 +81,8 @@ struct SignUpView: View {
         .onAppear {
             handleViewAppeared()
         }
-        .onChange(of: viewModel.isAuthenticated) { isAuthenticated in
-            if isAuthenticated {
+        .onChange(of: viewModel.state) { state in
+            if case .authenticated = state {
                 handleAuthenticationSuccess()
             }
         }
@@ -90,7 +98,7 @@ struct SignUpView: View {
     private func handleSignUpTapped() {
         print("SignUpView: Sign Up button tapped")
         viewModel.signUpWithEmail()
-        if viewModel.isAuthenticated {
+        if case .authenticated = viewModel.state {
             signUpSuccess = true
         }
     }
@@ -101,7 +109,7 @@ struct SignUpView: View {
     }
     
     private func checkExistingSession() {
-        if viewModel.isAuthenticated {
+        if case .authenticated = viewModel.state {
             print("SignUpView: Already authenticated, calling onAuthenticated")
             handleAuthenticationSuccess()
         }
