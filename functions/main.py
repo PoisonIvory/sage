@@ -31,15 +31,18 @@ if not firebase_admin._apps:
     firebase_admin.initialize_app(cred, {'projectId': project_id})
 
 def parse_file_path(file_name: str) -> Dict[str, str]:
-    """Parse file path to extract user and recording IDs."""
+    """Parse file path to extract recording ID from storage path."""
     try:
-        parts = file_name.split('/')
-        if len(parts) < 4:
+        # Storage path is sage-audio-files/{recording_id}.wav
+        if not file_name.startswith('sage-audio-files/'):
             raise ValueError(f"Invalid file path structure: {file_name}")
         
+        # Extract recording ID from filename
+        filename = file_name.split('/')[-1]
+        recording_id = filename.replace('.wav', '')
+        
         return {
-            'user_id': parts[1],
-            'recording_id': parts[3].replace('.wav', '')
+            'recording_id': recording_id
         }
     except Exception as e:
         logger.error(f"File path parsing failed: {e}")
@@ -143,8 +146,8 @@ def extract_f0_features_simple(audio: np.ndarray, sample_rate: int) -> Dict[str,
             'error_type': None
         }
         
-    except ImportError:
-        logger.error("Parselmouth not available, falling back to mock values")
+    except ImportError as e:
+        logger.error(f"Parselmouth not available: {e}, falling back to mock values")
         return {
             'mean_f0': 220.0,
             'std_f0': 5.0,
@@ -162,8 +165,8 @@ def extract_f0_features_simple(audio: np.ndarray, sample_rate: int) -> Dict[str,
             'error_type': 'extraction_failed'
         }
 
-def store_results(user_id: str, recording_id: str, features: Dict[str, Any], processing_metadata: Dict[str, Any]) -> None:
-    """Store processing results in Firestore insights subcollection."""
+def store_results(recording_id: str, features: Dict[str, Any], processing_metadata: Dict[str, Any]) -> None:
+    """Store processing results in Firestore insights subcollection under recordings/{id}/insights/."""
     try:
         db = firestore.client()
         
@@ -179,17 +182,20 @@ def store_results(user_id: str, recording_id: str, features: Dict[str, Any], pro
             'processing_metadata': processing_metadata,
             'tool_versions': {
                 'praat': '6.4.1',
-                'parselmouth': '0.4.3'
-            }
+                'parselmouth': '0.4.6'
+            },
+            'created_at': firestore.SERVER_TIMESTAMP
         }
         
-        insights_ref = db.collection('users').document(user_id).collection('recordings').document(recording_id).collection('insights')
-        insights_ref.add(insight_data)
+        # Write to canonical path: recordings/{recording_id}/insights/
+        insights_ref = db.collection('recordings').document(recording_id).collection('insights')
         
-        logger.info(f"F0 insights stored for user {user_id}, recording {recording_id}")
+        # Use add() method which returns a DocumentReference directly
+        doc_ref = insights_ref.add(insight_data)[1]  # add() returns (id, DocumentReference)
+        logger.info(f"F0 insights stored successfully for recording {recording_id} at document {doc_ref.id}")
         
     except Exception as e:
-        logger.error(f"Failed to store F0 insights: {e}")
+        logger.error(f"Failed to store F0 insights for recording {recording_id}: {e}")
         raise
 
 @functions_framework.cloud_event
@@ -201,11 +207,11 @@ def process_audio_file(cloud_event):
     event_data = cloud_event.data
     file_name = event_data.get('name', '')
     
-    if not file_name.endswith('/audio.wav'):
-        logger.info(f"Skipping non-audio.wav file: {file_name}")
+    if not file_name.endswith('.wav'):
+        logger.info(f"Skipping non-wav file: {file_name}")
         return
     
-    if not file_name.startswith('users/') or file_name.count('/') != 3:
+    if not file_name.startswith('sage-audio-files/'):
         logger.warning(f"Unexpected file path structure: {file_name}")
         return
     
@@ -214,7 +220,6 @@ def process_audio_file(cloud_event):
         logger.info(f"Processing audio file: {file_name} from bucket: {bucket_name}")
         
         file_info = parse_file_path(file_name)
-        user_id = file_info['user_id']
         recording_id = file_info['recording_id']
         
         temp_file_path = download_audio(bucket_name, file_name)
@@ -241,7 +246,7 @@ def process_audio_file(cloud_event):
             'voiced_frames': int(features['voiced_ratio'] * duration * 100)
         }
         
-        store_results(user_id, recording_id, features, processing_metadata)
+        store_results(recording_id, features, processing_metadata)
         
         logger.info(f"Processing completed successfully for {file_name}")
         

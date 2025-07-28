@@ -10,12 +10,12 @@ functions-framework
 # Scientific computing
 scipy
 
+# F0 analysis (Praat wrapper)
+praat-parselmouth
+
 # Testing and development
 pytest
 pytest-cov
 
 # Performance monitoring (optional)
 psutil
-
-# Note: parselmouth will be installed separately if needed
-# The function has fallback mock implementation if parselmouth is unavailable
