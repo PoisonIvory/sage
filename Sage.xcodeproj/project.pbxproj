@@ -11,6 +11,7 @@
 		CA6F2AE22E34E2710060DA83 /* FirebaseAuth in Frameworks */ = {isa = PBXBuildFile; productRef = CA6F2AE12E34E2710060DA83 /* FirebaseAuth */; };
 		CA6F2AE42E34E2710060DA83 /* FirebaseCore in Frameworks */ = {isa = PBXBuildFile; productRef = CA6F2AE32E34E2710060DA83 /* FirebaseCore */; };
 		CA6F2AE62E34E2710060DA83 /* FirebaseFirestore in Frameworks */ = {isa = PBXBuildFile; productRef = CA6F2AE52E34E2710060DA83 /* FirebaseFirestore */; };
+		CA6F2AE82E34E2710060DA83 /* FirebaseStorage in Frameworks */ = {isa = PBXBuildFile; productRef = CA6F2AE72E34E2710060DA83 /* FirebaseStorage */; };
 		CA7BE6BD2E35210B00B315CE /* TestPlan.xctestplan in Resources */ = {isa = PBXBuildFile; fileRef = CA7BE6BC2E35210B00B315CE /* TestPlan.xctestplan */; };
 		CA9F4FE72E33498400B66700 /* DeviceKit in Frameworks */ = {isa = PBXBuildFile; productRef = CA9F4FE62E33498400B66700 /* DeviceKit */; };
 		CA9F50132E33AE8D00B66700 /* Mixpanel in Frameworks */ = {isa = PBXBuildFile; productRef = CA9F50122E33AE8D00B66700 /* Mixpanel */; };
@@ -71,6 +72,7 @@
 				CA9F50132E33AE8D00B66700 /* Mixpanel in Frameworks */,
 				CA6F2AE22E34E2710060DA83 /* FirebaseAuth in Frameworks */,
 				CA6F2AE62E34E2710060DA83 /* FirebaseFirestore in Frameworks */,
+				CA6F2AE82E34E2710060DA83 /* FirebaseStorage in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -435,6 +437,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = sage;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We use your microphone to extract acoustic features from your speech and provide insights into your health.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "We use speech recognition to analyze your voice patterns and provide health insights. Your voice data is processed locally and securely.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -444,7 +447,6 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
@@ -477,6 +479,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = sage;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "We use your microphone to extract acoustic features from your speech and provide insights into your health.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "We use speech recognition to analyze your voice patterns and provide health insights. Your voice data is processed locally and securely.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -486,7 +489,6 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				IPHONEOS_DEPLOYMENT_TARGET = 18.5;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
@@ -682,6 +684,11 @@
 			isa = XCSwiftPackageProductDependency;
 			package = CA6F2ADE2E34E2710060DA83 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
 			productName = FirebaseFirestore;
+		};
+		CA6F2AE72E34E2710060DA83 /* FirebaseStorage */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = CA6F2ADE2E34E2710060DA83 /* XCRemoteSwiftPackageReference "firebase-ios-sdk" */;
+			productName = FirebaseStorage;
 		};
 		CA9F4FE62E33498400B66700 /* DeviceKit */ = {
 			isa = XCSwiftPackageProductDependency;

@@ -14,8 +14,7 @@ struct OnboardingJourneyView: View {
         authService: AuthServiceProtocol = AuthService(),
         userProfileRepository: UserProfileRepositoryProtocol = UserProfileRepository(),
         microphonePermissionManager: MicrophonePermissionManagerProtocol = MicrophonePermissionManager(),
-        audioRecorder: AudioRecorderProtocol = OnboardingAudioRecorder(),
-        audioUploader: AudioUploaderProtocol = AudioUploader(),
+        vocalAnalysisService: HybridVocalAnalysisService? = nil,
         coordinator: OnboardingCoordinatorProtocol? = nil,
         dateProvider: DateProvider = SystemDateProvider(),
         onComplete: (() -> Void)? = nil
@@ -25,8 +24,7 @@ struct OnboardingJourneyView: View {
             authService: authService,
             userProfileRepository: userProfileRepository,
             microphonePermissionManager: microphonePermissionManager,
-            audioRecorder: audioRecorder,
-            audioUploader: audioUploader,
+            vocalAnalysisService: vocalAnalysisService,
             coordinator: coordinator,
             dateProvider: dateProvider
         ))
@@ -61,8 +59,8 @@ struct OnboardingJourneyView: View {
                 SignupMethodView(viewModel: viewModel)
             case .explainer:
                 ExplainerView(viewModel: viewModel)
-            case .vocalTest:
-                VocalTestView(viewModel: viewModel)
+            case .sustainedVowelTest:
+                SustainedVowelTestView(viewModel: viewModel)
             case .readingPrompt:
                 ReadingPromptView(viewModel: viewModel)
             case .finalStep:
@@ -145,7 +143,7 @@ struct ExplainerView: View {
 
 // MARK: - Vocal Test View
 
-struct VocalTestView: View {
+struct SustainedVowelTestView: View {
     @ObservedObject var viewModel: OnboardingJourneyViewModel
     
     var body: some View {
@@ -153,7 +151,7 @@ struct VocalTestView: View {
             Spacer(minLength: 80)
             
             // Instruction
-            Text(viewModel.vocalTestInstruction)
+            Text(viewModel.sustainedVowelTestInstruction)
                 .font(SageTypography.sectionHeader)
                 .foregroundColor(SageColors.espressoBrown)
                 .multilineTextAlignment(.center)
@@ -161,7 +159,7 @@ struct VocalTestView: View {
                 .padding(.horizontal, SageSpacing.xlarge)
             
             // Prompt
-            Text(viewModel.vocalTestPrompt)
+            Text(viewModel.sustainedVowelTestPrompt)
                 .font(SageTypography.headline)
                 .foregroundColor(SageColors.cinnamonBark)
                 .multilineTextAlignment(.center)
@@ -202,8 +200,8 @@ struct VocalTestView: View {
                 if viewModel.isRecording {
                     // Recording in progress - show stop button
                     Button(action: {
-                        print("[VocalTestView] Stop recording tapped")
-                        viewModel.completeVocalTest()
+                        print("[SustainedVowelTestView] Stop recording tapped")
+                        viewModel.completeSustainedVowelTest()
                     }) {
                         Text("Stop Recording")
                             .font(SageTypography.headline)
@@ -217,7 +215,7 @@ struct VocalTestView: View {
                 } else if viewModel.shouldShowNextButton {
                     // Recording complete - show next button
                     Button(action: {
-                        print("[VocalTestView] Next button tapped")
+                        print("[SustainedVowelTestView] Next button tapped")
                         viewModel.selectNext()
                     }) {
                         Text(viewModel.nextButtonTitle)
@@ -229,11 +227,11 @@ struct VocalTestView: View {
                             .cornerRadius(16)
                     }
                     .accessibilityLabel("Continue to next step. Move to reading prompt.")
-                } else {
-                    // Ready to start recording
+                } else if !viewModel.isRecording && !viewModel.shouldShowNextButton && !viewModel.hasCompletedRecording {
+                    // Ready to start recording - only show if no recording has been completed
                     Button(action: {
-                        print("[VocalTestView] Begin recording tapped")
-                        viewModel.startVocalTest()
+                        print("[SustainedVowelTestView] Begin recording tapped")
+                        viewModel.startSustainedVowelTest()
                     }) {
                         Text(viewModel.beginButtonTitle)
                             .font(SageTypography.headline)
@@ -251,12 +249,12 @@ struct VocalTestView: View {
             Spacer(minLength: 60)
         }
         .onAppear {
-            print("[VocalTestView] View appeared")
-            viewModel.onVocalTestViewAppear()
+            print("[SustainedVowelTestView] View appeared")
+            viewModel.onSustainedVowelTestViewAppear()
         }
         .onDisappear {
-            print("[VocalTestView] View disappeared")
-            viewModel.onVocalTestViewDisappear()
+            print("[SustainedVowelTestView] View disappeared")
+            viewModel.onSustainedVowelTestViewDisappear()
         }
     }
 }

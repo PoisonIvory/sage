@@ -1,6 +1,7 @@
 import Foundation
 import SwiftUI
 import Mixpanel
+import AVFoundation
 
 /// ViewModel for the new GWT-compliant onboarding journey
 /// - Implements all behavior specified in OnboardingJourneyTests.swift
@@ -20,6 +21,7 @@ final class OnboardingJourneyViewModel: ObservableObject {
     @Published var successMessage: String?
     @Published var isRecording: Bool = false
     @Published var shouldShowNextButton: Bool = false
+    @Published var hasCompletedRecording: Bool = false
     
     // MARK: - Permission State
     @Published var microphonePermissionStatus: MicrophonePermissionStatus = .unknown
@@ -36,13 +38,14 @@ final class OnboardingJourneyViewModel: ObservableObject {
     private let authService: AuthServiceProtocol
     private let userProfileRepository: UserProfileRepositoryProtocol
     private let microphonePermissionManager: MicrophonePermissionManagerProtocol
-    private let audioRecorder: AudioRecorderProtocol
-    private let audioUploader: AudioUploaderProtocol
+    private let vocalAnalysisService: HybridVocalAnalysisService
     private weak var coordinator: OnboardingCoordinatorProtocol?
     private let dateProvider: DateProvider
     
     // MARK: - Private State
-    private var currentRecording: Recording?
+    private var currentVoiceRecording: VoiceRecording?
+    @Published var currentAnalysisResult: VocalAnalysisResult?
+    private var audioRecorder: AVAudioRecorder?
     
     // MARK: - Recording State
     @Published var recordingState: RecordingUIState = .idle()
@@ -53,8 +56,7 @@ final class OnboardingJourneyViewModel: ObservableObject {
         authService: AuthServiceProtocol,
         userProfileRepository: UserProfileRepositoryProtocol,
         microphonePermissionManager: MicrophonePermissionManagerProtocol,
-        audioRecorder: AudioRecorderProtocol,
-        audioUploader: AudioUploaderProtocol,
+        vocalAnalysisService: HybridVocalAnalysisService? = nil,
         coordinator: OnboardingCoordinatorProtocol?,
         dateProvider: DateProvider = SystemDateProvider()
     ) {
@@ -62,11 +64,10 @@ final class OnboardingJourneyViewModel: ObservableObject {
         self.authService = authService
         self.userProfileRepository = userProfileRepository
         self.microphonePermissionManager = microphonePermissionManager
-        self.audioRecorder = audioRecorder
-        self.audioUploader = audioUploader
+        self.vocalAnalysisService = vocalAnalysisService ?? HybridVocalAnalysisService()
         self.coordinator = coordinator
         self.dateProvider = dateProvider
-        Logger.info("[OnboardingJourneyViewModel] Initialized")
+        Logger.info("[OnboardingJourneyViewModel] Initialized with HybridVocalAnalysisService")
     }
     
     // MARK: - Signup Flow Methods
@@ -78,25 +79,29 @@ final class OnboardingJourneyViewModel: ObservableObject {
     }
     
     /// Handles user selection of anonymous signup
-    func selectAnonymous() {
+    nonisolated func selectAnonymous() {
         Logger.debug("[OnboardingJourneyViewModel] User selected anonymous signup")
-        clearFieldErrors() // Clear any previous errors
-        selectedSignupMethod = .anonymous
-        createMinimalUserProfile()
-        trackSignupMethodSelected(method: "anonymous")
-        trackOnboardingStarted()
-        currentStep = .explainer
+        Task { @MainActor in
+            clearFieldErrors() // Clear any previous errors
+            selectedSignupMethod = .anonymous
+            createMinimalUserProfile()
+            trackSignupMethodSelected(method: "anonymous")
+            trackOnboardingStarted()
+            currentStep = .explainer
+        }
     }
     
     /// Handles user selection of email signup
-    func selectEmail() {
+    nonisolated func selectEmail() {
         Logger.debug("[OnboardingJourneyViewModel] User selected email signup")
-        clearFieldErrors() // Clear any previous errors
-        selectedSignupMethod = .email
-        createMinimalUserProfile()
-        trackSignupMethodSelected(method: "email")
-        trackOnboardingStarted()
-        currentStep = .explainer
+        Task { @MainActor in
+            clearFieldErrors() // Clear any previous errors
+            selectedSignupMethod = .email
+            createMinimalUserProfile()
+            trackSignupMethodSelected(method: "email")
+            trackOnboardingStarted()
+            currentStep = .explainer
+        }
     }
     
     // MARK: - View 1: Explainer Methods
@@ -104,40 +109,51 @@ final class OnboardingJourneyViewModel: ObservableObject {
     /// Handles user tapping "Begin" button on explainer screen
     func selectBegin() {
         Logger.debug("[OnboardingJourneyViewModel] User tapped Begin button")
-        currentStep = .vocalTest
+        currentStep = .sustainedVowelTest
     }
     
     // MARK: - View 2: Vocal Test Methods
     
     /// Called when vocal test view appears
-    func onVocalTestViewAppear() {
+    func onSustainedVowelTestViewAppear() {
         Logger.debug("[OnboardingJourneyViewModel] Vocal test view appeared")
+        // Reset state for fresh start
+        shouldShowNextButton = false
         checkMicrophonePermission()
     }
     
     /// Called when vocal test view disappears
-    func onVocalTestViewDisappear() {
+    func onSustainedVowelTestViewDisappear() {
         Logger.debug("[OnboardingJourneyViewModel] Vocal test view disappeared")
         cancelRecordingIfNeeded()
     }
     
     /// Starts the vocal test recording
-    func startVocalTest() {
+    func startSustainedVowelTest() {
         Logger.debug("[OnboardingJourneyViewModel] Starting vocal test")
+        
+        // Prevent starting a new recording if one has already been completed
+        guard !hasCompletedRecording else {
+            Logger.debug("[OnboardingJourneyViewModel] Recording already completed, preventing new recording")
+            return
+        }
         
         // Check permission status first
         switch microphonePermissionStatus {
-        case .granted:
+        case .authorized, .granted:
             beginRecording()
         case .denied:
             Logger.error("[OnboardingJourneyViewModel] Microphone permission denied")
             errorMessage = "Microphone access is required. Enable it in Settings to continue."
-        case .unknown:
+        case .restricted:
+            Logger.error("[OnboardingJourneyViewModel] Microphone permission restricted")
+            errorMessage = "Microphone access is restricted on this device."
+        case .unknown, .notDetermined:
             // Request permission first
             microphonePermissionManager.checkPermission { [weak self] granted in
                 guard let self = self else { return }
                 if granted {
-                    self.microphonePermissionStatus = .granted
+                    self.microphonePermissionStatus = .authorized
                     self.beginRecording()
                 } else {
                     self.microphonePermissionStatus = .denied
@@ -149,42 +165,18 @@ final class OnboardingJourneyViewModel: ObservableObject {
     }
     
     /// Completes the vocal test recording
-    func completeVocalTest() {
-        Logger.debug("[OnboardingJourneyViewModel] Completing vocal test")
-        isRecording = false
-        recordingState = .idle()
-        
-        if let recording = currentRecording {
-            uploadRecording(recording)
-        } else {
-            Logger.error("[OnboardingJourneyViewModel] No recording found during completion")
-        }
+    func completeSustainedVowelTest() {
+        Logger.debug("[OnboardingJourneyViewModel] User requested to complete vocal test")
+        // Recording completion is handled automatically by the timer in beginRecording()
+        // This method is called when user taps "Stop Recording" but we'll let the timer finish
     }
     
-    /// Handles vocal test upload result
-    func handleVocalTestUploadResult(_ result: Result<Void, Error>) {
-        switch result {
-        case .success:
-            Logger.debug("[OnboardingJourneyViewModel] Upload completed successfully")
-            successMessage = "Success! Let's move on to testing your pitch variation."
-            shouldShowNextButton = true
-            trackVocalTestCompleted()
-            trackVocalTestUploaded(mode: .onboarding)
-        case .failure(let error):
-            Logger.error("[OnboardingJourneyViewModel] Upload failed: \(error.localizedDescription)")
-            if let uploadError = error as? UploadError {
-                errorMessage = uploadError.localizedDescription
-            } else {
-                errorMessage = "Upload failed. Please try again."
-            }
-        }
-    }
     
     /// Handles user tapping "Next" after vocal test
     func selectNext() {
         Logger.debug("[OnboardingJourneyViewModel] User tapped Next")
         switch currentStep {
-        case .vocalTest:
+        case .sustainedVowelTest:
             currentStep = .readingPrompt
         case .readingPrompt:
             currentStep = .finalStep
@@ -227,10 +219,11 @@ final class OnboardingJourneyViewModel: ObservableObject {
     func cancelRecordingIfNeeded() {
         if isRecording {
             Logger.debug("[OnboardingJourneyViewModel] Cancelling recording due to navigation")
-            audioRecorder.stop()
+            vocalAnalysisService.stopListening()
             isRecording = false
             recordingState = .idle()
-            currentRecording = nil
+            currentVoiceRecording = nil
+            currentAnalysisResult = nil
         }
     }
     
@@ -313,150 +306,243 @@ final class OnboardingJourneyViewModel: ObservableObject {
         Logger.debug("[OnboardingJourneyViewModel] Checking microphone permission")
         microphonePermissionManager.checkPermission { [weak self] granted in
             guard let self = self else { return }
-            self.microphonePermissionStatus = granted ? .granted : .denied
+            self.microphonePermissionStatus = granted ? .authorized : .denied
             Logger.debug("[OnboardingJourneyViewModel] Microphone permission status: \(self.microphonePermissionStatus)")
         }
     }
     
     private func beginRecording() {
-        Logger.debug("[OnboardingJourneyViewModel] Beginning recording")
+        Logger.debug("[OnboardingJourneyViewModel] Beginning real audio recording")
         isRecording = true
         recordingState = .recording()
         
-        // Use the AudioRecorderProtocol for controlled recording
-        audioRecorder.start(duration: testRecordingDuration) { [weak self] recording in
-            guard let self = self else { return }
-            Logger.debug("[OnboardingJourneyViewModel] Recording completed: \(recording.id)")
-            self.currentRecording = recording
-            self.completeVocalTest()
+        Task {
+            do {
+                // Setup audio session for recording
+                let audioSession = AVAudioSession.sharedInstance()
+                try audioSession.setCategory(.record, mode: .default)
+                try audioSession.setActive(true)
+                
+                // Create recording URL
+                let tempURL = URL(fileURLWithPath: NSTemporaryDirectory())
+                    .appendingPathComponent("onboarding_recording_\(UUID().uuidString).wav")
+                
+                // Configure audio recorder settings
+                let settings: [String: Any] = [
+                    AVFormatIDKey: kAudioFormatLinearPCM,
+                    AVSampleRateKey: 44100.0,
+                    AVNumberOfChannelsKey: 1,
+                    AVLinearPCMBitDepthKey: 16,
+                    AVLinearPCMIsFloatKey: false,
+                    AVLinearPCMIsBigEndianKey: false
+                ]
+                
+                // Create and start audio recorder
+                audioRecorder = try AVAudioRecorder(url: tempURL, settings: settings)
+                audioRecorder?.record()
+                
+                guard let userId = authService.currentUserId else {
+                    throw VocalAnalysisError.userNotAuthenticated
+                }
+                
+                // Create voice recording object
+                let voiceRecording = VoiceRecording(
+                    audioURL: tempURL,
+                    duration: testRecordingDuration,
+                    userId: userId
+                )
+                
+                currentVoiceRecording = voiceRecording
+                
+                Logger.debug("[OnboardingJourneyViewModel] Started real audio recording to: \(tempURL.path)")
+                
+                // Stop recording after specified duration
+                DispatchQueue.main.asyncAfter(deadline: .now() + testRecordingDuration) {
+                    Task { @MainActor in
+                        await self.stopRecordingAndAnalyze()
+                    }
+                }
+                
+            } catch {
+                await MainActor.run {
+                    Logger.error("[OnboardingJourneyViewModel] Failed to start recording: \(error.localizedDescription)")
+                    errorMessage = "Failed to start recording: \(error.localizedDescription)"
+                    isRecording = false
+                    recordingState = .idle()
+                }
+            }
         }
     }
     
-    private func uploadRecording(_ recording: Recording) {
-        Logger.debug("[OnboardingJourneyViewModel] Uploading recording: \(recording.id)")
-        audioUploader.uploadRecording(recording, mode: .onboarding) { [weak self] result in
-            self?.handleVocalTestUploadResult(result)
+    @MainActor
+    private func stopRecordingAndAnalyze() async {
+        Logger.debug("[OnboardingJourneyViewModel] Stopping recording and starting analysis")
+        
+        // Stop the audio recorder
+        audioRecorder?.stop()
+        
+        // Reset audio session
+        do {
+            try AVAudioSession.sharedInstance().setActive(false)
+        } catch {
+            Logger.error("[OnboardingJourneyViewModel] Failed to deactivate audio session: \(error.localizedDescription)")
         }
+        
+        guard let voiceRecording = currentVoiceRecording else {
+            Logger.error("[OnboardingJourneyViewModel] No voice recording found")
+            errorMessage = "Recording not found. Please try again."
+            return
+        }
+        
+        // Verify the audio file was created
+        let fileManager = FileManager.default
+        if !fileManager.fileExists(atPath: voiceRecording.audioURL.path) {
+            Logger.error("[OnboardingJourneyViewModel] Audio file was not created")
+            errorMessage = "Recording failed. Please try again."
+            isRecording = false
+            recordingState = .idle()
+            return
+        }
+        
+        Logger.debug("[OnboardingJourneyViewModel] Audio file created successfully, starting analysis")
+        
+        do {
+            // Perform hybrid analysis (local immediate + cloud comprehensive)  
+            let result = try await vocalAnalysisService.analyzeVoice(recording: voiceRecording)
+            
+            currentAnalysisResult = result
+            handleVocalAnalysisSuccess(result)
+            
+        } catch {
+            Logger.error("[OnboardingJourneyViewModel] Vocal analysis failed: \(error.localizedDescription)")
+            errorMessage = "Voice analysis failed: \(error.localizedDescription)"
+            isRecording = false
+            recordingState = .idle()
+        }
+    }
+    
+    
+    private func handleVocalAnalysisSuccess(_ result: VocalAnalysisResult) {
+        Logger.debug("[OnboardingJourneyViewModel] Voice analysis completed successfully")
+        
+        // Update UI with immediate local results
+        let f0Mean = result.localMetrics.f0Mean
+        let confidence = result.localMetrics.confidence
+        
+        successMessage = "Recording complete! F0: \(String(format: "%.1f", f0Mean))Hz (\(Int(confidence))% confidence)"
+        shouldShowNextButton = true
+        hasCompletedRecording = true
+        isRecording = false
+        recordingState = .idle()
+        
+        // Track analytics
+        trackSustainedVowelTestCompleted()
+        trackVocalAnalysisCompleted(result: result)
     }
     
     // MARK: - Analytics Methods
     
-    private func trackSignupMethodSelected(method: String) {
+    /// Centralized analytics tracking with user ID validation
+    /// - Parameter eventName: Name of the analytics event
+    /// - Parameter properties: Event properties to track
+    private func trackAnalyticsEvent(_ eventName: String, properties: [String: Any]) {
         guard let userId = userProfile?.id else {
-            Logger.error("[OnboardingJourneyViewModel] Missing user ID during signup method analytics")
+            Logger.error("[OnboardingJourneyViewModel] Missing user ID during \(eventName) analytics")
             return
         }
         
-        analyticsService.track(
-            "onboarding_signup_method_selected",
-            properties: [
-                "method": method,
-                "userID": userId
-            ],
-            origin: "OnboardingJourneyViewModel"
-        )
+        var eventProperties = properties
+        eventProperties["userID"] = userId
+        
+        // Convert to MixpanelType for analytics service
+        let mixpanelProperties = eventProperties.mapValues { value in
+            return value as? MixpanelType ?? String(describing: value)
+        }
+        
+        analyticsService.track(eventName, properties: mixpanelProperties, origin: "OnboardingJourneyViewModel")
+    }
+    
+    private func trackSignupMethodSelected(method: String) {
+        trackAnalyticsEvent("onboarding_signup_method_selected", properties: ["method": method])
     }
     
     private func trackOnboardingStarted() {
-        guard let userId = userProfile?.id else {
-            Logger.error("[OnboardingJourneyViewModel] Missing user ID during onboarding started analytics")
-            return
-        }
-        
-        analyticsService.track(
-            "onboarding_started",
-            properties: [
-                "userID": userId,
-                "signup_method": selectedSignupMethod?.rawValue ?? "unknown"
-            ],
-            origin: "OnboardingJourneyViewModel"
-        )
+        trackAnalyticsEvent("onboarding_started", properties: [
+            "signup_method": selectedSignupMethod?.rawValue ?? "unknown"
+        ])
     }
     
-    private func trackVocalTestCompleted() {
-        guard let userId = userProfile?.id else {
-            Logger.error("[OnboardingJourneyViewModel] Missing user ID during vocal test completed analytics")
-            return
-        }
-        
-        analyticsService.track(
-            "onboarding_vocal_test_completed",
-            properties: [
-                "duration": testRecordingDuration,
-                "userID": userId,
-                "mode": UploadMode.onboarding.rawValue
-            ],
-            origin: "OnboardingJourneyViewModel"
-        )
+    private func trackSustainedVowelTestCompleted() {
+        trackAnalyticsEvent("onboarding_vocal_test_completed", properties: [
+            "duration": testRecordingDuration,
+            "mode": UploadMode.onboarding.rawValue
+        ])
     }
     
-    private func trackVocalTestUploaded(mode: UploadMode) {
-        // Guard against nil userProfile to prevent crashes
-        guard let userId = userProfile?.id else {
-            Logger.error("[OnboardingJourneyViewModel] Missing user ID during upload analytics")
-            return
-        }
-        
-        analyticsService.track(
-            "onboarding_vocal_test_result_uploaded",
-            properties: [
-                "duration": testRecordingDuration,
-                "userID": userId,
-                "success": true,
-                "mode": mode.rawValue
-            ],
-            origin: "OnboardingJourneyViewModel"
-        )
+    private func trackVocalAnalysisCompleted(result: VocalAnalysisResult) {
+        trackAnalyticsEvent("onboarding_vocal_analysis_completed", properties: [
+            "duration": testRecordingDuration,
+            "f0_mean": result.localMetrics.f0Mean,
+            "confidence": result.localMetrics.confidence,
+            "status": result.status.rawValue
+        ])
     }
     
     private func trackProfileFinalized(profile: UserProfile) {
-        analyticsService.track(
-            "onboarding_profile_finalized",
-            properties: [
-                "age": profile.age,
-                "gender": profile.gender,
-                "userID": profile.id
-            ],
-            origin: "OnboardingJourneyViewModel"
-        )
+        trackAnalyticsEvent("onboarding_profile_finalized", properties: [
+            "age": profile.age,
+            "gender": profile.gender
+        ])
     }
     
     // MARK: - Computed Properties for UI Content
     
+    /// Centralized UI strings for onboarding flow
+    private struct OnboardingStrings {
+        static let explainerHeadline = "Let's run some quick tests"
+        static let explainerSubtext = "This helps us understand the unique physiology of your vocal tract."
+        static let sustainedVowelTestInstruction = "This test measures the rate and stability of vocal cord vibrations, both of which are affected by changes in hormones."
+        static let readingPromptHeading = "Reading Prompt"
+        static let finalStepMessage = "Almost there! You're one step away from completing setup."
+        static let beginButtonTitle = "Begin"
+        static let nextButtonTitle = "Next"
+        static let finishButtonTitle = "Finish"
+    }
+    
     var explainerHeadline: String {
-        return "Let's run some quick tests"
+        return OnboardingStrings.explainerHeadline
     }
     
     var explainerSubtext: String {
-        return "This helps us understand the unique physiology of your vocal tract."
+        return OnboardingStrings.explainerSubtext
     }
     
-    var vocalTestInstruction: String {
-        return "This test measures the rate and stability of vocal cord vibrations, both of which are affected by changes in hormones."
+    var sustainedVowelTestInstruction: String {
+        return OnboardingStrings.sustainedVowelTestInstruction
     }
     
-    var vocalTestPrompt: String {
+    var sustainedVowelTestPrompt: String {
         return "Please say 'ahh' for \(Int(testRecordingDuration)) seconds."
     }
     
     var readingPromptHeading: String {
-        return "Reading Prompt"
+        return OnboardingStrings.readingPromptHeading
     }
     
     var finalStepMessage: String {
-        return "Almost there! You're one step away from completing setup."
+        return OnboardingStrings.finalStepMessage
     }
     
     var beginButtonTitle: String {
-        return "Begin"
+        return OnboardingStrings.beginButtonTitle
     }
     
     var nextButtonTitle: String {
-        return "Next"
+        return OnboardingStrings.nextButtonTitle
     }
     
     var finishButtonTitle: String {
-        return "Finish"
+        return OnboardingStrings.finishButtonTitle
     }
 }
 
@@ -474,27 +560,4 @@ extension UploadMode {
     }
 }
 
-// MARK: - Logger for Production-Ready Logging
-
-/// Simple logger that respects build configuration
-/// - Debug builds: Full logging
-/// - Release builds: No logging to reduce noise
-struct Logger {
-    static func debug(_ message: String) {
-        #if DEBUG
-        print(message)
-        #endif
-    }
-    
-    static func error(_ message: String) {
-        #if DEBUG
-        print("❌ \(message)")
-        #endif
-    }
-    
-    static func info(_ message: String) {
-        #if DEBUG
-        print("ℹ️ \(message)")
-        #endif
-    }
-} 
+ 

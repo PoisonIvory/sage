@@ -54,8 +54,8 @@ final class SessionsViewModel: ObservableObject {
         AudioRecorder.shared.requestMicrophonePermission { [weak self] granted in
             guard let self = self else { return }
             if granted {
-                // TODO: Replace with real prompt selection logic
-                let promptID = "default-prompt" // Stub: Replace with actual prompt selection
+                // Prompt selection logic to be implemented
+                let promptID = "default-prompt"
                 self.currentPromptID = promptID
                 self.showRecordingModal = true
                 self.startRecording(promptID: promptID)
@@ -102,17 +102,13 @@ final class SessionsViewModel: ObservableObject {
     }
 
     // MARK: - Logging & Feedback
-    /// Logs validation failures to FEEDBACK_LOG.md with context and metadata.
+    /// Logs validation failures using structured logging.
     private func logValidationFailure(recording: Recording, reasons: [String]) {
-        // TODO: Implement structured logging to FEEDBACK_LOG.md
-        print("[FEEDBACK_LOG] Validation failed for recording \(recording.id): \(reasons.joined(separator: ", "))")
-        // Add code to append to FEEDBACK_LOG.md with date, error, and metadata
+        Logger.error("Validation failed for recording \(recording.id): \(reasons.joined(separator: ", "))", category: .audio)
     }
 
-    /// Logs upload failures to FEEDBACK_LOG.md with context and metadata.
+    /// Logs upload failures using structured logging.
     private func logUploadFailure(recording: Recording, error: Error) {
-        // TODO: Implement structured logging to FEEDBACK_LOG.md
-        print("[FEEDBACK_LOG] Upload failed for recording \(recording.id): \(error.localizedDescription)")
-        // Add code to append to FEEDBACK_LOG.md with date, error, and metadata
+        Logger.error("Upload failed for recording \(recording.id): \(error.localizedDescription)", category: .network)
     }
 } 

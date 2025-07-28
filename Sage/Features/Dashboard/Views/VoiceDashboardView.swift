@@ -1,32 +1,12 @@
 // VoiceDashboardView.swift
-// Sage Voice Biomarker Dashboard (Skeleton)
+// Sage Voice Biomarker Dashboard - Real Data Integration
 //
-// Implements dashboard structure per UI_STANDARDS.md, DATA_DICTIONARY.md, DATA_STANDARDS.md, and AI_GENERATION_RULES.md.
-// All data is placeholder/mock for initial UI development.
-//
-// See also: TEST_PLAN.md for test requirements, CONTRIBUTING.md for code style, and GLOSSARY.md for terminology.
+// GWT: Given user views dashboard after voice recording
+// GWT: When VoiceDashboardView displays results using real vocal analysis
+// GWT: Then UI shows actual biomarkers following UI_STANDARDS.md (no mock data)
 
 import SwiftUI
-
-// MARK: - Mock Data (see DATA_DICTIONARY.md for ranges/units)
-struct DashboardMockData {
-    let stabilityScore: Double = 7.0 // out of 10
-    let stabilityPercentile: Double = 0.68 // 68th percentile
-    let stabilityInsight = "Your voice carried a gentle steadiness today, like a calm morning breeze."
-    let pitch: Double = 210.0 // Hz
-    let expressiveness: Double = 0.62 // 0-1
-    let prosodyInsight = "Your tone was soft and expressive, hinting at openness."
-    let speechRate: Double = 142 // WPM
-    let pauseCount: Int = 8
-    let fluencyPercentile: Double = 0.41
-    let fluencyInsight = "Your words flowed at a slower, thoughtful pace."
-    let sentiment: Double = -0.18 // -1 to 1
-    let sentimentPercentile: Double = 0.32
-    let sentimentInsight = "A gentle melancholy colored your reflections."
-    let lexicalDiversity: Double = 0.52 // 0-1
-    let lexicalPercentile: Double = 0.57
-    let lexicalInsight = "Your vocabulary was quietly varied, like a walk through a familiar forest."
-}
+import Combine
 
 // MARK: - Percentile Bar (New UI Pattern, see FEEDBACK_LOG.md)
 struct SagePercentileBar: View {
@@ -82,144 +62,443 @@ struct SageStylizedCard<Content: View>: View {
     }
 }
 
-// MARK: - Dashboard View
+// MARK: - Dashboard View with Real Data Integration
+/// GWT: Given user views dashboard after voice recording
+/// GWT: When VoiceDashboardView displays results using HybridVocalAnalysisService  
+/// GWT: Then shows real vocal biomarkers (F0, jitter, shimmer, HNR) with no mock data
 struct VoiceDashboardView: View {
-    let data = DashboardMockData()
+    @StateObject private var analysisService = HybridVocalAnalysisService()
+    @State private var currentBiomarkers: VocalBiomarkers?
+    @State private var cancellables = Set<AnyCancellable>()
+    
     var body: some View {
-        print("VoiceDashboardView: body rendered (stylized)")
-        return ScrollView {
+        ScrollView {
             VStack(spacing: SageSpacing.xLarge) {
-                // Acoustic Features Group
-                VStack(spacing: SageSpacing.medium) {
-                    Text("Your Voice Today")
-                        .font(SageTypography.title)
-                        .foregroundColor(SageColors.espressoBrown)
-                        .padding(.bottom, SageSpacing.small)
-                    SageStylizedCard(background: SageColors.sandstone) {
-                        HStack(alignment: .center, spacing: SageSpacing.large) {
-                            VStack(alignment: .leading, spacing: SageSpacing.small) {
-                                Text("Voice Stability")
-                                    .font(SageTypography.headline)
-                                    .foregroundColor(SageColors.sageTeal)
-                                HStack(alignment: .lastTextBaseline, spacing: 4) {
-                                    Text(String(format: "%.1f", data.stabilityScore))
-                                        .font(SageTypography.title)
-                                        .foregroundColor(SageColors.espressoBrown)
-                                    Text("/10")
-                                        .font(SageTypography.body)
-                                        .foregroundColor(SageColors.earthClay)
-                                }
-                                SagePercentileBar(value: data.stabilityScore/10, accent: SageColors.sageTeal, background: SageColors.fogWhite, label: "Stability", percentile: data.stabilityPercentile)
-                                Text(data.stabilityInsight)
-                                    .font(SageTypography.body)
-                                    .foregroundColor(SageColors.cinnamonBark)
-                                    .italic()
-                            }
-                            Spacer()
-                        }
-                    }
-                    SageStylizedCard(background: SageColors.fogWhite) {
-                        VStack(alignment: .leading, spacing: SageSpacing.small) {
-                            Text("Prosody & Expression")
-                                .font(SageTypography.headline)
-                                .foregroundColor(SageColors.coralBlush)
-                            HStack(spacing: SageSpacing.medium) {
-                                VStack(alignment: .leading) {
-                                    Text("Pitch")
-                                        .font(SageTypography.caption)
-                                        .foregroundColor(SageColors.espressoBrown)
-                                    Text(String(format: "%.0f Hz", data.pitch))
-                                        .font(SageTypography.body)
-                                        .foregroundColor(SageColors.espressoBrown)
-                                }
-                                VStack(alignment: .leading) {
-                                    Text("Expressiveness")
-                                        .font(SageTypography.caption)
-                                        .foregroundColor(SageColors.espressoBrown)
-                                    SagePercentileBar(value: data.expressiveness, accent: SageColors.coralBlush, background: SageColors.sandstone, label: "Expressiveness", percentile: 0.64)
-                                }
-                            }
-                            Text(data.prosodyInsight)
-                                .font(SageTypography.body)
-                                .foregroundColor(SageColors.coralBlush)
-                                .italic()
-                        }
-                    }
+                dashboardHeader
+                
+                if analysisService.currentState.isAnalyzing {
+                    analysisInProgressSection
+                } else if let biomarkers = currentBiomarkers {
+                    realDataAnalysisCards(biomarkers: biomarkers)
+                } else {
+                    noDataAvailableSection
                 }
-                // Speech & Content Features Group
+            }
+            .padding([.horizontal, .top], SageSpacing.xLarge)
+            .padding(.bottom, 60)
+        }
+        .background(sageBackground)
+        .navigationTitle("Voice Dashboard")
+        .onAppear {
+            setupRealTimeSubscription()
+        }
+        .onDisappear {
+            analysisService.stopListening()
+        }
+    }
+    
+    // MARK: - UI Components
+    
+    private var sageBackground: some View {
+        LinearGradient(
+            gradient: Gradient(colors: [SageColors.fogWhite, SageColors.sandstone.opacity(0.5)]),
+            startPoint: .top,
+            endPoint: .bottom
+        )
+        .ignoresSafeArea()
+    }
+    
+    private var dashboardHeader: some View {
+        VStack(spacing: SageSpacing.small) {
+            Text("Your Voice Today")
+                .font(SageTypography.title)
+                .foregroundColor(SageColors.espressoBrown)
+            
+            Text(analysisService.currentState.description)
+                .font(SageTypography.body)
+                .foregroundColor(SageColors.earthClay)
+                .multilineTextAlignment(.center)
+        }
+        .padding(.bottom, SageSpacing.medium)
+    }
+    
+    /// GWT: Given analysis is in progress (local or cloud)
+    /// GWT: When displaying progress state
+    /// GWT: Then shows real analysis progress with no mock data
+    private var analysisInProgressSection: some View {
+        VStack(spacing: SageSpacing.medium) {
+            SageStylizedCard(background: SageColors.sandstone) {
                 VStack(spacing: SageSpacing.medium) {
-                    SageStylizedCard(background: SageColors.sandstone) {
-                        VStack(alignment: .leading, spacing: SageSpacing.small) {
-                            Text("Speech Rate & Fluency")
-                                .font(SageTypography.headline)
-                                .foregroundColor(SageColors.sageTeal)
+                    SageProgressView()
+                        .scaleEffect(0.8)
+                    
+                    Text("Real-Time Voice Analysis")
+                        .font(SageTypography.headline)
+                        .foregroundColor(SageColors.sageTeal)
+                    
+                    if case .localComplete(let metrics) = analysisService.currentState {
+                        VStack(spacing: SageSpacing.small) {
+                            Text("Local Analysis Complete")
+                                .font(SageTypography.body)
+                                .foregroundColor(SageColors.espressoBrown)
+                            
                             HStack(spacing: SageSpacing.medium) {
-                                VStack(alignment: .leading) {
-                                    Text("WPM")
+                                VStack {
+                                    Text("F0 Mean")
                                         .font(SageTypography.caption)
-                                        .foregroundColor(SageColors.espressoBrown)
-                                    Text(String(format: "%.0f", data.speechRate))
+                                        .foregroundColor(SageColors.earthClay)
+                                    Text("\(String(format: "%.1f", metrics.f0Mean)) Hz")
                                         .font(SageTypography.body)
                                         .foregroundColor(SageColors.espressoBrown)
                                 }
-                                VStack(alignment: .leading) {
-                                    Text("Pauses")
+                                
+                                VStack {
+                                    Text("Confidence")
                                         .font(SageTypography.caption)
-                                        .foregroundColor(SageColors.espressoBrown)
-                                    Text("\(data.pauseCount)")
+                                        .foregroundColor(SageColors.earthClay)
+                                    Text("\(Int(metrics.confidence))%")
                                         .font(SageTypography.body)
                                         .foregroundColor(SageColors.espressoBrown)
                                 }
-                                VStack(alignment: .leading) {
-                                    SagePercentileBar(value: data.speechRate/200, accent: SageColors.sageTeal, background: SageColors.fogWhite, label: "Fluency", percentile: data.fluencyPercentile)
-                                }
                             }
-                            Text(data.fluencyInsight)
-                                .font(SageTypography.body)
-                                .foregroundColor(SageColors.sageTeal)
-                                .italic()
-                        }
-                    }
-                    SageStylizedCard(background: SageColors.fogWhite) {
-                        VStack(alignment: .leading, spacing: SageSpacing.small) {
-                            Text("Verbal Content Analysis")
-                                .font(SageTypography.headline)
-                                .foregroundColor(SageColors.cinnamonBark)
-                            HStack(spacing: SageSpacing.medium) {
-                                VStack(alignment: .leading) {
-                                    Text("Sentiment")
-                                        .font(SageTypography.caption)
-                                        .foregroundColor(SageColors.espressoBrown)
-                                    SagePercentileBar(value: (data.sentiment+1)/2, accent: SageColors.coralBlush, background: SageColors.sandstone, label: "Sentiment", percentile: data.sentimentPercentile)
-                                }
-                                VStack(alignment: .leading) {
-                                    Text("Lexical Diversity")
-                                        .font(SageTypography.caption)
-                                        .foregroundColor(SageColors.espressoBrown)
-                                    SagePercentileBar(value: data.lexicalDiversity, accent: SageColors.cinnamonBark, background: SageColors.fogWhite, label: "Diversity", percentile: data.lexicalPercentile)
-                                }
-                            }
-                            Text(data.sentimentInsight)
-                                .font(SageTypography.body)
-                                .foregroundColor(SageColors.coralBlush)
-                                .italic()
-                            Text(data.lexicalInsight)
-                                .font(SageTypography.body)
-                                .foregroundColor(SageColors.cinnamonBark)
+                            
+                            Text("Comprehensive analysis in progress...")
+                                .font(SageTypography.caption)
+                                .foregroundColor(SageColors.earthClay)
                                 .italic()
                         }
                     }
                 }
             }
-            .padding([.horizontal, .top], SageSpacing.xLarge)
-            .padding(.bottom, 60)
-            .background(
-                LinearGradient(gradient: Gradient(colors: [SageColors.fogWhite, SageColors.sandstone.opacity(0.5)]), startPoint: .top, endPoint: .bottom)
-                    .ignoresSafeArea()
-            )
         }
-        .navigationTitle("Dashboard")
-        .background(SageColors.fogWhite.ignoresSafeArea())
+    }
+    
+    /// GWT: Given no recent voice analysis available
+    /// GWT: When displaying empty state
+    /// GWT: Then shows guidance with no mock data
+    private var noDataAvailableSection: some View {
+        SageStylizedCard(background: SageColors.fogWhite) {
+            VStack(spacing: SageSpacing.medium) {
+                Image(systemName: "waveform.circle")
+                    .font(.system(size: 48))
+                    .foregroundColor(SageColors.sageTeal)
+                
+                Text("No Recent Analysis")
+                    .font(SageTypography.headline)
+                    .foregroundColor(SageColors.espressoBrown)
+                
+                Text("Record your voice to see real-time vocal biomarker analysis including F0, jitter, shimmer, and HNR measurements.")
+                    .font(SageTypography.body)
+                    .foregroundColor(SageColors.earthClay)
+                    .multilineTextAlignment(.center)
+            }
+        }
+    }
+    
+    /// GWT: Given comprehensive VocalBiomarkers from cloud analysis
+    /// GWT: When displaying real vocal analysis results
+    /// GWT: Then shows actual research-grade features with clinical interpretation
+    private func realDataAnalysisCards(biomarkers: VocalBiomarkers) -> some View {
+        VStack(spacing: SageSpacing.medium) {
+            // Real Vocal Stability Card
+            realVocalStabilityCard(stability: biomarkers.stability, f0: biomarkers.f0)
+            
+            // Real Voice Quality Card (Jitter, Shimmer, HNR)
+            realVoiceQualityCard(voiceQuality: biomarkers.voiceQuality)
+            
+            // Clinical Assessment Card (Real recommendations)
+            realClinicalAssessmentCard(assessment: biomarkers.clinicalSummary, metadata: biomarkers.metadata)
+        }
+    }
+    
+    /// Real vocal stability card with actual stability score and F0 data
+    private func realVocalStabilityCard(stability: VocalStabilityScore, f0: F0Analysis) -> some View {
+        SageStylizedCard(background: SageColors.sandstone) {
+            VStack(alignment: .leading, spacing: SageSpacing.medium) {
+                Text("Voice Stability (Real Data)")
+                    .font(SageTypography.headline)
+                    .foregroundColor(SageColors.sageTeal)
+                
+                HStack(alignment: .lastTextBaseline, spacing: 4) {
+                    Text(String(format: "%.1f", stability.score))
+                        .font(SageTypography.title)
+                        .foregroundColor(SageColors.espressoBrown)
+                    Text("/100")
+                        .font(SageTypography.body)
+                        .foregroundColor(SageColors.earthClay)
+                }
+                
+                SagePercentileBar(
+                    value: stability.score / 100,
+                    accent: SageColors.sageTeal,
+                    background: SageColors.fogWhite,
+                    label: "Stability Score",
+                    percentile: stability.score / 100
+                )
+                
+                // Real F0 Analysis
+                VStack(alignment: .leading, spacing: SageSpacing.small) {
+                    Text("Fundamental Frequency Analysis")
+                        .font(SageTypography.caption)
+                        .foregroundColor(SageColors.espressoBrown)
+                    
+                    HStack(spacing: SageSpacing.medium) {
+                        VStack(alignment: .leading) {
+                            Text("Mean F0")
+                                .font(SageTypography.caption)
+                                .foregroundColor(SageColors.earthClay)
+                            Text("\(String(format: "%.1f", f0.mean)) Hz")
+                                .font(SageTypography.body)
+                                .foregroundColor(SageColors.espressoBrown)
+                        }
+                        
+                        VStack(alignment: .leading) {
+                            Text("Variability")
+                                .font(SageTypography.caption)
+                                .foregroundColor(SageColors.earthClay)
+                            Text("\(String(format: "%.1f", f0.std)) Hz")
+                                .font(SageTypography.body)
+                                .foregroundColor(SageColors.espressoBrown)
+                        }
+                        
+                        VStack(alignment: .leading) {
+                            Text("Confidence")
+                                .font(SageTypography.caption)
+                                .foregroundColor(SageColors.earthClay)
+                            Text("\(Int(f0.confidence))%")
+                                .font(SageTypography.body)
+                                .foregroundColor(SageColors.espressoBrown)
+                        }
+                    }
+                }
+                
+                Text(realStabilityInsight(for: stability.interpretation, f0Stability: f0.stabilityAssessment))
+                    .font(SageTypography.body)
+                    .foregroundColor(SageColors.cinnamonBark)
+                    .italic()
+            }
+        }
+    }
+    
+    /// Real voice quality card with actual jitter, shimmer, and HNR data
+    private func realVoiceQualityCard(voiceQuality: VoiceQualityAnalysis) -> some View {
+        SageStylizedCard(background: SageColors.fogWhite) {
+            VStack(alignment: .leading, spacing: SageSpacing.medium) {
+                Text("Voice Quality Analysis (Research-Grade)")
+                    .font(SageTypography.headline)
+                    .foregroundColor(SageColors.coralBlush)
+                
+                // Real Jitter Measurements
+                realVoiceQualitySection(
+                    title: "Jitter (Frequency Perturbation)",
+                    measurements: [
+                        ("Local", "\(String(format: "%.3f", voiceQuality.jitter.local))%"),
+                        ("RAP", "\(String(format: "%.3f", voiceQuality.jitter.rap))%"),
+                        ("PPQ5", "\(String(format: "%.3f", voiceQuality.jitter.ppq5))%")
+                    ],
+                    assessment: voiceQuality.jitter.clinicalAssessment,
+                    color: SageColors.sageTeal
+                )
+                
+                SageDivider()
+                
+                // Real Shimmer Measurements
+                realVoiceQualitySection(
+                    title: "Shimmer (Amplitude Perturbation)",
+                    measurements: [
+                        ("Local", "\(String(format: "%.3f", voiceQuality.shimmer.local))%"),
+                        ("APQ3", "\(String(format: "%.3f", voiceQuality.shimmer.apq3))%"),
+                        ("APQ5", "\(String(format: "%.3f", voiceQuality.shimmer.apq5))%")
+                    ],
+                    assessment: voiceQuality.shimmer.clinicalAssessment,
+                    color: SageColors.coralBlush
+                )
+                
+                SageDivider()
+                
+                // Real HNR Analysis
+                realVoiceQualitySection(
+                    title: "Harmonics-to-Noise Ratio",
+                    measurements: [
+                        ("Mean", "\(String(format: "%.1f", voiceQuality.hnr.mean)) dB"),
+                        ("Std Dev", "\(String(format: "%.1f", voiceQuality.hnr.std)) dB")
+                    ],
+                    assessment: voiceQuality.hnr.clinicalAssessment,
+                    color: SageColors.cinnamonBark
+                )
+                
+                Text("Clinical thresholds: Jitter <1.04% excellent, Shimmer <3.81% excellent, HNR >20dB excellent")
+                    .font(SageTypography.caption)
+                    .foregroundColor(SageColors.earthClay)
+                    .italic()
+            }
+        }
+    }
+    
+    /// Helper for real voice quality sections
+    private func realVoiceQualitySection(
+        title: String,
+        measurements: [(String, String)],
+        assessment: VoiceQualityLevel,
+        color: Color
+    ) -> some View {
+        VStack(alignment: .leading, spacing: SageSpacing.small) {
+            HStack {
+                Text(title)
+                    .font(SageTypography.caption)
+                    .foregroundColor(color)
+                
+                Spacer()
+                
+                // Real clinical assessment badge
+                Text(assessment.rawValue.capitalized)
+                    .font(SageTypography.caption)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(colorForAssessment(assessment).opacity(0.2))
+                    .foregroundColor(colorForAssessment(assessment))
+                    .cornerRadius(6)
+            }
+            
+            HStack(spacing: SageSpacing.medium) {
+                ForEach(measurements, id: \.0) { measurement in
+                    VStack(alignment: .leading) {
+                        Text(measurement.0)
+                            .font(SageTypography.caption)
+                            .foregroundColor(SageColors.earthClay)
+                        Text(measurement.1)
+                            .font(SageTypography.body)
+                            .foregroundColor(SageColors.espressoBrown)
+                    }
+                }
+                Spacer()
+            }
+        }
+    }
+    
+    /// Real clinical assessment card with actual recommendations
+    private func realClinicalAssessmentCard(assessment: ClinicalVoiceAssessment, metadata: VoiceAnalysisMetadata) -> some View {
+        SageStylizedCard(background: backgroundColorForRecommendation(assessment.recommendedAction)) {
+            VStack(alignment: .leading, spacing: SageSpacing.medium) {
+                Text("Clinical Assessment (Real Data)")
+                    .font(SageTypography.headline)
+                    .foregroundColor(SageColors.espressoBrown)
+                
+                HStack {
+                    VStack(alignment: .leading, spacing: SageSpacing.small) {
+                        Text("Overall Quality")
+                            .font(SageTypography.caption)
+                            .foregroundColor(SageColors.earthClay)
+                        
+                        Text(assessment.overallQuality.rawValue.capitalized)
+                            .font(SageTypography.body)
+                            .foregroundColor(colorForAssessment(assessment.overallQuality))
+                    }
+                    
+                    Spacer()
+                    
+                    VStack(alignment: .trailing, spacing: SageSpacing.small) {
+                        Text("Analysis Source")
+                            .font(SageTypography.caption)
+                            .foregroundColor(SageColors.earthClay)
+                        
+                        Text(metadata.analysisSource.rawValue.replacingOccurrences(of: "_", with: " ").capitalized)
+                            .font(SageTypography.body)
+                            .foregroundColor(SageColors.espressoBrown)
+                    }
+                }
+                
+                Text(realRecommendationText(for: assessment.recommendedAction, overallQuality: assessment.overallQuality))
+                    .font(SageTypography.body)
+                    .foregroundColor(SageColors.espressoBrown)
+                    .padding(.top, SageSpacing.small)
+                
+                // Real metadata display
+                HStack {
+                    Text("Voiced Ratio: \(String(format: "%.1f", metadata.voicedRatio * 100))%")
+                        .font(SageTypography.caption)
+                        .foregroundColor(SageColors.earthClay)
+                    
+                    Spacer()
+                    
+                    Text("Duration: \(String(format: "%.1f", metadata.recordingDuration))s")
+                        .font(SageTypography.caption)
+                        .foregroundColor(SageColors.earthClay)
+                }
+            }
+        }
+    }
+    
+    // MARK: - Helper Methods
+    
+    private func setupRealTimeSubscription() {
+        let resultsStream = analysisService.subscribeToResults()
+        
+        Task {
+            for await biomarkers in resultsStream {
+                await MainActor.run {
+                    currentBiomarkers = biomarkers
+                }
+            }
+        }
+    }
+    
+    private func colorForAssessment(_ assessment: VoiceQualityLevel) -> Color {
+        switch assessment {
+        case .excellent, .good:
+            return SageColors.sageTeal
+        case .moderate:
+            return SageColors.coralBlush
+        case .poor, .pathological:
+            return SageColors.cinnamonBark
+        }
+    }
+    
+    private func backgroundColorForRecommendation(_ recommendation: ClinicalRecommendation) -> Color {
+        switch recommendation {
+        case .continueTracking, .trackTrends:
+            return SageColors.fogWhite
+        case .monitorClosely:
+            return SageColors.sandstone
+        case .consultSpecialist:
+            return SageColors.coralBlush.opacity(0.1)
+        }
+    }
+    
+    private func realStabilityInsight(for interpretation: StabilityInterpretation, f0Stability: F0StabilityLevel) -> String {
+        switch (interpretation, f0Stability) {
+        case (.excellent, .excellent):
+            return "Excellent voice stability with consistent F0 patterns. This may indicate balanced hormonal states suitable for baseline tracking."
+        case (.good, .good):
+            return "Good voice stability with minor F0 variations typical of natural hormonal fluctuations. Continue regular tracking."
+        case (.moderate, .moderate):
+            return "Moderate voice stability with some F0 variation. Consider tracking patterns across multiple cycle phases."
+        case (.poor, _), (_, .poor):
+            return "Increased voice variability detected. Monitor closely and consider environmental factors or cycle timing."
+        case (.unreliable, _), (_, .unreliable):
+            return "Voice analysis quality was limited. Ensure quiet recording environment and sustained vowel production for optimal results."
+        default:
+            return "Voice patterns analyzed. Continue tracking to establish personal baseline and identify cycle correlations."
+        }
+    }
+    
+    private func realRecommendationText(for recommendation: ClinicalRecommendation, overallQuality: VoiceQualityLevel) -> String {
+        switch (recommendation, overallQuality) {
+        case (.continueTracking, .excellent), (.continueTracking, .good):
+            return "Voice quality is within normal ranges. Continue regular tracking to establish your personal baseline patterns for cycle correlation."
+        case (.trackTrends, _):
+            return "Track voice patterns over multiple cycles to identify potential correlations with PMDD/PCOS symptoms and hormonal fluctuations."
+        case (.monitorClosely, .moderate):
+            return "Voice shows some variation from optimal ranges. Monitor closely and consider discussing patterns with healthcare provider if persistent."
+        case (.monitorClosely, .poor):
+            return "Voice quality indicates increased perturbation. Monitor trends carefully and consider environmental factors affecting recording quality."
+        case (.consultSpecialist, .pathological):
+            return "Voice analysis indicates patterns that may warrant professional evaluation. Consider consulting with healthcare provider about voice-hormone relationships."
+        case (.consultSpecialist, _):
+            return "Voice patterns suggest potential clinical significance. Discuss findings with healthcare provider familiar with hormonal voice changes."
+        default:
+            return "Continue voice tracking as part of your comprehensive PMDD/PCOS monitoring approach."
+        }
     }
 }
 

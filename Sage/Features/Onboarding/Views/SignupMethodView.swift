@@ -132,8 +132,7 @@ struct SignupMethodView_Previews: PreviewProvider {
             authService: AuthService(),
             userProfileRepository: UserProfileRepository(),
             microphonePermissionManager: MicrophonePermissionManager(),
-            audioRecorder: OnboardingAudioRecorder(),
-            audioUploader: AudioUploader(),
+            vocalAnalysisService: HybridVocalAnalysisService(),
             coordinator: nil,
             dateProvider: SystemDateProvider()
         ))

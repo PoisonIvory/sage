@@ -2,6 +2,7 @@ import SwiftUI
 
 struct LoginView: View {
     @ObservedObject var viewModel: AuthViewModel
+    var onAuthenticated: (() -> Void)? = nil
 
     private var isLoading: Bool {
         if case .loading = viewModel.state { return true }
@@ -31,6 +32,12 @@ struct LoginView: View {
                     SageButton(title: "Login") {
                         print("LoginView: Login button tapped")
                         viewModel.loginWithEmail()
+                    }
+                    .onChange(of: viewModel.state) { oldState, state in
+                        if case .authenticated = state {
+                            print("LoginView: User authenticated")
+                            onAuthenticated?()
+                        }
                     }
                     .disabled(!viewModel.isFormValid || isLoading)
                 }

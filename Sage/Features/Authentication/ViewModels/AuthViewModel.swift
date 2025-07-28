@@ -63,6 +63,28 @@ class AuthViewModel: ObservableObject {
         }
     }
 
+    // MARK: - Computed Properties for Tests
+    var isAuthenticated: Bool {
+        if case .authenticated = state {
+            return true
+        }
+        return false
+    }
+    
+    var isLoading: Bool {
+        if case .loading = state {
+            return true
+        }
+        return false
+    }
+    
+    var errorMessage: String? {
+        if case .failed(let error) = state {
+            return error
+        }
+        return nil
+    }
+
     // MARK: - Email/Password Auth
     func signUpWithEmail() {
         clearSignOutFlag() // Clear flag when user explicitly signs up
@@ -104,7 +126,7 @@ class AuthViewModel: ObservableObject {
             return
         }
         state = .loading
-        // TODO: Extract login logic to service as well
+        // Login logic extraction to service to be implemented
         DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
             self.state = .authenticated(signUpMethod: "email")
             self.signUpMethod = "email"

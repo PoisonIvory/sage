@@ -1,0 +1,26 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Allow authenticated users to read and write their own voice recordings
+    match /voice_recordings/{userId}/{audioFile} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Legacy path support for existing audio files
+    match /sage-audio-files/{audioFile} {
+      allow read, write: if request.auth != null;
+    }
+    
+    // Allow public read access to processed audio files (if needed)
+    match /processed-audio/{audioFile} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+    
+    // Deny access to all other paths
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+} 

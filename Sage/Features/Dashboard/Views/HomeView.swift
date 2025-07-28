@@ -10,7 +10,9 @@ struct HomeView: View {
         }
         .onAppear {
             print("HomeView: appeared")
-            f0DataService.fetchF0Data()
+            Task {
+                await f0DataService.fetchF0Data()
+            }
         }
         .onDisappear {
             f0DataService.stopListening()
@@ -58,12 +60,12 @@ struct HomeView: View {
             if f0DataService.isLoading {
                 SageProgressView()
                     .scaleEffect(0.8)
-            } else if let errorMessage = f0DataService.errorMessage {
+            } else if f0DataService.errorMessage != nil {
                 Text("Analysis pending...")
                     .font(SageTypography.title)
                     .foregroundColor(SageColors.softTaupe)
             } else {
-                Text(f0DataService.f0Value)
+                Text(f0DataService.displayF0Value)
                     .font(SageTypography.title)
                     .foregroundColor(SageColors.sageTeal)
             }
@@ -76,6 +78,8 @@ struct HomeView: View {
                 Text("\(Int(f0DataService.f0Confidence))% confidence")
                     .font(SageTypography.caption)
                     .foregroundColor(SageColors.earthClay)
+            } else {
+                EmptyView()
             }
         }
     }

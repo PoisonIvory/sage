@@ -72,7 +72,7 @@ struct AuthChoiceView: View {
         .onAppear {
             handleViewAppeared()
         }
-        .onChange(of: viewModel.state) { state in
+        .onChange(of: viewModel.state) { oldState, state in
             if case .authenticated = state {
                 handleAuthenticationSuccess()
             }

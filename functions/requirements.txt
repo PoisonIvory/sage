@@ -1,6 +1,7 @@
 # Core audio processing libraries
 soundfile
 numpy
+librosa
 
 # Google Cloud services
 google-cloud-storage

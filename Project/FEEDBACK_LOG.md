@@ -40,6 +40,10 @@ This log captures all feedback, discoveries, and lessons learned during developm
 - AbstractWaveBackground extracted as a reusable design system component for future visual richness needs.
 - See UI_STANDARDS.md for spacing, typography, and color rules. | ...        |
 | 2025-07-25 | AnalyticsService.swift | Implemented onboarding_complete event tracking per DATA_STANDARDS.md §4.3.1, with documentation and test hooks. | Updated DATA_DICTIONARY.md, PROMPTS.md, DATA_STANDARDS.md | AI        |
+| 2025-01-24 | Data Path Consistency | Critical Issues Fixed: Inconsistent data paths, dual ID system, missing error handling, no snapshot listeners, file path parsing issues | Implemented comprehensive fixes for all 5 critical issues identified. Updated Cloud Function to use canonical paths, F0DataService to use snapshot listeners, consistent userID field usage, proper error handling, and correct file path parsing. | AI |
+| 2025-01-24 | F0DataService Resilience | Additional Critical Fixes: Added timeout mechanism (60s), debouncing for duplicate insights, missing created_at field handling, constants extraction, improved error handling | Implemented timeout/retry mechanism, debouncing to prevent duplicate processing, proper cleanup of timers and listeners, extracted f0_analysis constant, and enhanced error resilience for missing fields. | AI |
+| 2025-01-24 | F0DataService Architecture | Architectural Improvements: Injectable timer protocol, Result pattern in completions, race condition protection, private(set) state, metadata exposure, improved naming | Implemented TimerHandler protocol for testability, Result<Void, Error> completions, state consistency protection, metadata access, and clearer naming conventions for better maintainability. | AI |
+| 2025-01-24 | F0DataService Polish | Final Improvements: Clarified completion semantics, replaced print() with Logger, added noInsightYet error case, improved error handling | Enhanced completion semantics to distinguish between "listener attached" vs "no insight found", replaced all print() with structured Logger calls, added specific error case for when insights are not yet available. | AI |
 
 ---
 

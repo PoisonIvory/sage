@@ -1,0 +1,410 @@
+import Foundation
+import FirebaseFirestore
+import FirebaseAuth
+import os.log
+
+// MARK: - Timer Protocol for Testability
+
+protocol TimerHandler {
+    func schedule(timeout: TimeInterval, callback: @escaping () -> Void)
+    func cancel()
+}
+
+class RealTimerHandler: TimerHandler {
+    private var timer: Timer?
+    
+    func schedule(timeout: TimeInterval, callback: @escaping () -> Void) {
+        cancel() // Cancel any existing timer
+        timer = Timer.scheduledTimer(withTimeInterval: timeout, repeats: false) { _ in
+            callback()
+        }
+    }
+    
+    func cancel() {
+        timer?.invalidate()
+        timer = nil
+    }
+}
+
+// MARK: - Constants
+
+private struct F0DataServiceStrings {
+    static let stillProcessing = "Still Processing..."
+    static let loading = "Loading..."
+    static let processingError = "Processing Error"
+    static let processingTimeout = "Processing delayed, please check back later"
+    static let userNotAuthenticated = "User not authenticated"
+    static let invalidDocumentData = "Invalid document data"
+    static let invalidF0DataFormat = "Invalid F0 data format"
+    static let f0ValueOutOfRange = "F0 value outside valid range (75-500 Hz)"
+    static let failedToFetchRecordings = "Failed to fetch recordings: "
+    static let noVocalTestRecordings = "No vocal test recordings found"
+    static let failedToFetchF0Data = "Failed to fetch F0 data: "
+    static let noF0AnalysisFound = "No F0 analysis found for recording"
+}
+
+// FirestoreKeys moved to Shared/Constants/FirestoreKeys.swift
+
+// MARK: - Models
+
+struct F0ProcessingMetadata {
+    let audioDuration: Double
+    let voicedFrames: Int
+    let totalFrames: Int
+    
+    init(dictionary: [String: Any]) {
+        self.audioDuration = dictionary[FirestoreKeys.audioDuration] as? Double ?? 0
+        self.voicedFrames = dictionary[FirestoreKeys.voicedFrames] as? Int ?? 0
+        self.totalFrames = dictionary[FirestoreKeys.totalFrames] as? Int ?? 0
+    }
+}
+
+enum F0State {
+    case idle
+    case loading
+    case success(value: String, confidence: Double, metadata: F0ProcessingMetadata?)
+    case error(String)
+}
+
+/// F0DataService fetches fundamental frequency data from Firestore
+/// - Complies with DATA_STANDARDS.md §3.2.1, DATA_DICTIONARY.md, and code quality patterns
+@MainActor
+final class F0DataService: ObservableObject {
+    // MARK: - Published State
+    @Published private(set) var state: F0State = .idle
+    
+    // MARK: - Private Properties
+    private let db: Firestore
+    private let auth: Auth
+    private let timerHandler: TimerHandler
+    private var insightsListener: ListenerRegistration?
+    private var lastProcessedF0Value: Double?
+    internal let processingTimeout: TimeInterval = 60.0 // 60 seconds timeout
+    
+    // MARK: - Initialization
+    
+    init(db: Firestore = Firestore.firestore(), 
+         auth: Auth = Auth.auth(),
+         timerHandler: TimerHandler = RealTimerHandler()) {
+        self.db = db
+        self.auth = auth
+        self.timerHandler = timerHandler
+    }
+    
+    deinit {
+        // Note: Cannot call @MainActor methods from deinit
+        // The stopListening() method will be called when the object is deallocated
+    }
+    
+    // MARK: - Convenience Properties (for backward compatibility)
+    
+    var displayF0Value: String {
+        switch state {
+        case .idle:
+            return F0DataServiceStrings.stillProcessing
+        case .loading:
+            return F0DataServiceStrings.loading
+        case .success(let value, _, _):
+            return value
+        case .error:
+            return F0DataServiceStrings.processingError
+        }
+    }
+    
+    var f0Confidence: Double {
+        switch state {
+        case .success(_, let confidence, _):
+            return confidence
+        default:
+            return 0.0
+        }
+    }
+    
+    var isLoading: Bool {
+        if case .loading = state {
+            return true
+        }
+        return false
+    }
+    
+    var errorMessage: String? {
+        if case .error(let message) = state {
+            return message
+        }
+        return nil
+    }
+    
+    var lastMetadata: F0ProcessingMetadata? {
+        switch state {
+        case .success(_, _, let metadata):
+            return metadata
+        default:
+            return nil
+        }
+    }
+    
+    // MARK: - Public Methods
+    
+    /// Fetches F0 data for the current user from their most recent sustained vowel recording
+    /// Uses snapshot listeners for real-time updates when insights are written
+    func fetchF0Data(completion: ((Result<Void, Error>) -> Void)? = nil) {
+        guard validateUserAuthentication() else {
+            completion?(.failure(F0DataServiceError.userNotAuthenticated))
+            return
+        }
+        
+        startLoading()
+        startTimeoutTimer()
+        queryRecentRecordings(completion: completion)
+    }
+    
+    // MARK: - Private Helper Methods
+    
+    private func validateUserAuthentication() -> Bool {
+        guard auth.currentUser?.uid != nil else {
+            handleError(F0DataServiceStrings.userNotAuthenticated)
+            return false
+        }
+        return true
+    }
+    
+    private func startLoading() {
+        state = .loading
+    }
+    
+    private func startTimeoutTimer() {
+        timerHandler.schedule(timeout: processingTimeout) { [weak self] in
+            Task { @MainActor in
+                self?.handleTimeout()
+            }
+        }
+    }
+    
+    internal func handleTimeout() {
+        // Only handle timeout if still in loading state (race condition protection)
+        if case .loading = state {
+            Logger.error("F0DataService: Processing timeout after \(processingTimeout) seconds")
+            handleError(F0DataServiceStrings.processingTimeout)
+        }
+    }
+    
+    private func queryRecentRecordings(completion: ((Result<Void, Error>) -> Void)? = nil) {
+        guard let userId = auth.currentUser?.uid else { 
+            completion?(.failure(F0DataServiceError.userNotAuthenticated))
+            return 
+        }
+        
+        Logger.info("F0DataService: Querying recordings for user: \(userId)")
+        
+        // Query the root "recordings" collection, filtered by userID (Firebase UID)
+        let recordingsRef = db.collection("recordings")
+        
+        recordingsRef
+            .whereField("userID", isEqualTo: userId)
+            .whereField(FirestoreKeys.task, isEqualTo: "onboarding_vocal_test")
+            .order(by: FirestoreKeys.sessionTime, descending: true)
+            .limit(to: 1)
+            .getDocuments { [weak self] (snapshot: QuerySnapshot?, error: Error?) in
+                Task { @MainActor in
+                    if let error = error {
+                        Logger.error("F0DataService: Query error: \(error.localizedDescription)")
+                        self?.handleError("\(F0DataServiceStrings.failedToFetchRecordings)\(error.localizedDescription)")
+                        completion?(.failure(error))
+                        return
+                    }
+                    
+                    Logger.info("F0DataService: Query returned \(snapshot?.documents.count ?? 0) documents")
+                    
+                    guard let document = snapshot?.documents.first else {
+                        Logger.error("F0DataService: No vocal test recordings found for user: \(userId)")
+                        self?.handleError(F0DataServiceStrings.noVocalTestRecordings)
+                        completion?(.failure(F0DataServiceError.noVocalTestRecordings))
+                        return
+                    }
+                    
+                    Logger.info("F0DataService: Found recording document: \(document.documentID)")
+                    self?.setupInsightsListener(for: document.reference, completion: completion)
+                }
+            }
+    }
+    
+    // MARK: - Snapshot Listener Methods
+    
+    private func setupInsightsListener(for recordingRef: DocumentReference, completion: ((Result<Void, Error>) -> Void)? = nil) {
+        // Remove any existing listener
+        insightsListener?.remove()
+        
+        let insightsRef = recordingRef.collection("insights")
+        
+        Logger.info("F0DataService: Setting up snapshot listener for insights in recording: \(recordingRef.documentID)")
+        
+        insightsListener = insightsRef
+            .whereField(FirestoreKeys.insightType, isEqualTo: FirestoreKeys.f0Analysis)
+            .order(by: FirestoreKeys.createdAt, descending: true)
+            .limit(to: 1)
+            .addSnapshotListener { [weak self] (snapshot: QuerySnapshot?, error: Error?) in
+                Task { @MainActor in
+                    if let error = error {
+                        Logger.error("F0DataService: Snapshot listener error: \(error.localizedDescription)")
+                        self?.handleError("\(F0DataServiceStrings.failedToFetchF0Data)\(error.localizedDescription)")
+                        completion?(.failure(error))
+                        return
+                    }
+                    
+                    guard let document = snapshot?.documents.first else {
+                        Logger.info("F0DataService: No F0 insights found yet for recording: \(recordingRef.documentID)")
+                        // Don't show error immediately - insights might still be processing
+                        if snapshot?.documents.isEmpty == true {
+                            self?.state = .idle // Show "Still Processing..." state
+                            // Complete with success since listener is attached and insight may arrive later
+                            completion?(.success(()))
+                        } else {
+                            // No documents in snapshot - complete with noInsightYet error
+                            completion?(.failure(F0DataServiceError.noInsightYet))
+                        }
+                        return
+                    }
+                    
+                    Logger.info("F0DataService: F0 insight document found: \(document.documentID)")
+                    self?.processParsedF0Data(document, completion: completion)
+                }
+            }
+    }
+    
+    // MARK: - Internal Helper Methods (accessible for testing)
+    
+    internal func processParsedF0Data(_ document: DocumentSnapshot, completion: ((Result<Void, Error>) -> Void)? = nil) {
+        guard let data = document.data() else {
+            handleError(F0DataServiceStrings.invalidDocumentData)
+            completion?(.failure(F0DataServiceError.invalidDocumentData))
+            return
+        }
+        
+        processParsedF0Data(documentID: document.documentID, data: data, completion: completion)
+    }
+    
+    internal func processParsedF0Data(documentID: String, data: [String: Any], completion: ((Result<Void, Error>) -> Void)? = nil) {
+        let insightId = documentID
+        Logger.info("Processing F0 insight document: \(insightId)")
+        
+        guard validateAndParseF0Data(data, insightId: insightId) else { 
+            completion?(.failure(F0DataServiceError.invalidF0DataFormat))
+            return 
+        }
+        processMetadata(data, insightId: insightId)
+        completeProcessing(insightId: insightId)
+        completion?(.success(()))
+    }
+    
+    private func validateAndParseF0Data(_ data: [String: Any], insightId: String) -> Bool {
+        guard let f0Mean = data[FirestoreKeys.f0Mean] as? Double else {
+            handleError(F0DataServiceStrings.invalidF0DataFormat)
+            return false
+        }
+        
+        guard f0Mean >= 75 && f0Mean <= 500 else {
+            handleError(F0DataServiceStrings.f0ValueOutOfRange)
+            return false
+        }
+        
+        // Debounce: Only process if F0 value has changed
+        if let lastValue = lastProcessedF0Value, abs(lastValue - f0Mean) < 0.1 {
+            Logger.info("F0DataService: Ignoring duplicate F0 value update")
+            return true
+        }
+        
+        let confidence = data[FirestoreKeys.confidence] as? Double ?? 0.0
+        let metadata = extractProcessingMetadata(from: data)
+        handleSuccess(f0: f0Mean, confidence: confidence, metadata: metadata, insightId: insightId)
+        lastProcessedF0Value = f0Mean
+        
+        return true
+    }
+    
+    private func extractProcessingMetadata(from data: [String: Any]) -> F0ProcessingMetadata? {
+        if let processingMetadata = data[FirestoreKeys.metadata] as? [String: Any] {
+            return F0ProcessingMetadata(dictionary: processingMetadata)
+        }
+        return nil
+    }
+    
+    private func processMetadata(_ data: [String: Any], insightId: String) {
+        if let status = data[FirestoreKeys.status] as? String, status == "completed_with_warnings" {
+            Logger.info("F0 analysis completed with warnings for insight: \(insightId)")
+        }
+        
+        if let errorType = data[FirestoreKeys.errorType] as? String {
+            Logger.info("F0 analysis error type: \(errorType) for insight: \(insightId)")
+        }
+        
+        if let processingMetadata = data[FirestoreKeys.metadata] as? [String: Any] {
+            logProcessingMetadata(processingMetadata)
+        }
+    }
+    
+    private func logProcessingMetadata(_ metadata: [String: Any]) {
+        let processingMetadata = F0ProcessingMetadata(dictionary: metadata)
+        Logger.info("F0 processed: \(processingMetadata.audioDuration)s audio, \(processingMetadata.voicedFrames)/\(processingMetadata.totalFrames) voiced frames")
+    }
+    
+    private func handleSuccess(f0: Double, confidence: Double, metadata: F0ProcessingMetadata?, insightId: String) {
+        let valueString = String(format: "%.1f Hz", f0)
+        state = .success(value: valueString, confidence: confidence, metadata: metadata)
+        timerHandler.cancel() // Clear timeout on success
+        Logger.info("F0 value updated to \(valueString) with \(confidence)% confidence for insight: \(insightId)")
+    }
+    
+    private func completeProcessing(insightId: String) {
+        // State is already set in handleSuccess
+        // Additional completion logic can be added here if needed
+    }
+    
+    // MARK: - Private Helper Methods
+    
+    private func handleError(_ message: String) {
+        state = .error(message)
+        timerHandler.cancel() // Clear timeout on error
+        Logger.error("F0DataService error: \(message)")
+    }
+    
+    /// Stops any ongoing operations and cleans up resources
+    func stopListening() {
+        insightsListener?.remove()
+        insightsListener = nil
+        timerHandler.cancel()
+        lastProcessedF0Value = nil
+        state = .idle
+        Logger.info("F0DataService: Stopped listening")
+    }
+}
+
+// MARK: - Error Types
+
+enum F0DataServiceError: Error, LocalizedError {
+    case userNotAuthenticated
+    case noVocalTestRecordings
+    case invalidDocumentData
+    case invalidF0DataFormat
+    case f0ValueOutOfRange
+    case processingTimeout
+    case noInsightYet
+    
+    var errorDescription: String? {
+        switch self {
+        case .userNotAuthenticated:
+            return "User not authenticated"
+        case .noVocalTestRecordings:
+            return "No vocal test recordings found"
+        case .invalidDocumentData:
+            return "Invalid document data"
+        case .invalidF0DataFormat:
+            return "Invalid F0 data format"
+        case .f0ValueOutOfRange:
+            return "F0 value outside valid range (75-500 Hz)"
+        case .processingTimeout:
+            return "Processing delayed, please check back later"
+        case .noInsightYet:
+            return "No F0 insight found yet - processing may still be in progress"
+        }
+    }
+} 

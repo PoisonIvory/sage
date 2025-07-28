@@ -10,9 +10,12 @@
         "firebase-debug.*.log",
         "*.local"
       ],
-      "runtime": "python313"
+      "runtime": "python311"
     }
   ],
+  "storage": {
+    "rules": "storage.rules"
+  },
   "emulators": {
     "functions": {
       "host": "localhost",

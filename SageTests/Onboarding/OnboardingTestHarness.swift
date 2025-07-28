@@ -10,7 +10,7 @@
 import XCTest
 import Mixpanel
 @testable import Sage
-import Mocks.MockAuthService // Import the shared mock
+// MockAuthService is available in the same module
 
 // MARK: - Test Constants
 
@@ -312,16 +312,16 @@ class OnboardingTestHarness {
         return viewModel
     }
     
-    func setupForVocalTest() -> OnboardingJourneyViewModel {
+    func setupForSustainedVowelTest() -> OnboardingJourneyViewModel {
         let viewModel = makeViewModel()
-        viewModel.currentStep = .vocalTest
+        viewModel.currentStep = .sustainedVowelTest
         mockMicrophonePermissionManager.permissionGranted = true
         viewModel.microphonePermissionStatus = .granted
         return viewModel
     }
     
     func setupForRecordingInProgress() -> OnboardingJourneyViewModel {
-        let viewModel = setupForVocalTest()
+        let viewModel = setupForSustainedVowelTest()
         viewModel.isRecording = true
         viewModel.recordingState = .recording()
         return viewModel

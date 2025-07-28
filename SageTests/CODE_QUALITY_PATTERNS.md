@@ -35,7 +35,7 @@ This document outlines the code quality patterns and best practices we've identi
 
 ```swift
 // ❌ BAD: OnboardingJourneyViewModel has 500+ lines with long methods
-func startVocalTest() {
+func startSustainedVowelTest() {
     // 30+ lines handling permission checking, recording setup, error handling
     switch microphonePermissionStatus {
     case .granted:
@@ -59,7 +59,7 @@ func startVocalTest() {
 }
 
 // ✅ GOOD: Break down into focused methods
-func startVocalTest() {
+func startSustainedVowelTest() {
     switch microphonePermissionStatus {
     case .granted:
         beginRecording()
@@ -302,7 +302,7 @@ var explainerSubtext: String {
     return "This helps us understand the unique physiology of your vocal tract."
 }
 
-var vocalTestInstruction: String {
+var sustainedVowelTestInstruction: String {
     return "This test measures the rate and stability of vocal cord vibrations."
 }
 
@@ -310,7 +310,7 @@ var vocalTestInstruction: String {
 struct OnboardingStrings {
     static let explainerHeadline = "Let's run some quick tests"
     static let explainerSubtext = "This helps us understand the unique physiology of your vocal tract."
-    static let vocalTestInstruction = "This test measures the rate and stability of vocal cord vibrations."
+    static let sustainedVowelTestInstruction = "This test measures the rate and stability of vocal cord vibrations."
     static let beginButtonTitle = "Begin"
     static let nextButtonTitle = "Next"
     static let finishButtonTitle = "Finish"
@@ -383,11 +383,11 @@ static func createCompleteUserProfile(
 ```swift
 // ❌ BAD: Setting mock properties
 harness.mockMicrophonePermissionManager.permissionGranted = true
-viewModel.startVocalTest() // Expects ViewModel to read from mock
+viewModel.startSustainedVowelTest() // Expects ViewModel to read from mock
 
 // ✅ GOOD: Setting ViewModel state directly
 viewModel.microphonePermissionStatus = .granted
-viewModel.startVocalTest() // ViewModel uses its own state
+viewModel.startSustainedVowelTest() // ViewModel uses its own state
 ```
 
 ### Pattern: State Validation
@@ -398,19 +398,19 @@ viewModel.startVocalTest() // ViewModel uses its own state
 
 ```swift
 // ❌ BAD: No state validation
-func testVocalTestRecording() {
-    viewModel.startVocalTest()
+func testSustainedVowelTestRecording() {
+    viewModel.startSustainedVowelTest()
     XCTAssertTrue(viewModel.isRecording)
 }
 
 // ✅ GOOD: Validate state setup
-func testVocalTestRecording() {
+func testSustainedVowelTestRecording() {
     // Given: Microphone permission is granted
     viewModel.microphonePermissionStatus = .granted
     XCTAssertEqual(viewModel.microphonePermissionStatus, .granted)
     
     // When: User starts vocal test
-    viewModel.startVocalTest()
+    viewModel.startSustainedVowelTest()
     
     // Then: Recording should be active
     XCTAssertTrue(viewModel.isRecording)

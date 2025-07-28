@@ -55,7 +55,7 @@ final class ExplainerScreenTests: XCTestCase {
     
     // MARK: - Navigation Tests
     
-    func testNavigationFromExplainerToVocalTest() {
+    func testNavigationFromExplainerToSustainedVowelTest() {
         // Given: User is on explainer screen
         viewModel.currentStep = .explainer
         
@@ -63,7 +63,7 @@ final class ExplainerScreenTests: XCTestCase {
         viewModel.selectBegin()
         
         // Then: Should navigate to vocal test screen
-        XCTAssertEqual(viewModel.currentStep, .vocalTest)
+        XCTAssertEqual(viewModel.currentStep, .sustainedVowelTest)
     }
     
     // MARK: - UI Content Tests
@@ -115,7 +115,7 @@ final class ExplainerScreenTests: XCTestCase {
         
         // Then: Should navigate successfully, indicating button is enabled
         XCTAssertNotEqual(viewModel.currentStep, initialStep)
-        XCTAssertEqual(viewModel.currentStep, .vocalTest)
+        XCTAssertEqual(viewModel.currentStep, .sustainedVowelTest)
     }
     
     // MARK: - Localization Key Tests
@@ -147,7 +147,7 @@ final class ExplainerScreenTests: XCTestCase {
         viewModel.selectBegin()
         
         // Then: Should still navigate successfully
-        XCTAssertEqual(viewModel.currentStep, .vocalTest)
+        XCTAssertEqual(viewModel.currentStep, .sustainedVowelTest)
     }
     
     // MARK: - Content Accessibility Tests

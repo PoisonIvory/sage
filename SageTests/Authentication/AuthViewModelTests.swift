@@ -9,7 +9,7 @@
 
 import XCTest
 @testable import Sage
-import Mocks.MockAuthService // Import the shared mock
+// MockAuthService is available in the same module
 
 @MainActor
 class AuthViewModelTests: XCTestCase {

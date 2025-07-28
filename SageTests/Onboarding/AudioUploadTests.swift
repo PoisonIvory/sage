@@ -69,7 +69,7 @@ final class AudioUploadTests: XCTestCase {
         harness.mockAudioUploader.shouldSucceed = true
         
         // When: Upload completes
-        viewModel.handleVocalTestUploadResult(.success(()))
+        viewModel.handleSustainedVowelTestUploadResult(.success(()))
         
         // Then: Should show next button and success state
         XCTAssertTrue(viewModel.shouldShowNextButton)
@@ -82,7 +82,7 @@ final class AudioUploadTests: XCTestCase {
         harness.mockAudioUploader.errorType = .networkError
         
         // When: Upload fails
-        viewModel.handleVocalTestUploadResult(.failure(UploadError.networkError))
+        viewModel.handleSustainedVowelTestUploadResult(.failure(UploadError.networkError))
         
         // Then: Should show error and not show next button
         XCTAssertNotNil(viewModel.errorMessage)
@@ -97,7 +97,7 @@ final class AudioUploadTests: XCTestCase {
         viewModel.userProfile = OnboardingTestDataFactory.createMinimalUserProfile()
         
         // When: Upload completes successfully
-        viewModel.handleVocalTestUploadResult(.success(()))
+        viewModel.handleSustainedVowelTestUploadResult(.success(()))
         
         // Then: Should track both completion and upload analytics events
         XCTAssertTrue(harness.mockAnalyticsService.trackedEvents.contains("onboarding_vocal_test_completed"))
@@ -112,7 +112,7 @@ final class AudioUploadTests: XCTestCase {
         viewModel.userProfile = OnboardingTestDataFactory.createMinimalUserProfile()
         
         // When: Upload completes successfully
-        viewModel.handleVocalTestUploadResult(.success(()))
+        viewModel.handleSustainedVowelTestUploadResult(.success(()))
         
         // Then: Should track analytics events
         XCTAssertTrue(harness.mockAnalyticsService.trackedEvents.contains("onboarding_vocal_test_completed"))
@@ -125,14 +125,14 @@ final class AudioUploadTests: XCTestCase {
         // Given: Upload failed with error
         harness.mockAudioUploader.shouldSucceed = false
         harness.mockAudioUploader.errorType = .networkError
-        viewModel.handleVocalTestUploadResult(.failure(UploadError.networkError))
+        viewModel.handleSustainedVowelTestUploadResult(.failure(UploadError.networkError))
         
         // Verify error exists
         XCTAssertNotNil(viewModel.errorMessage)
         
         // When: Upload succeeds on retry
         harness.mockAudioUploader.shouldSucceed = true
-        viewModel.handleVocalTestUploadResult(.success(()))
+        viewModel.handleSustainedVowelTestUploadResult(.success(()))
         
         // Then: Should recover without crashing
         XCTAssertTrue(viewModel.shouldShowNextButton)

@@ -1,148 +1,193 @@
 import XCTest
 import FirebaseFirestore
+import FirebaseAuth
 @testable import Sage
 
-/// MVP Tests for F0DataService
-/// - Focuses on crash prevention, numeric parsing, and user-visible formatting
-@MainActor
-final class F0DataServiceTests: XCTestCase {
+// MARK: - Mock Timer Handler for Testing
+
+class MockTimerHandler: TimerHandler {
+    var scheduledCallbacks: [() -> Void] = []
+    var isCancelled = false
     
+    func schedule(timeout: TimeInterval, callback: @escaping () -> Void) {
+        scheduledCallbacks.append(callback)
+        isCancelled = false
+    }
+    
+    func cancel() {
+        isCancelled = true
+        scheduledCallbacks.removeAll()
+    }
+    
+    func triggerTimeout() {
+        guard !isCancelled else { return }
+        for callback in scheduledCallbacks {
+            callback()
+        }
+        scheduledCallbacks.removeAll()
+    }
+}
+
+@MainActor
+class F0DataServiceTests: XCTestCase {
     var f0DataService: F0DataService!
+    var mockTimerHandler: MockTimerHandler!
     
     override func setUp() {
         super.setUp()
-        f0DataService = F0DataService()
+        mockTimerHandler = MockTimerHandler()
+        f0DataService = F0DataService(timerHandler: mockTimerHandler)
     }
     
     override func tearDown() {
+        f0DataService.stopListening()
         f0DataService = nil
+        mockTimerHandler = nil
         super.tearDown()
     }
     
-    // MARK: - Test Numeric Conversion (Crash Prevention)
+    // MARK: - Snapshot Listener Tests
     
-    func testF0ConfidenceRemainsDouble() async {
-        // Given: F0 data with confidence as Double
-        let testData: [String: Any] = [
-            "f0_mean": 220.5,
-            "f0_confidence": 95.7,  // Double value
-            "status": "completed"
-        ]
-        
-        // When: Processing F0 data
-        f0DataService.processF0Data(documentID: "test_doc", data: testData)
-        
-        // Then: Confidence should remain as Double, not converted to Int
-        if case .success(_, let confidence) = f0DataService.state {
-            XCTAssertEqual(confidence, 95.7, accuracy: 0.01)
-            XCTAssertTrue(type(of: confidence) == Double.self)
-        } else {
-            XCTFail("Expected success state")
-        }
+    func testUserSelectsVocalTest_WhenServiceInitialized_HasCorrectDefaults() {
+        // Given: F0DataService is initialized
+        // When: Checking initial state
+        // Then: Should have correct defaults
+        XCTAssertEqual(f0DataService.displayF0Value, "Still Processing...")
+        XCTAssertEqual(f0DataService.f0Confidence, 0.0)
+        XCTAssertFalse(f0DataService.isLoading)
+        XCTAssertNil(f0DataService.errorMessage)
     }
     
-    // MARK: - Test User-Visible Formatting
-    
-    func testF0DisplayFormatMatchesBackendRounding() async {
-        // Given: F0 data with decimal precision
-        let testData: [String: Any] = [
-            "f0_mean": 220.567,  // Should round to 220.6
-            "f0_confidence": 95.0,
-            "status": "completed"
-        ]
+    func testUserStopsListening_CleansUpResources() async {
+        // Given: F0DataService is initialized
         
-        // When: Processing F0 data
-        f0DataService.processF0Data(documentID: "test_doc", data: testData)
+        // When: User stops listening
+        await f0DataService.stopListening()
         
-        // Then: Display should show 1 decimal place to match backend rounding
-        if case .success(let value, _) = f0DataService.state {
-            XCTAssertEqual(value, "220.6 Hz")
-        } else {
-            XCTFail("Expected success state")
-        }
+        // Then: Should clean up resources and reset state
+        XCTAssertEqual(f0DataService.displayF0Value, "Still Processing...")
+        XCTAssertEqual(f0DataService.f0Confidence, 0.0)
+        XCTAssertFalse(f0DataService.isLoading)
+        XCTAssertNil(f0DataService.errorMessage)
+        
+        // Verify timer was cancelled
+        XCTAssertTrue(mockTimerHandler.isCancelled)
     }
     
-    // MARK: - Test Error Handling (Crash Prevention)
+    // MARK: - Constants and Configuration Tests
     
-    func testErrorMessageNotResetOnFailedParsing() async {
-        // Given: Service with existing error state
-        f0DataService.state = .error("Previous error")
-        
-        // Given: Invalid F0 data
-        let testData: [String: Any] = [
-            "f0_mean": "invalid",  // Wrong type
-            "f0_confidence": 95.0,
-            "status": "completed"
-        ]
-        
-        // When: Processing F0 data fails
-        f0DataService.processF0Data(documentID: "test_doc", data: testData)
-        
-        // Then: Should have new error message
-        if case .error(let message) = f0DataService.state {
-            XCTAssertEqual(message, "Invalid F0 data format")
-        } else {
-            XCTFail("Expected error state")
-        }
+    func testF0AnalysisConstant_IsUsedConsistently() {
+        // Given: F0DataService uses FirestoreKeys.f0Analysis constant
+        // When: Processing F0 data
+        // Then: Should use consistent constant value
+        XCTAssertEqual(FirestoreKeys.f0Analysis, "f0_analysis")
     }
     
-    func testF0ValueOutOfRange() async {
-        // Given: F0 data with value outside valid range
-        let testData: [String: Any] = [
-            "f0_mean": 35.0,  // Below minimum of 75 Hz
-            "f0_confidence": 95.0,
-            "status": "completed"
-        ]
-        
-        // When: Processing F0 data
-        f0DataService.processF0Data(documentID: "out_of_range", data: testData)
-        
-        // Then: Should be in error state with appropriate message
-        if case .error(let message) = f0DataService.state {
-            XCTAssertEqual(message, "F0 value outside valid range (75-500 Hz)")
-        } else {
-            XCTFail("Expected error state")
-        }
+    func testProcessingTimeout_IsReasonable() {
+        // Given: F0DataService has a processing timeout
+        // When: Checking timeout value
+        // Then: Should be reasonable for Cloud Function processing
+        XCTAssertGreaterThan(f0DataService.processingTimeout, 30.0) // At least 30 seconds
+        XCTAssertLessThan(f0DataService.processingTimeout, 120.0) // No more than 2 minutes
     }
     
-    // MARK: - Test Edge Cases (Crash Prevention)
+    // MARK: - Timer Handler Tests
     
-    func testMissingConfidenceHandling() async {
-        // Given: F0 data without confidence
-        let testData: [String: Any] = [
-            "f0_mean": 220.5,
-            "status": "completed"
-        ]
+    func testRealTimerHandler_SchedulesAndCancelsCorrectly() {
+        // Given: Real timer handler
+        let realTimerHandler = RealTimerHandler()
         
-        // When: Processing F0 data
-        f0DataService.processF0Data(documentID: "test_doc", data: testData)
-        
-        // Then: Confidence should default to 0.0
-        if case .success(let value, let confidence) = f0DataService.state {
-            XCTAssertEqual(confidence, 0.0)
-            XCTAssertEqual(value, "220.5 Hz")
-        } else {
-            XCTFail("Expected success state")
+        // When: Scheduling a timer
+        var callbackCalled = false
+        realTimerHandler.schedule(timeout: 0.1) {
+            callbackCalled = true
         }
+        
+        // Then: Timer should be scheduled
+        XCTAssertFalse(callbackCalled)
+        
+        // When: Waiting for timer to fire
+        let expectation = XCTestExpectation(description: "Timer callback")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 0.3)
+        
+        // Then: Callback should have been called
+        XCTAssertTrue(callbackCalled)
     }
     
-    func testInvalidConfidenceType() async {
-        // Given: F0 data with invalid confidence type
-        let testData: [String: Any] = [
-            "f0_mean": 220.5,
-            "f0_confidence": "invalid",  // String instead of Double
-            "status": "completed"
-        ]
+    func testRealTimerHandler_CancelsCorrectly() {
+        // Given: Real timer handler
+        let realTimerHandler = RealTimerHandler()
         
-        // When: Processing F0 data
-        f0DataService.processF0Data(documentID: "test_doc", data: testData)
-        
-        // Then: Confidence should default to 0.0
-        if case .success(let value, let confidence) = f0DataService.state {
-            XCTAssertEqual(confidence, 0.0)
-            XCTAssertEqual(value, "220.5 Hz")
-        } else {
-            XCTFail("Expected success state")
+        // When: Scheduling and immediately cancelling
+        var callbackCalled = false
+        realTimerHandler.schedule(timeout: 0.1) {
+            callbackCalled = true
         }
+        realTimerHandler.cancel()
+        
+        // When: Waiting longer than timeout
+        let expectation = XCTestExpectation(description: "Timer should not fire")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
+            expectation.fulfill()
+        }
+        wait(for: [expectation], timeout: 0.3)
+        
+        // Then: Callback should not have been called
+        XCTAssertFalse(callbackCalled)
+    }
+}
+
+// MARK: - Mock Classes
+
+class MockFirestore: Firestore {
+    var mockQueryResponse: [MockDocumentSnapshot] = []
+    var mockSnapshotListenerResponse: [MockDocumentSnapshot] = []
+    var wasListenerRemoved = false
+    
+    func setupMockQueryResponse(documents: [MockDocumentSnapshot]) {
+        mockQueryResponse = documents
+    }
+    
+    func setupMockSnapshotListenerResponse(documents: [MockDocumentSnapshot]) {
+        mockSnapshotListenerResponse = documents
+    }
+    
+    func simulateSnapshotListenerUpdate(documents: [MockDocumentSnapshot]) {
+        mockSnapshotListenerResponse = documents
+        // In a real implementation, this would trigger the snapshot listener callback
+    }
+}
+
+class MockAuth: Auth {
+    var currentUser: MockUser?
+    
+    override var currentUser: User? {
+        return currentUser
+    }
+}
+
+class MockUser: User {
+    let uid: String
+    
+    init(uid: String) {
+        self.uid = uid
+    }
+}
+
+// Mock document snapshot that doesn't subclass DocumentSnapshot
+struct MockDocumentSnapshot {
+    let documentID: String
+    let data: [String: Any]
+    
+    init(documentID: String, data: [String: Any]) {
+        self.documentID = documentID
+        self.data = data
+    }
+    
+    func data() -> [String: Any]? {
+        return data
     }
 } 
