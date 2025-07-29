@@ -1,24 +1,56 @@
-# Xcode
-build/
-DerivedData/
-*.xcworkspace
-
-# Swift Package Manager
-.swiftpm/
-.build/
-
 # Firebase and sensitive config
 GoogleService-Info.plist
 
-# macOS
-.DS_Store
+# Remove AI instructions and internal docs
+Project/
 
-# Cursor-specific
-.idea/
-.cursor/
+# Xcode
+*.xcuserdatad/
+*.xcuserdata/
+*.xcuserstate
+*.xcworkspace/
+*.xcodeproj/project.xcworkspace/
+*.xcodeproj/xcuserdata/
+*.xcodeproj/xcshareddata/WorkspaceSettings.xcsettings
+DerivedData/
 
-# Function source files
-function_source.zip
+# SwiftPM
+.build/
+.swiftpm/
 
-# Python virtual environments
+# CocoaPods
+Pods/
+Podfile.lock
+
+# Carthage
+Carthage/
+
+# Fastlane
+fastlane/report.xml
+fastlane/Preview.html
+fastlane/screenshots/
+fastlane/test_output/
+
+# SPM
+Package.resolved
+
+# Python
 functions/venv/
+functions/__pycache__/
+functions/*.pyc
+functions/.pytest_cache/
+
+# Logs
+*.log
+
+# Misc
+.DS_Store
+*.swp
+*.swo
+
+# Test output
+*.xcresult
+
+# User-specific
+*.orig
+*.bak
