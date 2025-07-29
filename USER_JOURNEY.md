@@ -43,7 +43,58 @@ graph TD
 
 ## Authentication Journey
 
-### Sign Up Flow
+### Welcome Screen User Actions
+```mermaid
+graph TD
+    A[WelcomeView<br/>"Women have always spoken."] --> B{User Action}
+    
+    B -->|Tap "Get Started"| C[SignUpView<br/>Registration Form]
+    B -->|Tap "I already have an account"| D[LoginView<br/>Sign In Form]
+    B -->|No action| E[Stay on WelcomeView]
+    
+    C --> F{Form Validation}
+    F -->|Valid Email + Password ≥6 chars| G[Firebase Auth<br/>Create Account]
+    F -->|Invalid Email| H[Show Error<br/>"Invalid email"]
+    F -->|Password <6 chars| I[Show Error<br/>"Invalid password"]
+    F -->|Tap "Continue Anonymously"| J[Anonymous Auth<br/>No credentials needed]
+    
+    D --> K{Form Validation}
+    K -->|Valid Email + Password ≥6 chars| L[Firebase Auth<br/>Sign In]
+    K -->|Invalid Email| M[Show Error<br/>"Invalid email"]
+    K -->|Password <6 chars| N[Show Error<br/>"Invalid password"]
+    
+    G --> O{Authentication Success?}
+    L --> O
+    J --> O
+    
+    O -->|Success| P[Check Onboarding Status]
+    O -->|Network Error| Q[Show Error<br/>"Check internet connection"]
+    O -->|Email in Use| R[Show Error<br/>"Email already registered"]
+    O -->|Unknown Error| S[Show Error<br/>"Unexpected error occurred"]
+    
+    Q --> T[User Retry]
+    R --> T
+    S --> T
+    T --> C
+    
+    P --> U{Onboarding Complete?}
+    U -->|No| V[OnboardingJourneyView<br/>Voice Setup Flow]
+    U -->|Yes| W[ContentView<br/>Main App with Tabs]
+    
+    classDef welcome fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef form fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef validation fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    classDef error fill:#ffebee,stroke:#d32f2f,stroke-width:2px
+    classDef success fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    
+    class A,B welcome
+    class C,D,F,K form
+    class G,H,I,J,L,M,N validation
+    class O,P,Q,R,S,U error
+    class V,W success
+```
+
+### Sign Up Flow with Requirements
 ```mermaid
 sequenceDiagram
     participant U as User
@@ -55,22 +106,35 @@ sequenceDiagram
     
     U->>W: Tap "Get Started"
     W->>S: Navigate to SignUpView
-    U->>S: Enter email & password
-    S->>A: signUp(email, password)
-    A->>F: Create user account
-    F->>A: Success/Error response
-    A->>S: Update UI state
     
-    alt Authentication Success
-        S->>O: Navigate to Onboarding
-        O->>O: Start voice baseline setup
-    else Authentication Failed
-        S->>S: Show error message
-        U->>S: Retry or go back
+    Note over S: Form Requirements:<br/>- Email: Valid email format<br/>- Password: Minimum 6 characters<br/>- Button disabled until valid
+    
+    U->>S: Enter email & password
+    S->>A: Validate form (isFormValid)
+    A->>A: Check isEmailValid && isPasswordValid
+    
+    alt Form Valid
+        S->>A: signUpWithEmail()
+        A->>F: Create user account
+        F->>A: Success/Error response
+        A->>S: Update UI state
+        
+        alt Authentication Success
+            S->>O: Navigate to Onboarding
+            O->>O: Start voice baseline setup
+        else Authentication Failed
+            S->>S: Show specific error message
+            U->>S: Retry or go back
+        end
+    else Form Invalid
+        S->>S: Show validation error
+        U->>S: Fix form and retry
     end
+    
+    Note over S: Alternative Path:<br/>U->>S: Tap "Continue Anonymously"<br/>S->>A: signInAnonymously()<br/>No validation required
 ```
 
-### Login Flow
+### Login Flow with Requirements
 ```mermaid
 sequenceDiagram
     participant U as User
@@ -80,84 +144,178 @@ sequenceDiagram
     participant F as Firebase Auth
     participant O as OnboardingJourneyView
     
-    U->>W: Tap "Sign In"
+    U->>W: Tap "I already have an account"
     W->>L: Navigate to LoginView
-    U->>L: Enter credentials
-    L->>A: signIn(email, password)
-    A->>F: Authenticate user
-    F->>A: Success/Error response
-    A->>L: Update UI state
     
-    alt Authentication Success
-        L->>O: Navigate to Onboarding (if needed)
-        O->>O: Start voice baseline setup
-    else Authentication Failed
-        L->>L: Show error message
-        U->>L: Retry or go back
+    Note over L: Form Requirements:<br/>- Email: Valid email format<br/>- Password: Minimum 6 characters<br/>- Button disabled until valid
+    
+    U->>L: Enter credentials
+    L->>A: Validate form (isFormValid)
+    A->>A: Check isEmailValid && isPasswordValid
+    
+    alt Form Valid
+        L->>A: loginWithEmail()
+        A->>F: Authenticate user
+        F->>A: Success/Error response
+        A->>L: Update UI state
+        
+        alt Authentication Success
+            L->>O: Navigate to Onboarding (if needed)
+            O->>O: Start voice baseline setup
+        else Authentication Failed
+            L->>L: Show specific error message
+            U->>L: Retry or go back
+        end
+    else Form Invalid
+        L->>L: Show validation error
+        U->>L: Fix form and retry
     end
 ```
 
 ## Onboarding Journey
 
-### Complete Onboarding Flow
+### Complete Onboarding Flow with Requirements
 ```mermaid
 graph TD
     A[OnboardingJourneyView<br/>Entry Point] --> B[SignupMethodView<br/>Choose Signup Method]
     B --> C{User Selection}
-    C -->|Anonymous| D[UserInfoFormView<br/>Basic Profile]
-    C -->|Email| E[SignUpView<br/>Email Registration]
+    C -->|Tap "Anonymous"| D[UserInfoFormView<br/>Basic Profile]
+    C -->|Tap "Email"| E[SignUpView<br/>Email Registration]
     
     D --> F[VoiceHeroView<br/>Voice Test Explanation]
     E --> F
     
     F --> G[OnboardingJourneyView<br/>Sustained Vowel Test]
-    G --> H{Recording Quality}
-    H -->|Good| I[OnboardingJourneyView<br/>Reading Prompt]
-    H -->|Poor| G
+    G --> H{Microphone Permission}
+    H -->|Granted| I[Start 10-second Recording]
+    H -->|Denied| J[Show Error<br/>"Microphone access required"]
+    H -->|Restricted| K[Show Error<br/>"Microphone restricted"]
     
-    I --> J[OnboardingJourneyView<br/>Final Step]
-    J --> K{Baseline Established?}
-    K -->|Yes| L[ContentView<br/>Main App]
-    K -->|No| M[Wait for Cloud Analysis]
-    M --> L
+    I --> L{Recording Quality Gate}
+    L -->|RMS ≥ Threshold| M[Proceed to Analysis]
+    L -->|RMS < Threshold| N[Show Quality Error<br/>"Signal too weak"]
+    
+    M --> O[Local Analysis<br/>Immediate F0]
+    M --> P[Cloud Upload<br/>Comprehensive Analysis]
+    
+    O --> Q[Show Immediate Results]
+    P --> R[Real-time Updates<br/>Via Firestore Listener]
+    
+    Q --> S[OnboardingJourneyView<br/>Reading Prompt]
+    R --> S
+    
+    S --> T[OnboardingJourneyView<br/>Final Step]
+    T --> U{Baseline Established?}
+    U -->|Yes| V[ContentView<br/>Main App]
+    U -->|No| W[Wait for Cloud Analysis]
+    W --> V
+    
+    N --> X[User Retry]
+    X --> G
     
     classDef step fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
     classDef decision fill:#fff3e0,stroke:#f57c00,stroke-width:2px
     classDef recording fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    classDef error fill:#ffebee,stroke:#d32f2f,stroke-width:2px
     classDef completion fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
     
-    class A,B,D,E,F,I,J step
-    class C,H,K decision
-    class G,M recording
-    class L completion
+    class A,B,D,E,F,T step
+    class C,H,L,U decision
+    class G,I,M,O,P,Q,R,S recording
+    class J,K,N,X error
+    class V,W completion
 ```
 
-### Voice Recording Process
+### Voice Recording Process with Quality Gates
 ```mermaid
 sequenceDiagram
     participant U as User
     participant O as OnboardingJourneyView
+    participant M as MicrophonePermissionManager
     participant R as AudioRecorder
     participant L as LocalVoiceAnalyzer
     participant C as CloudVoiceAnalysisService
     participant F as Firestore
     
     U->>O: Tap "Start Recording"
-    O->>R: Start 10-second recording
-    R->>O: Recording in progress
-    O->>O: Show countdown timer
+    O->>M: Check microphone permission
     
-    R->>O: Recording complete
-    O->>L: Analyze locally (F0)
-    L->>O: Immediate F0 feedback
+    alt Permission Granted
+        M->>O: Permission granted
+        O->>R: Start 10-second recording
+        R->>O: Recording in progress
+        O->>O: Show countdown timer
+        
+        R->>O: Recording complete
+        O->>L: Analyze locally (F0)
+        L->>O: Immediate F0 feedback
+        
+        O->>C: Upload to cloud
+        C->>C: Process with Parselmouth
+        C->>F: Store comprehensive results
+        F->>O: Real-time updates via listener
+        
+        O->>O: Show comprehensive analysis
+        O->>O: Establish baseline (if ready)
+    else Permission Denied
+        M->>O: Permission denied
+        O->>O: Show "Microphone access required"
+        U->>O: Go to Settings or retry
+    else Permission Restricted
+        M->>O: Permission restricted
+        O->>O: Show "Microphone restricted on device"
+        U->>O: Cannot proceed
+    end
     
-    O->>C: Upload to cloud
-    C->>C: Process with Parselmouth
-    C->>F: Store comprehensive results
-    F->>O: Real-time updates via listener
+    Note over O: Quality Gate Requirements:<br/>- RMS signal level ≥ 0.01 (device)<br/>- RMS signal level ≥ 0.005 (simulator)<br/>- 10-second sustained vowel<br/>- WAV format, 48kHz, 24-bit
+```
+
+### Onboarding Step Requirements
+```mermaid
+graph TD
+    A[OnboardingJourneyView<br/>Entry] --> B[SignupMethodView<br/>Choose Method]
+    B --> C{User Action}
+    C -->|Tap "Anonymous"| D[UserInfoFormView<br/>Age & Gender Required]
+    C -->|Tap "Email"| E[SignUpView<br/>Email + Password ≥6 chars]
     
-    O->>O: Show comprehensive analysis
-    O->>O: Establish baseline (if ready)
+    D --> F[VoiceHeroView<br/>Explanation Screen]
+    E --> F
+    
+    F --> G[OnboardingJourneyView<br/>Sustained Vowel Test]
+    G --> H{Requirements Met?}
+    
+    H -->|Microphone Permission + Valid Audio| I[Proceed to Analysis]
+    H -->|Missing Permission| J[Request Microphone Access]
+    H -->|Poor Audio Quality| K[Show Quality Error]
+    
+    I --> L[Local Analysis<br/>Immediate F0]
+    I --> M[Cloud Analysis<br/>Comprehensive Features]
+    
+    L --> N[OnboardingJourneyView<br/>Reading Prompt]
+    M --> N
+    
+    N --> O[OnboardingJourneyView<br/>Final Step]
+    O --> P{Baseline Ready?}
+    P -->|Yes| Q[ContentView<br/>Main App]
+    P -->|No| R[Wait for Cloud Results]
+    R --> Q
+    
+    J --> S[User Grants Permission]
+    S --> G
+    K --> T[User Retry]
+    T --> G
+    
+    classDef step fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef requirement fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef validation fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    classDef error fill:#ffebee,stroke:#d32f2f,stroke-width:2px
+    classDef completion fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    
+    class A,B,D,E,F,N,O step
+    class C,H,P requirement
+    class G,I,L,M validation
+    class J,K,S,T error
+    class Q,R completion
 ```
 
 ## Main App Journey
