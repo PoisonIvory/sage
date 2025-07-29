@@ -4,43 +4,6 @@ This document provides a comprehensive visual overview of all user journeys thro
 
 **Document Status**: This document reflects the actual implementation as of January 2025. All flows, views, and interactions are based on the current codebase.
 
-## App Entry Point & Authentication Flow
-
-### Main App Navigation Structure
-```mermaid
-graph TD
-    A[SageApp.swift<br/>Entry Point] --> B{User Authenticated?}
-    B -->|No| C[WelcomeView<br/>Landing Screen]
-    B -->|Yes| D{Onboarding Complete?}
-    D -->|No| E[OnboardingJourneyView<br/>Voice Setup Flow]
-    D -->|Yes| F[ContentView<br/>Main App with Tabs]
-    
-    C --> G[SignUpView<br/>Registration]
-    C --> H[LoginView<br/>Sign In]
-    C --> I[ContentView<br/>Browse Mode]
-    
-    G --> J{Authentication Success?}
-    H --> J
-    J -->|Yes| D
-    J -->|No| C
-    
-    E --> F
-    F --> K[HomeView<br/>Today's Analysis]
-    F --> L[SessionsView<br/>Recording Interface]
-    F --> M[VoiceDashboardView<br/>Longitudinal Trends]
-    F --> N[ProfilePagePlaceholderView<br/>User Profile]
-    
-    classDef entry fill:#ffebee,stroke:#d32f2f,stroke-width:2px
-    classDef auth fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
-    classDef onboarding fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
-    classDef main fill:#fff3e0,stroke:#f57c00,stroke-width:2px
-    
-    class A entry
-    class B,C,G,H,I,J auth
-    class D,E onboarding
-    class F,K,L,M,N main
-```
-
 ## Authentication Journey
 
 ### Welcome Screen User Actions
