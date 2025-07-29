@@ -1,12 +1,12 @@
 # Legacy Code Analysis & Cleanup Recommendations
 
-## 🔍 **Critical Analysis Summary**
+##  **Critical Analysis Summary**
 
 After analyzing the codebase for legacy code, unused patterns, and cleanup opportunities, here are the **safe-to-remove** items and **recommended improvements**.
 
 ---
 
-## 🗑️ **Safe to Remove (Legacy Code)**
+##  **Safe to Remove (Legacy Code)**
 
 ### 1. **Empty Placeholder Files**
 ```swift
@@ -37,7 +37,7 @@ After analyzing the codebase for legacy code, unused patterns, and cleanup oppor
 
 ---
 
-## 🧹 **Recommended Cleanup Actions**
+##  **Recommended Cleanup Actions**
 
 ### **Priority 1: Immediate Removal**
 
@@ -81,26 +81,26 @@ rm Sage/UIComponents/SageTabBarItemStyle.swift
 
 ---
 
-## 📊 **Impact Analysis**
+##  **Impact Analysis**
 
 ### **Safe Removals (No Breaking Changes)**
-- ✅ Empty placeholder files
-- ✅ Mock recording logic (replace with proper error handling)
-- ✅ Legacy migration code (migration completed)
-- ✅ Unused TODO comments
+-  Empty placeholder files
+-  Mock recording logic (replace with proper error handling)
+-  Legacy migration code (migration completed)
+-  Unused TODO comments
 
 ### **Requires Testing**
-- ⚠️ ProfilePagePlaceholderView replacement
-- ⚠️ VoiceDashboardView mock data replacement
-- ⚠️ Structured logging implementation
+-  ProfilePagePlaceholderView replacement
+-  VoiceDashboardView mock data replacement
+-  Structured logging implementation
 
 ### **Requires Implementation**
-- 🔄 TODO items that should be implemented rather than removed
-- 🔄 Proper error handling to replace mock recordings
+-  TODO items that should be implemented rather than removed
+-  Proper error handling to replace mock recordings
 
 ---
 
-## 🚀 **Implementation Plan**
+##  **Implementation Plan**
 
 ### **Phase 1: Safe Removals (Immediate)**
 1. Delete `SageTabBarItemStyle.swift`
@@ -120,7 +120,7 @@ rm Sage/UIComponents/SageTabBarItemStyle.swift
 
 ---
 
-## 📋 **Files to Modify**
+##  **Files to Modify**
 
 ### **Delete These Files:**
 - `Sage/UIComponents/SageTabBarItemStyle.swift`
@@ -134,7 +134,7 @@ rm Sage/UIComponents/SageTabBarItemStyle.swift
 
 ---
 
-## ✅ **Benefits of Cleanup**
+##  **Benefits of Cleanup**
 
 1. **Reduced Codebase Size:** Remove ~200 lines of unused code
 2. **Improved Maintainability:** Eliminate confusing mock/placeholder code
@@ -144,7 +144,7 @@ rm Sage/UIComponents/SageTabBarItemStyle.swift
 
 ---
 
-## ⚠️ **Precautions**
+##  **Precautions**
 
 1. **Test Thoroughly:** Run all tests after each removal
 2. **Incremental Changes:** Make changes one at a time

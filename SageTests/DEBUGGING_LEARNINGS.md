@@ -1,6 +1,6 @@
 # Debugging Learnings & Best Practices
 
-## 📋 Table of Contents
+##  Table of Contents
 - [Overview](#-overview)
 - [Common Debugging Patterns](#-common-debugging-patterns)
 - [Communication & Requirements Gaps](#-communication--requirements-gaps)
@@ -15,13 +15,13 @@
 - [Expected Benefits](#-expected-benefits)
 - [Resources](#-resources)
 
-## 🎯 Overview
+##  Overview
 
 This document captures the key learnings from our debugging sessions and retrospective analysis. These patterns should be applied to all future development work to prevent repeated debugging cycles.
 
 **Scope**: Applies to all production Swift code in ViewModels, Coordinators, Services, and Unit Tests.
 
-## 🚨 Common Debugging Patterns We've Identified
+##  Common Debugging Patterns We've Identified
 
 ### 1. Test-Implementation Mismatch Pattern
 
@@ -120,7 +120,7 @@ This document captures the key learnings from our debugging sessions and retrosp
 
 **Solution**: Establish consistent error handling patterns and centralize error management.
 
-## 🗣️ Communication & Requirements Gaps
+##  Communication & Requirements Gaps
 
 ### 8. Requirements Drift Pattern
 
@@ -156,7 +156,7 @@ This document captures the key learnings from our debugging sessions and retrosp
 - Use concrete examples in requirements
 - Create shared understanding between product and engineering
 
-## 🚫 When Not to Write a Test
+##  When Not to Write a Test
 
 Not all code needs tests, and not all test failures are worth fixing. Focus testing efforts on high-value areas:
 
@@ -183,7 +183,7 @@ Before writing a test, ask:
 3. **Is the behavior stable enough to test?**
 4. **Is the test cost (writing + maintaining) worth the benefit?**
 
-## 🛠️ Best Practices for Future Development
+##  Best Practices for Future Development
 
 ### 1. Test-First Development (TDD)
 
@@ -218,11 +218,11 @@ func testUserProfileCreation() {
 ### 3. Set Up State Directly on ViewModels
 
 ```swift
-// ✅ CORRECT: Set state directly on ViewModel
+//  CORRECT: Set state directly on ViewModel
 viewModel.microphonePermissionStatus = .granted
 viewModel.userProfile = OnboardingTestDataFactory.createMinimalUserProfile()
 
-// ❌ INCORRECT: Rely on mocks to set ViewModel state
+//  INCORRECT: Rely on mocks to set ViewModel state
 harness.mockMicrophonePermissionManager.permissionGranted = true
 ```
 
@@ -284,7 +284,7 @@ private func validateTestEnvironment() {
 ### 7. Method Length Guidelines
 
 ```swift
-// ✅ GOOD: Methods under 20 lines, single responsibility
+//  GOOD: Methods under 20 lines, single responsibility
 private func validateAge(_ age: Int) -> ValidationResult {
     guard age > 0 else {
         return .failure(.ageRequired(fieldName: "age"))
@@ -295,7 +295,7 @@ private func validateAge(_ age: Int) -> ValidationResult {
     return .success
 }
 
-// ❌ BAD: Methods over 50 lines with multiple responsibilities
+//  BAD: Methods over 50 lines with multiple responsibilities
 func processUserData() {
     // 50+ lines of validation, processing, analytics, error handling
     // Multiple responsibilities in one method
@@ -305,7 +305,7 @@ func processUserData() {
 ### 8. Helper Method Extraction
 
 ```swift
-// ✅ GOOD: Extract common patterns into helpers
+//  GOOD: Extract common patterns into helpers
 private func trackAnalyticsEvent(_ eventName: String, properties: [String: Any]) {
     guard let userId = userProfile?.id else {
         Logger.error("[ViewModel] Missing user ID during \(eventName) analytics")
@@ -333,7 +333,7 @@ private func trackOnboardingStarted() {
 ### 9. Consistent Error Handling
 
 ```swift
-// ✅ GOOD: Centralized error handling
+//  GOOD: Centralized error handling
 enum ViewModelError: Error {
     case missingUserProfile
     case invalidInput(String)
@@ -361,7 +361,7 @@ private func handleError(_ error: Error) {
 ### 10. UI Content Centralization
 
 ```swift
-// ✅ GOOD: Centralize UI strings
+//  GOOD: Centralize UI strings
 struct OnboardingStrings {
     static let explainerHeadline = "Let's run some quick tests"
     static let explainerSubtext = "This helps us understand the unique physiology of your vocal tract."
@@ -377,7 +377,7 @@ var explainerHeadline: String {
 }
 ```
 
-## 🔄 Concurrency Debugging
+##  Concurrency Debugging
 
 ### Common Concurrency Pitfalls
 
@@ -392,7 +392,7 @@ var explainerHeadline: String {
 ### 1. @MainActor Violations
 
 ```swift
-// ❌ BAD: Missing @MainActor
+//  BAD: Missing @MainActor
 final class OnboardingJourneyViewModel: ObservableObject {
     @Published var currentStep: OnboardingStep = .signupMethod
     
@@ -402,7 +402,7 @@ final class OnboardingJourneyViewModel: ObservableObject {
     }
 }
 
-// ✅ GOOD: Proper @MainActor usage
+//  GOOD: Proper @MainActor usage
 @MainActor
 final class OnboardingJourneyViewModel: ObservableObject {
     @Published var currentStep: OnboardingStep = .signupMethod
@@ -417,7 +417,7 @@ final class OnboardingJourneyViewModel: ObservableObject {
 ### 2. Background Thread Issues in ViewModels
 
 ```swift
-// ❌ BAD: UI updates from background thread
+//  BAD: UI updates from background thread
 func loadUserProfile() {
     Task.detached {
         let profile = await userProfileRepository.fetchProfile()
@@ -426,7 +426,7 @@ func loadUserProfile() {
     }
 }
 
-// ✅ GOOD: Proper main thread handling
+//  GOOD: Proper main thread handling
 func loadUserProfile() {
     Task.detached {
         let profile = await userProfileRepository.fetchProfile()
@@ -440,7 +440,7 @@ func loadUserProfile() {
 ### 3. Async Let Side Effects
 
 ```swift
-// ❌ BAD: Unhandled async let side effects
+//  BAD: Unhandled async let side effects
 func processData() async {
     async let userData = fetchUserData()
     async let analyticsData = fetchAnalyticsData()
@@ -449,7 +449,7 @@ func processData() async {
     let result = await (userData, analyticsData)
 }
 
-// ✅ GOOD: Proper async let handling
+//  GOOD: Proper async let handling
 func processData() async {
     async let userData = fetchUserData()
     async let analyticsData = fetchAnalyticsData()
@@ -463,20 +463,20 @@ func processData() async {
 ### 4. Test Concurrency Issues
 
 ```swift
-// ❌ BAD: Test not handling async properly
+//  BAD: Test not handling async properly
 func testAsyncOperation() {
     viewModel.performAsyncOperation()
     XCTAssertEqual(viewModel.result, expectedValue) // Race condition
 }
 
-// ✅ GOOD: Proper async test
+//  GOOD: Proper async test
 func testAsyncOperation() async {
     await viewModel.performAsyncOperation()
     XCTAssertEqual(viewModel.result, expectedValue)
 }
 ```
 
-## 📋 Pre-Testing Checklist
+##  Pre-Testing Checklist
 
 Before writing any test, verify:
 
@@ -493,59 +493,59 @@ Before writing any test, verify:
 - [ ] **[ROI]** Is this test worth writing and maintaining?
 - [ ] **[Concurrency]** Are there any threading concerns?
 
-## 🔧 Common Fixes We've Applied
+##  Common Fixes We've Applied
 
 ### 1. Permission State Setup
 
 ```swift
-// ✅ CORRECT
+//  CORRECT
 viewModel.microphonePermissionStatus = .granted
 
-// ❌ INCORRECT
+//  INCORRECT
 harness.mockMicrophonePermissionManager.permissionGranted = true
 ```
 
 ### 2. User Profile Setup
 
 ```swift
-// ✅ CORRECT
+//  CORRECT
 viewModel.userProfile = OnboardingTestDataFactory.createMinimalUserProfile()
 
-// ❌ INCORRECT
+//  INCORRECT
 viewModel.userProfile = OnboardingTestDataFactory.createCompleteUserProfile(age: 0, gender: "")
 ```
 
 ### 3. Recording Flow Testing
 
 ```swift
-// ✅ CORRECT
+//  CORRECT
 let mockRecording = OnboardingTestDataFactory.createMockRecording()
 harness.mockAudioRecorder.simulateRecordingCompletion(mockRecording)
 
-// ❌ INCORRECT
+//  INCORRECT
 harness.mockAudioRecorder.stop()
 ```
 
 ### 4. Analytics Testing
 
 ```swift
-// ✅ CORRECT
+//  CORRECT
 viewModel.userProfile = OnboardingTestDataFactory.createMinimalUserProfile()
 viewModel.handleVocalTestUploadResult(.success(()))
 
-// ❌ INCORRECT
+//  INCORRECT
 viewModel.startVocalTest() // Without user profile
 ```
 
 ### 5. Method Refactoring
 
 ```swift
-// ✅ BEFORE: Long method with multiple responsibilities
+//  BEFORE: Long method with multiple responsibilities
 func processUserSignup() {
     // 50+ lines of validation, profile creation, analytics, navigation
 }
 
-// ✅ AFTER: Broken down into focused methods
+//  AFTER: Broken down into focused methods
 func processUserSignup() {
     guard validateSignupData() else { return }
     createUserProfile()
@@ -562,7 +562,7 @@ private func navigateToNextStep() { /* 3 lines */ }
 ### 6. Helper Method Creation
 
 ```swift
-// ✅ BEFORE: Repeated analytics pattern
+//  BEFORE: Repeated analytics pattern
 private func trackSignupMethodSelected(method: String) {
     guard let userId = userProfile?.id else {
         Logger.error("[ViewModel] Missing user ID during signup method analytics")
@@ -579,7 +579,7 @@ private func trackOnboardingStarted() {
     analyticsService.track("onboarding_started", properties: ["userID": userId, "signup_method": selectedSignupMethod?.rawValue ?? "unknown"], origin: "ViewModel")
 }
 
-// ✅ AFTER: Extracted helper method
+//  AFTER: Extracted helper method
 private func trackAnalyticsEvent(_ eventName: String, properties: [String: Any]) {
     guard let userId = userProfile?.id else {
         Logger.error("[ViewModel] Missing user ID during \(eventName) analytics")
@@ -591,7 +591,7 @@ private func trackAnalyticsEvent(_ eventName: String, properties: [String: Any])
 }
 ```
 
-## 🔒 Enforcement & Automation
+##  Enforcement & Automation
 
 ### SwiftLint Rules
 
@@ -663,7 +663,7 @@ func testOnboardingFlowSnapshot() {
 }
 ```
 
-## 🛠️ Tooling & Automation
+##  Tooling & Automation
 
 ### Recommended Tools
 
@@ -702,7 +702,7 @@ func XCTAssertUserProfileCreated(in viewModel: OnboardingJourneyViewModel) {
 }
 ```
 
-## 🎯 MVP vs Post-MVP Considerations
+##  MVP vs Post-MVP Considerations
 
 ### Essential for MVP (Implement Now)
 - [x] **Method Length**: Keep methods under 20 lines
@@ -721,7 +721,7 @@ func XCTAssertUserProfileCreated(in viewModel: OnboardingJourneyViewModel) {
 - [ ] **Performance Optimization**: Lazy loading, caching strategies
 - [ ] **Advanced Concurrency**: Structured concurrency patterns
 
-## 🎯 Expected Benefits
+##  Expected Benefits
 
 By following these practices:
 
@@ -736,7 +736,7 @@ By following these practices:
 - **Centralized UI content** for easier localization and updates
 - **Reduced concurrency bugs** through proper @MainActor usage
 
-## 📚 Resources
+##  Resources
 
 - [MVP Testing Strategy](./README.md#mvp-testing-strategy)
 - [Test Harness Documentation](./OnboardingTestHarness.swift)
@@ -764,4 +764,4 @@ By following these practices:
 - Prefer pattern matching on enums for all state-driven UI logic. Avoid duplicating state as booleans.
 
 ### Testing
-- When changing a ViewModel’s API, update all test harnesses and mocks to match the new API. 
+- When changing a ViewModels API, update all test harnesses and mocks to match the new API. 

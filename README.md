@@ -21,12 +21,12 @@ Sage represents a pioneering advancement in voice-based health monitoring, speci
 
 ### Voice as a Digital Biomarker
 
-The human voice serves as a rich source of physiological information, with recent research demonstrating its potential as a non-invasive biomarker for health monitoring¹. Voice production involves complex coordination between respiratory, laryngeal, and articulatory systems, making it sensitive to subtle physiological changes that may precede clinical symptoms².
+The human voice serves as a rich source of physiological information, with recent research demonstrating its potential as a non-invasive biomarker for health monitoring. Voice production involves complex coordination between respiratory, laryngeal, and articulatory systems, making it sensitive to subtle physiological changes that may precede clinical symptoms.
 
 **Key Physiological Mechanisms:**
-- **Hormonal Receptors**: Sex hormone receptors (estrogen, progesterone, androgen) have been localized in laryngeal tissues³
-- **Laryngeal Vascular Changes**: Narrow-band imaging studies demonstrate increased laryngeal vascular congestion during premenstrual periods⁴
-- **Mucosa Alterations**: Estrogen increases laryngeal mucosa thickness and mucus production; progesterone causes laryngeal drying⁵
+- **Hormonal Receptors**: Sex hormone receptors (estrogen, progesterone, androgen) have been localized in laryngeal tissues
+- **Laryngeal Vascular Changes**: Narrow-band imaging studies demonstrate increased laryngeal vascular congestion during premenstrual periods
+- **Mucosa Alterations**: Estrogen increases laryngeal mucosa thickness and mucus production; progesterone causes laryngeal drying
 
 ### Hormonal Impact on Vocal Tract
 
@@ -37,16 +37,16 @@ A longitudinal observational study by Kaufman et al. (2025) analyzed smartphone-
 - Subtle but measurable variations in fundamental frequency (F0) correlating with menstrual phases
 - Higher minimum pitch during late follicular phase (estrogen peak)
 - Lowest voice intensity during luteal phase (progesterone dominance)
-- No voice changes in hormonal contraceptive users, confirming endogenous hormone dependency⁶
+- No voice changes in hormonal contraceptive users, confirming endogenous hormone dependency
 
 #### PCOS and Voice Alterations
 Research demonstrates significant voice changes in Polycystic Ovary Syndrome:
-- **Laryngeal Abnormalities**: Impaired vocal fold vibration and incomplete glottic closure patterns⁷
-- **Muscle Tension**: Supraglottic hyperfunction indicating deviant muscle tension patterns⁸
-- **Symptomatology**: Increased reports of vocal fatigue, throat clearing, and perceived voice deepening⁹
+- **Laryngeal Abnormalities**: Impaired vocal fold vibration and incomplete glottic closure patterns
+- **Muscle Tension**: Supraglottic hyperfunction indicating deviant muscle tension patterns
+- **Symptomatology**: Increased reports of vocal fatigue, throat clearing, and perceived voice deepening
 
 #### Endometriosis Treatment Effects  
-Voice changes occur in 5-10% of women treated with danazol (synthetic androgen) for endometriosis, causing measurable pitch deepening¹⁰. This establishes a direct causal relationship between hormonal interventions and quantifiable voice parameter changes.
+Voice changes occur in 5-10% of women treated with danazol (synthetic androgen) for endometriosis, causing measurable pitch deepening. This establishes a direct causal relationship between hormonal interventions and quantifiable voice parameter changes.
 
 ### Clinical-Grade Acoustic Analysis
 
@@ -57,12 +57,12 @@ Sage implements validated acoustic analysis methods established in clinical spee
 - Vibration rate of vocal folds, perceived as pitch
 - Clinical range: 80-400 Hz for adult females
 - Measured via autocorrelation algorithms (Praat implementation)
-- Significance: F0 variability correlates with prosodic health and neurological function¹¹
+- Significance: F0 variability correlates with prosodic health and neurological function
 
 **Voice Quality Metrics:**
-- **Jitter**: Cycle-to-cycle F0 perturbation (<1% normal, >1.04% pathological)¹²
-- **Shimmer**: Amplitude perturbation (<0.35 dB normal, >0.57 dB pathological)¹³  
-- **Harmonics-to-Noise Ratio (HNR)**: Periodic vs. aperiodic energy (>20 dB healthy, <15 dB pathological)¹⁴
+- **Jitter**: Cycle-to-cycle F0 perturbation (<1% normal, >1.04% pathological)
+- **Shimmer**: Amplitude perturbation (<0.35 dB normal, >0.57 dB pathological)  
+- **Harmonics-to-Noise Ratio (HNR)**: Periodic vs. aperiodic energy (>20 dB healthy, <15 dB pathological)
 
 **Temporal Features:**
 - Phonation duration (respiratory health indicator)
@@ -72,8 +72,8 @@ Sage implements validated acoustic analysis methods established in clinical spee
 #### Validation Against Clinical Standards
 Our feature extraction pipeline implements algorithms validated against clinical gold standards:
 - **Praat Compatibility**: Core algorithms replicate Praat voice report measurements
-- **eGeMAPS Compliance**: Extended Geneva Minimalistic Acoustic Parameter Set features¹⁵
-- **Multi-tool Validation**: Cross-validated against openSMILE and librosa implementations¹⁶
+- **eGeMAPS Compliance**: Extended Geneva Minimalistic Acoustic Parameter Set features
+- **Multi-tool Validation**: Cross-validated against openSMILE and librosa implementations
 
 ---
 
@@ -81,29 +81,29 @@ Our feature extraction pipeline implements algorithms validated against clinical
 
 ### iOS Application Stack
 ```
-┌─────────────────────────────────────────────────┐
-│                SwiftUI Views                    │
-├─────────────────────────────────────────────────┤
-│              MVVM ViewModels                    │
-├─────────────────────────────────────────────────┤
-│               Domain Layer                      │
-│  ┌─────────────────┐ ┌─────────────────────────┐│
-│  │ Voice Analysis  │ │ Hormonal Correlation    ││
-│  │ Service         │ │ Engine                  ││
-│  └─────────────────┘ └─────────────────────────┘│
-├─────────────────────────────────────────────────┤
-│             Infrastructure Layer                │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐│
-│  │ Audio       │ │ Firebase    │ │ Analytics   ││
-│  │ Recorder    │ │ Services    │ │ Service     ││
-│  └─────────────┘ └─────────────┘ └─────────────┘│
-└─────────────────────────────────────────────────┘
+
+                SwiftUI Views                    
+
+              MVVM ViewModels                    
+
+               Domain Layer                      
+   
+   Voice Analysis    Hormonal Correlation    
+   Service           Engine                  
+   
+
+             Infrastructure Layer                
+    
+   Audio         Firebase      Analytics   
+   Recorder      Services      Service     
+    
+
 ```
 
 ### Audio Processing Pipeline
 ```
-Audio Recording → Local Validation → Feature Extraction → 
-Cloud Analysis → Biomarker Storage → Trend Analysis → 
+Audio Recording  Local Validation  Feature Extraction  
+Cloud Analysis  Biomarker Storage  Trend Analysis  
 Clinical Insights
 ```
 
@@ -210,7 +210,7 @@ func testVocalBaselineEstablishment_ValidRecording_EstablishesBaseline() {
 **Accuracy Benchmarks:**
 - **F0 Detection**: >98% accuracy vs. Praat gold standard
 - **Jitter/Shimmer**: <5% deviation from clinical measurements
-- **HNR Calculation**: ±1 dB precision vs. laboratory equipment
+- **HNR Calculation**: 1 dB precision vs. laboratory equipment
 
 **Test Coverage:**
 - **Unit Tests**: 95%+ coverage across all business logic
@@ -251,7 +251,7 @@ func testVocalBaselineEstablishment_ValidRecording_EstablishesBaseline() {
 - **Battery Impact**: <3% additional consumption per session
 
 **Clinical Accuracy:**
-- **Inter-rater Reliability**: κ > 0.85 (substantial agreement)
+- **Inter-rater Reliability**:  > 0.85 (substantial agreement)
 - **Test-retest Reliability**: r > 0.90 (excellent consistency)
 - **Cross-device Consistency**: <2% variance (iPhone models)
 
@@ -379,9 +379,9 @@ xcodebuild test -scheme Sage -destination 'platform=iOS Simulator,name=iPhone 15
 
 11. Eyben, F., et al. (2016). "The Geneva Minimalistic Acoustic Parameter Set (GeMAPS) for voice research and affective computing." *IEEE Transactions on Affective Computing*, 7(2), 190-202.
 
-12. Farrús, M., et al. (2007). "Jitter and shimmer measurements for speaker recognition." *Interspeech*, 2007, 778-781.
+12. Farrs, M., et al. (2007). "Jitter and shimmer measurements for speaker recognition." *Interspeech*, 2007, 778-781.
 
-13. Teixeira, J.P., et al. (2013). "Vocal acoustic analysis–jitter, shimmer and HNR parameters." *Procedia Technology*, 9, 1112-1122.
+13. Teixeira, J.P., et al. (2013). "Vocal acoustic analysisjitter, shimmer and HNR parameters." *Procedia Technology*, 9, 1112-1122.
 
 14. de Bodt, M.S., et al. (1997). "Speaking fundamental frequency characteristics of normal speakers over 29 years of age." *Journal of Voice*, 11(3), 292-300.
 
@@ -391,4 +391,4 @@ xcodebuild test -scheme Sage -destination 'platform=iOS Simulator,name=iPhone 15
 
 ---
 
-**Sage represents the convergence of clinical speech pathology, women's health research, and advanced mobile technology—establishing a new paradigm for voice-based health monitoring in hormonal disorders.**
+**Sage represents the convergence of clinical speech pathology, women's health research, and advanced mobile technologyestablishing a new paradigm for voice-based health monitoring in hormonal disorders.**

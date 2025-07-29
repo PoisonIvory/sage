@@ -2,41 +2,41 @@
 
 This document describes the file organization structure for the Sage iOS app, following industry best practices and clean architecture principles.
 
-## 📁 Directory Structure
+##  Directory Structure
 
 ```
 Sage/
-├── App/                          # Application entry points
-│   ├── SageApp.swift            # Main app file
-│   └── ContentView.swift        # Root content view
-├── Domain/                       # Pure business logic (Clean Architecture)
-│   ├── Models/                  # Domain models
-│   │   ├── Recording/           # Recording-related models
-│   │   ├── User/                # User-related models
-│   │   └── Onboarding/          # Onboarding-related models
-│   └── Protocols/               # Shared interfaces
-├── Infrastructure/               # Platform-specific implementations
-│   └── Services/                # External service integrations
-│       ├── Auth/                # Authentication services
-│       ├── Audio/               # Audio recording services
-│       ├── Analytics/           # Analytics services
-│       └── Uploading/           # File upload services
-├── Features/                     # Feature modules
-│   ├── Authentication/          # Auth feature
-│   ├── Dashboard/               # Dashboard feature
-│   ├── Onboarding/              # Onboarding feature
-│   └── Sessions/                # Sessions feature
-├── UIComponents/                 # Reusable UI components
-├── Shared/                      # Shared resources
-│   ├── Constants/               # App-wide constants
-│   ├── Extensions/              # Swift extensions
-│   ├── Helpers/                 # Helper functions
-│   └── Utilities/               # Utility classes
-├── Assets.xcassets/             # App assets
-└── Sage.xcdatamodeld/          # Core Data model
+ App/                          # Application entry points
+    SageApp.swift            # Main app file
+    ContentView.swift        # Root content view
+ Domain/                       # Pure business logic (Clean Architecture)
+    Models/                  # Domain models
+       Recording/           # Recording-related models
+       User/                # User-related models
+       Onboarding/          # Onboarding-related models
+    Protocols/               # Shared interfaces
+ Infrastructure/               # Platform-specific implementations
+    Services/                # External service integrations
+        Auth/                # Authentication services
+        Audio/               # Audio recording services
+        Analytics/           # Analytics services
+        Uploading/           # File upload services
+ Features/                     # Feature modules
+    Authentication/          # Auth feature
+    Dashboard/               # Dashboard feature
+    Onboarding/              # Onboarding feature
+    Sessions/                # Sessions feature
+ UIComponents/                 # Reusable UI components
+ Shared/                      # Shared resources
+    Constants/               # App-wide constants
+    Extensions/              # Swift extensions
+    Helpers/                 # Helper functions
+    Utilities/               # Utility classes
+ Assets.xcassets/             # App assets
+ Sage.xcdatamodeld/          # Core Data model
 ```
 
-## 🏗 Architecture Principles
+##  Architecture Principles
 
 ### Clean Architecture
 - **Domain**: Contains pure business logic, independent of frameworks
@@ -49,7 +49,7 @@ Sage/
 - **Views**: UI components and user interactions
 - **ViewModels**: State management and business logic coordination
 
-## 📋 File Organization Guidelines
+##  File Organization Guidelines
 
 ### Domain Models
 - Group related models by domain concept (User, Recording, Onboarding)
@@ -72,7 +72,7 @@ Sage/
 - **Helpers**: Helper functions and utilities
 - **Utilities**: Reusable utility classes like Logger
 
-## 🔄 Migration Notes
+##  Migration Notes
 
 ### Recent Changes
 - Moved from `Core/` to `Domain/` and `Infrastructure/`
@@ -87,20 +87,20 @@ Sage/
 - **Testability**: Clean architecture enables easy testing
 - **Discoverability**: Intuitive file organization
 
-## 🧪 Testing Structure
+##  Testing Structure
 
 Tests mirror the main app structure:
 ```
 SageTests/
-├── AppFlow/                     # App-level tests
-├── Authentication/              # Auth feature tests
-├── Onboarding/                  # Onboarding feature tests
-├── Recording/                   # Recording domain tests
-├── Services/                    # Infrastructure service tests
-└── Mocks/                      # Test mocks and stubs
+ AppFlow/                     # App-level tests
+ Authentication/              # Auth feature tests
+ Onboarding/                  # Onboarding feature tests
+ Recording/                   # Recording domain tests
+ Services/                    # Infrastructure service tests
+ Mocks/                      # Test mocks and stubs
 ```
 
-## 📚 Related Documentation
+##  Related Documentation
 
 - `DATA_STANDARDS.md`: Data modeling standards
 - `UI_STANDARDS.md`: UI component standards

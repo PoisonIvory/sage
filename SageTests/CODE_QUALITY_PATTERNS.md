@@ -1,6 +1,6 @@
 # Code Quality Patterns & Best Practices
 
-## 📋 Table of Contents
+##  Table of Contents
 - [Overview](#-overview)
 - [Method Length & Complexity Guidelines](#-method-length--complexity-guidelines)
 - [Helper Method Extraction Patterns](#-helper-method-extraction-patterns)
@@ -17,13 +17,13 @@
 - [Code Review Checklist](#-code-review-checklist)
 - [Implementation Strategy](#-implementation-strategy)
 
-## 🎯 Overview
+##  Overview
 
 This document outlines the code quality patterns and best practices we've identified through our debugging sessions and codebase analysis. These patterns should be applied to all future development work to improve maintainability, readability, and reduce debugging time.
 
 **Scope**: Applies to all production Swift code in ViewModels, Coordinators, Services, and Unit Tests.
 
-## 📏 Method Length & Complexity Guidelines
+##  Method Length & Complexity Guidelines
 
 ### Rule: Keep Methods Under 20 Lines
 
@@ -34,7 +34,7 @@ This document outlines the code quality patterns and best practices we've identi
 **Examples from our codebase**:
 
 ```swift
-// ❌ BAD: OnboardingJourneyViewModel has 500+ lines with long methods
+//  BAD: OnboardingJourneyViewModel has 500+ lines with long methods
 func startSustainedVowelTest() {
     // 30+ lines handling permission checking, recording setup, error handling
     switch microphonePermissionStatus {
@@ -58,7 +58,7 @@ func startSustainedVowelTest() {
     }
 }
 
-// ✅ GOOD: Break down into focused methods
+//  GOOD: Break down into focused methods
 func startSustainedVowelTest() {
     switch microphonePermissionStatus {
     case .granted:
@@ -96,7 +96,7 @@ private func requestPermissionAndRecord() {
 **Root Cause**: Lack of clear architectural boundaries. Methods grow to handle multiple concerns without refactoring.
 
 ```swift
-// ❌ BAD: Multiple responsibilities in one method
+//  BAD: Multiple responsibilities in one method
 func processUserSignup() {
     // Validation
     guard isEmailValid, isPasswordValid else {
@@ -114,7 +114,7 @@ func processUserSignup() {
     currentStep = .next
 }
 
-// ✅ GOOD: Separate methods for each responsibility
+//  GOOD: Separate methods for each responsibility
 func processUserSignup() {
     guard validateSignupData() else { return }
     createUserProfile()
@@ -128,7 +128,7 @@ private func trackSignupAnalytics() { /* 8 lines */ }
 private func navigateToNextStep() { /* 3 lines */ }
 ```
 
-## 🔧 Helper Method Extraction Patterns
+##  Helper Method Extraction Patterns
 
 ### Avoiding Repetition in Analytics
 
@@ -137,7 +137,7 @@ private func navigateToNextStep() { /* 3 lines */ }
 **Root Cause**: Lack of code review focus on DRY principles. Missing patterns library or shared utilities.
 
 ```swift
-// ❌ BAD: Repeated pattern
+//  BAD: Repeated pattern
 private func trackSignupMethodSelected(method: String) {
     guard let userId = userProfile?.id else {
         Logger.error("[ViewModel] Missing user ID during signup method analytics")
@@ -154,7 +154,7 @@ private func trackOnboardingStarted() {
     analyticsService.track("onboarding_started", properties: ["userID": userId, "signup_method": selectedSignupMethod?.rawValue ?? "unknown"], origin: "ViewModel")
 }
 
-// ✅ GOOD: Extracted helper method
+//  GOOD: Extracted helper method
 private func trackAnalyticsEvent(_ eventName: String, properties: [String: Any]) {
     guard let userId = userProfile?.id else {
         Logger.error("[ViewModel] Missing user ID during \(eventName) analytics")
@@ -184,7 +184,7 @@ private func trackOnboardingStarted() {
 **Root Cause**: No centralized validation strategy. Each method implements its own validation rules.
 
 ```swift
-// ❌ BAD: Validation scattered
+//  BAD: Validation scattered
 func selectAnonymous() {
     guard userProfile == nil else {
         errorMessage = "Profile already exists"
@@ -201,7 +201,7 @@ func selectEmail() {
     // ... rest of method
 }
 
-// ✅ GOOD: Centralized validation
+//  GOOD: Centralized validation
 private func validateNoExistingProfile() -> Bool {
     guard userProfile == nil else {
         errorMessage = "Profile already exists"
@@ -228,7 +228,7 @@ func selectEmail() {
 **Root Cause**: No established error handling strategy or patterns. Different developers use different approaches.
 
 ```swift
-// ❌ BAD: Inconsistent error handling
+//  BAD: Inconsistent error handling
 func method1() {
     do {
         try someOperation()
@@ -246,7 +246,7 @@ func method2() {
     }
 }
 
-// ✅ GOOD: Centralized error handling
+//  GOOD: Centralized error handling
 enum ViewModelError: Error {
     case operationFailed(Error)
     case criticalError(Error)
@@ -284,7 +284,7 @@ func method2() {
 }
 ```
 
-## 📝 UI Content Centralization
+##  UI Content Centralization
 
 ### Pattern: Centralize UI Strings
 
@@ -293,7 +293,7 @@ func method2() {
 **Root Cause**: No localization strategy or string management system. Strings added ad-hoc during development.
 
 ```swift
-// ❌ BAD: Hardcoded strings
+//  BAD: Hardcoded strings
 var explainerHeadline: String {
     return "Let's run some quick tests"
 }
@@ -306,7 +306,7 @@ var sustainedVowelTestInstruction: String {
     return "This test measures the rate and stability of vocal cord vibrations."
 }
 
-// ✅ GOOD: Centralized strings
+//  GOOD: Centralized strings
 struct OnboardingStrings {
     static let explainerHeadline = "Let's run some quick tests"
     static let explainerSubtext = "This helps us understand the unique physiology of your vocal tract."
@@ -326,7 +326,7 @@ var explainerSubtext: String {
 }
 ```
 
-## 🧪 Test Data Factory Patterns
+##  Test Data Factory Patterns
 
 ### Validating Test Setup Inputs
 
@@ -335,7 +335,7 @@ var explainerSubtext: String {
 **Root Cause**: Test data factories lack proper validation and documentation. No clear contracts for valid inputs.
 
 ```swift
-// ❌ BAD: No input validation
+//  BAD: No input validation
 static func createCompleteUserProfile(
     age: Int = 25,
     gender: String = "female"
@@ -349,7 +349,7 @@ static func createCompleteUserProfile(
     )
 }
 
-// ✅ GOOD: Input validation
+//  GOOD: Input validation
 static func createCompleteUserProfile(
     age: Int = 25,
     gender: String = "female"
@@ -372,7 +372,7 @@ static func createCompleteUserProfile(
 }
 ```
 
-## 🔄 State Management Patterns
+##  State Management Patterns
 
 ### Pattern: Direct State Setting
 
@@ -381,11 +381,11 @@ static func createCompleteUserProfile(
 **Root Cause**: Inconsistent state management patterns across ViewModels. Lack of clear state ownership.
 
 ```swift
-// ❌ BAD: Setting mock properties
+//  BAD: Setting mock properties
 harness.mockMicrophonePermissionManager.permissionGranted = true
 viewModel.startSustainedVowelTest() // Expects ViewModel to read from mock
 
-// ✅ GOOD: Setting ViewModel state directly
+//  GOOD: Setting ViewModel state directly
 viewModel.microphonePermissionStatus = .granted
 viewModel.startSustainedVowelTest() // ViewModel uses its own state
 ```
@@ -397,13 +397,13 @@ viewModel.startSustainedVowelTest() // ViewModel uses its own state
 **Root Cause**: No established patterns for state validation in tests.
 
 ```swift
-// ❌ BAD: No state validation
+//  BAD: No state validation
 func testSustainedVowelTestRecording() {
     viewModel.startSustainedVowelTest()
     XCTAssertTrue(viewModel.isRecording)
 }
 
-// ✅ GOOD: Validate state setup
+//  GOOD: Validate state setup
 func testSustainedVowelTestRecording() {
     // Given: Microphone permission is granted
     viewModel.microphonePermissionStatus = .granted
@@ -417,7 +417,7 @@ func testSustainedVowelTestRecording() {
 }
 ```
 
-## 📊 Analytics Patterns
+##  Analytics Patterns
 
 ### Pattern: Consistent Analytics Tracking
 
@@ -426,7 +426,7 @@ func testSustainedVowelTestRecording() {
 **Root Cause**: No established analytics patterns or helper methods. Each developer implements tracking differently.
 
 ```swift
-// ❌ BAD: Inconsistent analytics
+//  BAD: Inconsistent analytics
 private func trackSignupMethodSelected(method: String) {
     analyticsService.track("signup_method", properties: ["method": method])
 }
@@ -437,7 +437,7 @@ private func trackOnboardingStarted() {
     ])
 }
 
-// ✅ GOOD: Consistent analytics with helper
+//  GOOD: Consistent analytics with helper
 private func trackAnalyticsEvent(_ eventName: String, properties: [String: Any]) {
     guard let userId = userProfile?.id else {
         Logger.error("[ViewModel] Missing user ID during \(eventName) analytics")
@@ -463,7 +463,7 @@ private func trackOnboardingStarted() {
 }
 ```
 
-## 🔄 Concurrency & Threading
+##  Concurrency & Threading
 
 ### Rule: Use @MainActor for UI-Bound Logic
 
@@ -472,7 +472,7 @@ private func trackOnboardingStarted() {
 **Root Cause**: Lack of understanding of Swift Concurrency. Missing @MainActor annotations on UI-bound classes.
 
 ```swift
-// ✅ GOOD: @MainActor for UI-bound ViewModels
+//  GOOD: @MainActor for UI-bound ViewModels
 @MainActor
 final class OnboardingJourneyViewModel: ObservableObject {
     @Published var currentStep: OnboardingStep = .signupMethod
@@ -484,7 +484,7 @@ final class OnboardingJourneyViewModel: ObservableObject {
     }
 }
 
-// ✅ GOOD: @MainActor for test classes that interact with ViewModels
+//  GOOD: @MainActor for test classes that interact with ViewModels
 @MainActor
 class OnboardingFlowTests: XCTestCase {
     func testUserSelectsGetStarted() {
@@ -502,7 +502,7 @@ class OnboardingFlowTests: XCTestCase {
 **Root Cause**: Async operations not properly handled with MainActor.
 
 ```swift
-// ❌ BAD: UI updates from background thread
+//  BAD: UI updates from background thread
 func loadUserProfile() {
     Task.detached {
         let profile = await userProfileRepository.fetchProfile()
@@ -511,7 +511,7 @@ func loadUserProfile() {
     }
 }
 
-// ✅ GOOD: Proper main thread handling
+//  GOOD: Proper main thread handling
 func loadUserProfile() {
     Task.detached {
         let profile = await userProfileRepository.fetchProfile()
@@ -522,7 +522,7 @@ func loadUserProfile() {
 }
 ```
 
-## 🗣️ Communication & Requirements
+##  Communication & Requirements
 
 ### Requirements Drift Pattern
 
@@ -548,7 +548,7 @@ func loadUserProfile() {
 - Use concrete examples in requirements
 - Create shared understanding between product and engineering
 
-## 🚫 When Not to Refactor
+##  When Not to Refactor
 
 Not all code needs refactoring, and not all refactoring provides value. Focus refactoring efforts on high-impact areas:
 
@@ -573,7 +573,7 @@ Before refactoring, ask:
 3. **Is the code stable enough to refactor?**
 4. **Is the refactoring cost worth the benefit?**
 
-## 🛠️ Tooling & Automation
+##  Tooling & Automation
 
 ### Recommended Tools
 
@@ -612,7 +612,7 @@ func XCTAssertUserProfileCreated(in viewModel: OnboardingJourneyViewModel) {
 }
 ```
 
-## 🔒 Enforcement & Automation
+##  Enforcement & Automation
 
 ### SwiftLint Rules
 
@@ -684,7 +684,7 @@ func testOnboardingFlowSnapshot() {
 }
 ```
 
-## 🎯 MVP vs Post-MVP Considerations
+##  MVP vs Post-MVP Considerations
 
 ### Essential for MVP (Implement Now)
 - [x] **Method Length**: Keep methods under 20 lines
@@ -703,11 +703,11 @@ func testOnboardingFlowSnapshot() {
 - [ ] **Performance Optimization**: Lazy loading, caching strategies
 - [ ] **Advanced Concurrency**: Structured concurrency patterns
 
-## 📋 Code Review Checklist
+##  Code Review Checklist
 
 When reviewing code, check for:
 
-### ✅ Do's
+###  Do's
 - [ ] **[Length]** Methods under 20 lines?
 - [ ] **[SRP]** One responsibility per method?
 - [ ] **[Reuse]** Common code extracted to helpers?
@@ -720,7 +720,7 @@ When reviewing code, check for:
 - [ ] **[MainActor]** UI-bound ViewModels use @MainActor?
 - [ ] **[ROI]** Is this refactoring worth the effort?
 
-### ❌ Don'ts
+###  Don'ts
 - [ ] **[Anti-Pattern]** Methods over 50 lines?
 - [ ] **[Anti-Pattern]** Multiple responsibilities in one method?
 - [ ] **[Anti-Pattern]** Repeated code patterns?
@@ -732,7 +732,7 @@ When reviewing code, check for:
 - [ ] **[Anti-Pattern]** Missing @MainActor on UI-bound ViewModels?
 - [ ] **[Anti-Pattern]** Refactoring stable, working code unnecessarily?
 
-## 🚀 Implementation Strategy
+##  Implementation Strategy
 
 ### Phase 1: Identify Long Methods
 1. Scan codebase for methods over 20 lines
@@ -754,7 +754,7 @@ When reviewing code, check for:
 2. Validate that refactoring improves maintainability
 3. Document new patterns for future development
 
-## 🎯 Benefits of Following These Patterns
+##  Benefits of Following These Patterns
 
 ### Immediate Benefits:
 - **Easier Testing**: Smaller methods are easier to test in isolation

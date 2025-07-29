@@ -25,7 +25,7 @@ config:
 ---
 flowchart TB
     subgraph "iOS Device - Local Processing"
-        A[Raw Audio Input<br/>48kHz, 24-bit WAV] --> B[Local Quality Gates<br/>RMS ≥ 0.01, Duration ≥ 1s]
+        A[Raw Audio Input<br/>48kHz, 24-bit WAV] --> B[Local Quality Gates<br/>RMS  0.01, Duration  1s]
         B --> C{Quality Validation}
         C -->|Pass| D[iOS Native Analysis<br/>SFVoiceAnalytics + Custom F0]
         C -->|Fail| E[Local Reject<br/>User feedback < 5s]
@@ -366,7 +366,7 @@ erDiagram
 **Research References:**
 - Titze, I.R. (1994) - F0 ranges by demographics
 - Baken & Orlikoff (2000) - Voice analysis standards
-- Farrús et al. (2007) - Jitter/shimmer pathological thresholds
+- Farrs et al. (2007) - Jitter/shimmer pathological thresholds
 
 **Algorithm Standards:**
 - Praat 6.4.1 equivalent algorithms via Parselmouth

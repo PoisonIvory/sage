@@ -6,19 +6,19 @@ This directory contains the organized test suite for the Sage app, following Tes
 
 ```
 SageTests/
-├── Mocks/
-│   ├── AuthMocks.swift          // Mock Firebase Auth objects
-│   └── OnboardingMocks.swift    // Mock coordinator objects
-├── Authentication/
-│   ├── AuthViewModelTests.swift     // Unit tests for AuthViewModel
-│   ├── AuthErrorHandlingTests.swift // Error handling tests
-│   └── AuthFlowTests.swift          // Integration tests
-├── Onboarding/
-│   └── OnboardingFlowViewModelTests.swift // Onboarding flow tests
-├── Recording/
-│   └── RecordingValidationTests.swift     // Audio validation tests
-├── SageTests.swift              // Main reference file
-└── README.md                    // This file
+ Mocks/
+    AuthMocks.swift          // Mock Firebase Auth objects
+    OnboardingMocks.swift    // Mock coordinator objects
+ Authentication/
+    AuthViewModelTests.swift     // Unit tests for AuthViewModel
+    AuthErrorHandlingTests.swift // Error handling tests
+    AuthFlowTests.swift          // Integration tests
+ Onboarding/
+    OnboardingFlowViewModelTests.swift // Onboarding flow tests
+ Recording/
+    RecordingValidationTests.swift     // Audio validation tests
+ SageTests.swift              // Main reference file
+ README.md                    // This file
 ```
 
 ## Test Categories
@@ -44,7 +44,7 @@ Fake external dependencies:
 
 ## TDD Cycle
 
-### RED → GREEN → REFACTOR
+### RED  GREEN  REFACTOR
 
 1. **RED**: Write failing tests that describe desired behavior
 2. **GREEN**: Implement minimum code to make tests pass
@@ -98,7 +98,7 @@ xcodebuild test -project Sage.xcodeproj -scheme Sage -only-testing:SageTests/Aut
 
 ## Adding New Tests
 
-## 🚨 Important: Debugging Learnings & Code Quality
+##  Important: Debugging Learnings & Code Quality
 
 Before writing new tests or code, please review our documentation:
 

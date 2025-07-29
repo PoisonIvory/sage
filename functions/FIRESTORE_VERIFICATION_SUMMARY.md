@@ -2,22 +2,22 @@
 
 ## Analysis Based on Your Code and Logs
 
-### 🔍 What I Found
+###  What I Found
 
 Based on my analysis of your cloud function code and logs, here's the complete picture:
 
-#### ✅ Positive Indicators:
+####  Positive Indicators:
 1. **Function Deployment**: Successfully deployed with 512M memory
 2. **Processing Started**: Logs show processing started at 22:07:41 UTC for file `1A7412FB-852A-487C-A561-1EEC916E4BAB-reprocess.wav`
 3. **Quality Gate Passed**: Audio validation succeeded (duration=5.06s, RMS=0.130817)
 4. **Memory Issue Resolved**: Upgraded from 244M to 512M memory limit
 
-#### ⚠️ Issues Identified:
+####  Issues Identified:
 1. **Shimmer Calculation Error**: "Get shimmer (local_db)" command not available
 2. **Incomplete Processing**: Logs don't show final success/failure messages
 3. **Memory Issues**: Earlier attempts failed due to memory limits
 
-## 📊 Expected Firestore Data Structure
+##  Expected Firestore Data Structure
 
 ### Collection Path:
 ```
@@ -34,7 +34,7 @@ recordings/{recording_id}/insights/{auto_generated_doc_id}
   
   // Jitter measures (vocal fold stability)
   "vocal_analysis_jitter_local": 0.85,       // % - local period perturbation
-  "vocal_analysis_jitter_absolute": 45.2,    // µs - absolute period variation
+  "vocal_analysis_jitter_absolute": 45.2,    // s - absolute period variation
   "vocal_analysis_jitter_rap": 0.92,         // % - relative average perturbation
   "vocal_analysis_jitter_ppq5": 0.78,        // % - 5-point period perturbation
   
@@ -76,7 +76,7 @@ recordings/{recording_id}/insights/{auto_generated_doc_id}
 }
 ```
 
-## 🔍 How to Verify Firestore Writes
+##  How to Verify Firestore Writes
 
 ### Method 1: Firebase Console (Recommended)
 1. **Open**: https://console.firebase.google.com/project/sage-2d21f/firestore
@@ -97,36 +97,36 @@ gcloud firestore export gs://sage-2d21f-export --collection-ids=recordings
 - Look for network requests to Firestore in Xcode debugger
 - Verify voice analysis metrics are displayed
 
-## 🎯 Success Indicators
+##  Success Indicators
 
-### ✅ Data Successfully Written If:
+###  Data Successfully Written If:
 - Documents exist in `recordings/{recording_id}/insights/`
 - Documents contain `vocal_analysis_f0_mean` field with numeric value (80-300 Hz typical)
 - `insight_type` field equals "voice_analysis"
 - `status` field is "completed" or "completed_with_warnings"
 - `created_at` timestamp is around 22:07:41 UTC
 
-### ❌ Potential Issues If:
+###  Potential Issues If:
 - No documents in insights collection
 - Documents missing `vocal_analysis_*` fields
 - All voice analysis values are 0.0
 - Status is "failed" or missing
 
-## 🔧 Recommended Next Steps
+##  Recommended Next Steps
 
 1. **Check Firebase Console** first (easiest method)
 2. **Test with fresh audio file** to see if processing completes
 3. **Monitor logs** for complete processing cycle
 4. **Check iOS app** for F0 data display
 
-## 📝 Recording IDs to Check
+##  Recording IDs to Check
 
 Based on the logs, check these specific recording IDs:
 - `1A7412FB-852A-487C-A561-1EEC916E4BAB-reprocess` (most recent, 22:07:41 UTC)
 - `1A7412FB-852A-487C-A561-1EEC916E4BAB` (earlier attempt)
 - `CF96F83C-0D86-4219-870F-A2240803BC99` (memory-limited attempt)
 
-## 🚨 Known Issues
+##  Known Issues
 
 1. **Shimmer DB Calculation**: May fail but shouldn't prevent other data from being saved
 2. **Memory Limits**: Resolved by upgrading to 512M

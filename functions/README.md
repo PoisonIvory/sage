@@ -19,7 +19,7 @@ This Cloud Function processes audio files uploaded to Firebase Storage and extra
 ## Architecture
 
 ```
-Audio Upload → Download → Quality Gate → F0 Extraction → Validation → Store Results
+Audio Upload  Download  Quality Gate  F0 Extraction  Validation  Store Results
 ```
 
 ### Components
@@ -223,21 +223,21 @@ firebase deploy --only functions
 Stores results in Firestore insights subcollection for better scalability:
 ```
 users/{userId}/recordings/{recordingId}/insights/{insightId}
-├── insight_type: "f0_analysis"           # Type of analysis performed
-├── created_at: timestamp                 # Processing timestamp
-├── status: "completed"                   # Processing status
-├── f0_mean: float                        # Mean F0 (rounded to 1 decimal)
-├── f0_std: float                         # F0 standard deviation (rounded to 1 decimal)
-├── f0_confidence: float                  # Confidence percentage (rounded to 1 decimal)
-├── voiced_ratio: float                   # Proportion of voiced frames (rounded to 3 decimals)
-├── processing_metadata: object           # Audio processing details
-│   ├── audio_duration: float             # Duration in seconds
-│   ├── sample_rate: int                  # Sample rate in Hz
-│   └── tool_version: string              # Praat version used
-├── analysis_version: "1.0"               # Analysis pipeline version
-└── tool_versions: object                 # Tool version information
-    ├── praat: "6.4.1"                    # Praat version
-    └── parselmouth: "0.4.3"              # Parselmouth version
+ insight_type: "f0_analysis"           # Type of analysis performed
+ created_at: timestamp                 # Processing timestamp
+ status: "completed"                   # Processing status
+ f0_mean: float                        # Mean F0 (rounded to 1 decimal)
+ f0_std: float                         # F0 standard deviation (rounded to 1 decimal)
+ f0_confidence: float                  # Confidence percentage (rounded to 1 decimal)
+ voiced_ratio: float                   # Proportion of voiced frames (rounded to 3 decimals)
+ processing_metadata: object           # Audio processing details
+    audio_duration: float             # Duration in seconds
+    sample_rate: int                  # Sample rate in Hz
+    tool_version: string              # Praat version used
+ analysis_version: "1.0"               # Analysis pipeline version
+ tool_versions: object                 # Tool version information
+     praat: "6.4.1"                    # Praat version
+     parselmouth: "0.4.3"              # Parselmouth version
 ```
 
 **Frontend Integration Note**: iOS app should query the insights subcollection for `insight_type: "f0_analysis"` and read `f0_mean` and `f0_std` fields. All F0 values are rounded for consistent display and storage efficiency.
@@ -250,10 +250,10 @@ users/{userId}/recordings/{recordingId}/audio.wav
 ```
 
 **Filtering Logic:**
-- ✅ Must end with `/audio.wav`
-- ✅ Must start with `users/`
-- ✅ Must have exactly 3 path segments (users/userId/recordings/recordingId/audio.wav)
-- ❌ Skips all other file types and paths
+-  Must end with `/audio.wav`
+-  Must start with `users/`
+-  Must have exactly 3 path segments (users/userId/recordings/recordingId/audio.wav)
+-  Skips all other file types and paths
 
 This ensures only the intended audio files trigger F0 extraction and prevents processing of other file types.
 
