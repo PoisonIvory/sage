@@ -46,6 +46,84 @@ flowchart TD
     class C1,C2,C3 analysis
 ```
 
+## Domain-Driven Architecture Layers
+
+### Application Structure
+```mermaid
+graph TD
+    subgraph "App Layer"
+        A1[SageApp.swift<br/>Entry Point]
+        A2[ContentView.swift<br/>Tab Navigation]
+    end
+    
+    subgraph "Features Layer"
+        B1[OnboardingJourneyView<br/>Voice Setup with Baseline]
+        B2[SessionsView<br/>Daily Recording]
+        B3[HomeView<br/>Today's Voice Analysis]
+        B4[VoiceDashboardView<br/>Longitudinal Trends]
+        B5[AuthChoiceView<br/>Authentication]
+    end
+    
+    subgraph "ViewModels"
+        C1[OnboardingJourneyViewModel<br/>Recording & Baseline Logic]
+        C2[AuthViewModel<br/>Authentication State]
+        C3[SessionsViewModel<br/>Daily Sessions]
+    end
+    
+    subgraph "Domain Services"
+        D1[HybridVocalAnalysisService<br/>Analysis Orchestration]
+        D2[VocalBaselineService<br/>Baseline Management]
+        D3[LocalVoiceAnalyzer<br/>iOS SFVoiceAnalytics]
+    end
+    
+    subgraph "Domain Models"
+        E1[VocalBiomarkers<br/>Clinical Models]
+        E2[VocalBaseline<br/>User Baseline]
+        E3[UserProfile<br/>User Data]
+    end
+    
+    subgraph "Infrastructure Services"
+        F1[AuthService<br/>Firebase Auth]
+        F2[MicrophonePermissionManager<br/>Audio Permissions]
+        F3[UserProfileRepository<br/>Profile Storage]
+        F4[VoiceAnalysisRepository<br/>Analysis Storage]
+    end
+    
+    A1 --> A2
+    A2 --> B1
+    A2 --> B2
+    A2 --> B3
+    A2 --> B4
+    A2 --> B5
+    B1 --> C1
+    B5 --> C2
+    B2 --> C3
+    C1 --> D1
+    C1 --> D2
+    D1 --> D3
+    D1 --> E1
+    D2 --> E2
+    D2 --> E3
+    C1 --> F1
+    C1 --> F2
+    C1 --> F3
+    D1 --> F4
+    
+    classDef app fill:#ffebee,stroke:#d32f2f,stroke-width:2px
+    classDef feature fill:#e3f2fd,stroke:#1976d2,stroke-width:1px
+    classDef viewmodel fill:#f3e5f5,stroke:#7b1fa2,stroke-width:1px
+    classDef domain fill:#e8f5e8,stroke:#388e3c,stroke-width:1px
+    classDef model fill:#fff3e0,stroke:#f57c00,stroke-width:1px
+    classDef infrastructure fill:#fce4ec,stroke:#c2185b,stroke-width:1px
+    
+    class A1,A2 app
+    class B1,B2,B3,B4,B5 feature
+    class C1,C2,C3 viewmodel
+    class D1,D2,D3 domain
+    class E1,E2,E3 model
+    class F1,F2,F3,F4 infrastructure
+```
+
 ## Core User Flows
 
 ### Hybrid Analysis Pipeline
