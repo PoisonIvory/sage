@@ -11,14 +11,14 @@ This document provides a comprehensive visual overview of all user journeys thro
 graph TD
     A[WelcomeView] --> B{User Action}
     
-    B -->|Tap "Get Started"| C[SignUpView]
-    B -->|Tap "I already have an account"| D[LoginView]
+    B -->|Tap Get Started| C[SignUpView]
+    B -->|Tap I already have an account| D[LoginView]
     
     C --> F{Form Validation}
     F -->|Valid Email + Password >=6 chars| G[Firebase Auth]
     F -->|Invalid Email| H[Show Error]
     F -->|Password <6 chars| I[Show Error]
-    F -->|Tap "Continue Anonymously"| J[Anonymous Auth]
+    F -->|Tap Continue Anonymously| J[Anonymous Auth]
     
     D --> K{Form Validation}
     K -->|Valid Email + Password >=6 chars| L[Firebase Auth]
@@ -54,7 +54,7 @@ sequenceDiagram
     participant F as Firebase Auth
     participant O as OnboardingJourneyView
     
-    U->>W: Tap "Get Started"
+    U->>W: Tap Get Started
     W->>S: Navigate to SignUpView
     
     Note over S: Form Requirements:<br/>- Email: Valid email format<br/>- Password: Minimum 6 characters<br/>- Button disabled until valid
@@ -81,7 +81,7 @@ sequenceDiagram
         U->>S: Fix form and retry
     end
     
-    Note over S: Alternative Path:<br/>U->>S: Tap "Continue Anonymously"<br/>S->>A: signInAnonymously()<br/>No validation required
+    Note over S: Alternative Path:<br/>U->>S: Tap Continue Anonymously<br/>S->>A: signInAnonymously()<br/>No validation required
 ```
 
 ### Login Flow with Requirements
@@ -94,7 +94,7 @@ sequenceDiagram
     participant F as Firebase Auth
     participant O as OnboardingJourneyView
     
-    U->>W: Tap "I already have an account"
+    U->>W: Tap I already have an account
     W->>L: Navigate to LoginView
     
     Note over L: Form Requirements:<br/>- Email: Valid email format<br/>- Password: Minimum 6 characters<br/>- Button disabled until valid
@@ -187,7 +187,7 @@ sequenceDiagram
     participant C as CloudVoiceAnalysisService
     participant F as Firestore
     
-    U->>O: Tap "Start Recording"
+    U->>O: Tap Start Recording
     O->>M: Check microphone permission
     
     alt Permission Granted
@@ -225,8 +225,8 @@ sequenceDiagram
 graph TD
     A[OnboardingJourneyView<br/>Entry] --> B[SignupMethodView<br/>Choose Method]
     B --> C{User Action}
-    C -->|Tap "Anonymous"| D[UserInfoFormView<br/>Age & Gender Required]
-    C -->|Tap "Email"| E[SignUpView<br/>Email + Password >=6 chars]
+    C -->|Tap Anonymous| D[UserInfoFormView<br/>Age & Gender Required]
+    C -->|Tap Email| E[SignUpView<br/>Email + Password >=6 chars]
     
     D --> F[VoiceHeroView<br/>Explanation Screen]
     E --> F
