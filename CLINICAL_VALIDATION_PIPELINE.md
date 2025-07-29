@@ -29,25 +29,29 @@ flowchart TD
     G --> H[Comprehensive Analysis]
     H --> I[Feature Storage]
     
-    classDef processing fill:#d4edda,stroke:#28a745,stroke-width:2px
+    classDef input fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef processing fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
     classDef validation fill:#fff3cd,stroke:#ffc107,stroke-width:2px
-    classDef storage fill:#cce5ff,stroke:#007bff,stroke-width:2px
+    classDef storage fill:#e8f5e8,stroke:#4caf50,stroke-width:2px
+    classDef error fill:#ffebee,stroke:#f44336,stroke-width:2px
     
-    class A,D,G,H processing
+    class A input
+    class D,F,G,H processing
     class B,C validation
     class I storage
+    class E error
 ```
 
 ### Current Capabilities
 
-**✅ IMPLEMENTED - Voice Analysis Features:**
+**IMPLEMENTED - Voice Analysis Features:**
 - **Local Analysis**: iOS-based immediate F0 detection (`LocalVoiceAnalyzer.swift`)
 - **Cloud Analysis**: Comprehensive Parselmouth-based feature extraction
 - **Quality Gates**: Audio validation and signal quality checks
 - **Feature Extraction**: F0, jitter, shimmer, HNR measurements
 - **Hybrid Architecture**: Local immediate + cloud comprehensive analysis
 
-**✅ IMPLEMENTED - Technical Infrastructure:**
+**IMPLEMENTED - Technical Infrastructure:**
 - **Audio Processing**: AVFoundation-based recording and validation
 - **Firebase Integration**: Cloud storage and real-time data sync
 - **Error Handling**: Comprehensive error states and recovery
@@ -69,9 +73,11 @@ flowchart LR
     
     classDef local fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
     classDef cloud fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef storage fill:#e8f5e8,stroke:#4caf50,stroke-width:2px
     
     class A,B,C local
-    class D,E,F,G cloud
+    class D,E,F cloud
+    class G storage
 ```
 
 **Current Feature Set:**
@@ -85,18 +91,18 @@ flowchart LR
 
 ### Test Architecture
 
-**✅ IMPLEMENTED - iOS Tests (SageTests/):**
+**IMPLEMENTED - iOS Tests (SageTests/):**
 - `HybridVocalAnalysisServiceTests.swift` - Voice analysis service testing
 - `LocalVoiceAnalyzerQualityGateTests.swift` - Audio quality validation
 - `AuthViewModelTests.swift` - Authentication flow testing
 - `OnboardingJourneyViewModelTests.swift` - User onboarding testing
 
-**✅ IMPLEMENTED - Cloud Function Tests (functions/tests/):**
+**IMPLEMENTED - Cloud Function Tests (functions/tests/):**
 - `test_vocal_analysis_extractor.py` - Feature extraction testing
 - `test_audio_processing_service.py` - Audio processing validation
 - `test_integration.py` - End-to-end pipeline testing
 
-**⚠️ TESTING LIMITATION:**
+**TESTING LIMITATION:**
 - **Manual Execution Required**: All tests require manual running (no CI/CD automation)
 - **Synthetic Data**: Tests use mock data and synthetic audio signals
 - **No Research Validation**: No comparison against research gold standards
@@ -127,7 +133,7 @@ def test_sustained_vowel_analysis_extracts_all_biomarkers(self):
 
 ### Current Privacy Implementation
 
-**✅ IMPLEMENTED - Basic Privacy Features:**
+**IMPLEMENTED - Basic Privacy Features:**
 - **Anonymous Authentication**: Firebase anonymous auth support
 - **User ID Anonymization**: Simple hash-based pseudonymization
 - **Data Separation**: Research data separated from user identification
@@ -141,7 +147,7 @@ static func anonymize(_ identifier: String) -> String {
 }
 ```
 
-**⚠️ PRIVACY LIMITATIONS:**
+**PRIVACY LIMITATIONS:**
 - **No HIPAA Compliance**: Not implemented for healthcare data protection
 - **No GDPR Framework**: Basic privacy only, not comprehensive GDPR compliance
 - **Simple Anonymization**: Hash-based only, not cryptographically secure
@@ -151,7 +157,7 @@ static func anonymize(_ identifier: String) -> String {
 
 ### Measured Performance
 
-**✅ ACTUAL PERFORMANCE METRICS:**
+**ACTUAL PERFORMANCE METRICS:**
 - **Local Analysis**: <5 seconds for basic F0 detection
 - **Cloud Processing**: <30 seconds for comprehensive analysis  
 - **File Size Limits**: 0.5-30 seconds audio duration
@@ -174,13 +180,13 @@ func testAudioAnalysisPerformance() async throws {
 
 ### Current Deployment
 
-**✅ IMPLEMENTED - Manual Deployment:**
+**IMPLEMENTED - Manual Deployment:**
 - **Firebase Functions**: Semi-automated deployment via `functions/deploy.sh`
 - **iOS App**: Manual Xcode build and deployment
 - **Cloud Storage**: Firebase Storage integration
 - **Database**: Firestore for real-time data sync
 
-**⚠️ DEPLOYMENT LIMITATIONS:**
+**DEPLOYMENT LIMITATIONS:**
 - **No CI/CD Pipeline**: No automated continuous integration
 - **No Automated Testing**: No automated test execution on commits
 - **Manual Quality Gates**: Quality checks require manual verification
@@ -190,25 +196,25 @@ func testAudioAnalysisPerformance() async throws {
 
 ### Current Status: PROTOTYPE
 
-**⚠️ IMPORTANT DISCLAIMER:**
+**IMPORTANT DISCLAIMER:**
 This is an **experimental prototype** for research purposes. The system has NOT undergone research validation and should not be used for medical diagnosis or medical decision-making.
 
 **What This System Provides:**
-- ✅ Technically sound voice analysis algorithms
-- ✅ Research-quality feature extraction
-- ✅ Robust error handling and quality validation
-- ✅ Real-time user feedback and analysis
+- Technically sound voice analysis algorithms
+- Research-quality feature extraction
+- Robust error handling and quality validation
+- Real-time user feedback and analysis
 
 **What This System Does NOT Provide:**
-- ❌ Research validation against gold standards  
-- ❌ FDA approval or medical device certification
-- ❌ HIPAA/GDPR compliance frameworks
-- ❌ Production-ready CI/CD automation
-- ❌ Research accuracy guarantees
+- Research validation against gold standards  
+- FDA approval or medical device certification
+- HIPAA/GDPR compliance frameworks
+- Production-ready CI/CD automation
+- Research accuracy guarantees
 
 ### Development Roadmap
 
-**🔄 PLANNED IMPROVEMENTS:**
+**PLANNED IMPROVEMENTS:**
 - **Research Validation** - Comparison against Praat gold standards with reference datasets
 - **CI/CD Implementation** - Automated testing and deployment pipelines  
 - **Compliance Framework** - HIPAA/GDPR implementation for healthcare use
