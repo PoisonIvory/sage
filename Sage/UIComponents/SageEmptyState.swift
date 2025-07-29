@@ -5,48 +5,50 @@ struct SageEmptyState<CTA: View>: View {
     let title: String
     let message: String
     let cta: CTA?
+    let flags: FeatureFlags?
 
     @State private var appeared = false
 
-    init(iconName: String, title: String, message: String, @ViewBuilder cta: () -> CTA? = { nil }) {
+    init(iconName: String, title: String, message: String, flags: FeatureFlags? = nil, @ViewBuilder cta: () -> CTA? = { nil }) {
         self.iconName = iconName
         self.title = title
         self.message = message
+        self.flags = flags
         self.cta = cta()
     }
 
     var body: some View {
-        VStack(spacing: SageSpacing.xLarge) {
+        VStack(spacing: SageSpacing.xLarge(flags)) {
             ZStack {
                 Circle()
                     .fill(SageColors.sandstone.opacity(0.2))
                     .frame(width: 96, height: 96)
                 Image(systemName: iconName)
                     .font(.system(size: 56, weight: .medium))
-                    .foregroundColor(SageColors.sageTeal)
+                    .foregroundColor(SageColors.accent(flags))
                     .accessibilityHidden(true)
             }
             Text(title)
-                .font(SageTypography.body)
+                .font(SageTypography.body(flags))
                 .fontWeight(.semibold)
-                .foregroundColor(SageColors.espressoBrown)
+                .foregroundColor(SageColors.primary(flags))
                 .multilineTextAlignment(.center)
-                .padding(.top, SageSpacing.small)
+                .padding(.top, SageSpacing.small(flags))
             Text(message)
-                .font(SageTypography.caption)
-                .foregroundColor(SageColors.cinnamonBark)
+                .font(SageTypography.caption(flags))
+                .foregroundColor(SageColors.secondary(flags))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, SageSpacing.xlarge)
             if let cta = cta {
                 cta
-                    .padding(.top, SageSpacing.medium)
+                    .padding(.top, SageSpacing.medium(flags))
             }
         }
         .frame(maxWidth: 320)
-        .padding(SageSpacing.xLarge)
+        .padding(SageSpacing.xLarge(flags))
         .background(
             RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(SageColors.fogWhite)
+                .fill(SageColors.surface(flags))
                 .shadow(color: SageColors.sandstone.opacity(0.13), radius: 18, x: 0, y: 6)
         )
         .opacity(appeared ? 1 : 0)
