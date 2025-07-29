@@ -2,15 +2,15 @@
 
 ## Prerequisites
 
-- Firebase CLI installed
+- Google Cloud CLI installed
 - Google Cloud project configured
 - Service account with appropriate permissions
 
 ## Quick Deploy
 
 ```bash
-# Deploy to Firebase Functions
-firebase deploy --only functions
+# Deploy to Cloud Run
+gcloud run deploy sage-voice-analysis --source .
 
 # Or use the deployment script
 ./deploy.sh
@@ -18,19 +18,22 @@ firebase deploy --only functions
 
 ## Environment Setup
 
-1. **Install Firebase CLI**
+1. **Install Google Cloud CLI**
    ```bash
-   npm install -g firebase-tools
+   # macOS
+   brew install google-cloud-sdk
+   
+   # Or download from Google Cloud Console
    ```
 
-2. **Login to Firebase**
+2. **Login to Google Cloud**
    ```bash
-   firebase login
+   gcloud auth login
    ```
 
-3. **Initialize Project** (if not already done)
+3. **Set Project**
    ```bash
-   firebase init functions
+   gcloud config set project YOUR_PROJECT_ID
    ```
 
 ## Configuration
@@ -41,7 +44,8 @@ The function uses the following environment variables:
 
 ## Monitoring
 
-Monitor function performance in the Firebase Console:
-- Function execution logs
+Monitor function performance in the Google Cloud Console:
+- Cloud Run service logs
 - Error rates and latency
-- Resource usage and scaling 
+- Resource usage and scaling
+- Firebase Storage trigger events 

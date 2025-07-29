@@ -1,13 +1,13 @@
-# Sage Voice Analysis Cloud Functions
+# Sage Voice Analysis Cloud Run Functions
 
-This directory contains the cloud functions for Sage's voice analysis pipeline, providing research-grade vocal biomarker analysis.
+This directory contains the Cloud Run functions for Sage's voice analysis pipeline, providing research-grade vocal biomarker analysis.
 
 ## Architecture
 
 ```
 functions/
 ├── core/                    # Core application logic
-│   ├── main.py             # Cloud function entry point
+│   ├── main.py             # Cloud Run function entry point
 │   ├── config/             # Configuration management
 │   ├── models/             # Data models and entities
 │   ├── analysis/           # Voice analysis pipeline
@@ -43,7 +43,7 @@ pip install -r requirements.txt
 # Run tests
 python -m pytest tests/
 
-# Deploy to Firebase
+# Deploy to Cloud Run
 ./deployment/deploy.sh
 ```
 
@@ -58,7 +58,7 @@ python -m pytest tests/test_vocal_analysis_extractor.py
 
 ## Deployment
 
-The cloud function is deployed to Firebase Functions and triggered by audio file uploads to Firebase Storage.
+The Cloud Run function is deployed to Google Cloud and triggered by audio file uploads to Firebase Storage.
 
 ### Environment
 - **Runtime**: Python 3.11
