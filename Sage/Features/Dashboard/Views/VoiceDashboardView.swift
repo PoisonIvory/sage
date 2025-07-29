@@ -77,7 +77,7 @@ struct VoiceDashboardView: View {
         ScrollView {
             VStack(spacing: SageSpacing.xLarge) {
                 dashboardHeader
-                
+                Spacer(minLength: 0)
                 if analysisService.currentState.isAnalyzing {
                     analysisInProgressSection
                 } else if let biomarkers = currentBiomarkers {
@@ -85,9 +85,13 @@ struct VoiceDashboardView: View {
                 } else {
                     noDataAvailableSection
                 }
+                Spacer(minLength: 0)
             }
-            .padding([.horizontal, .top], SageSpacing.xLarge)
-            .padding(.bottom, 60)
+            .padding(.horizontal, SageSpacing.large)
+            .padding(.top, SageSpacing.xLarge)
+            .padding(.bottom, 24)
+            .frame(maxWidth: 500)
+            .frame(maxWidth: .infinity)
         }
         .background(sageBackground)
         .navigationTitle("Voice Dashboard")
@@ -179,22 +183,26 @@ struct VoiceDashboardView: View {
     /// GWT: When displaying empty state
     /// GWT: Then shows guidance with no mock data
     private var noDataAvailableSection: some View {
-        SageStylizedCard(background: SageColors.fogWhite) {
-            VStack(spacing: SageSpacing.medium) {
-                Image(systemName: "waveform.circle")
-                    .font(.system(size: 48))
-                    .foregroundColor(SageColors.sageTeal)
-                
-                Text("No Recent Analysis")
-                    .font(SageTypography.headline)
-                    .foregroundColor(SageColors.espressoBrown)
-                
-                Text("Record your voice to see real-time vocal biomarker analysis including F0, jitter, shimmer, and HNR measurements.")
-                    .font(SageTypography.body)
-                    .foregroundColor(SageColors.earthClay)
-                    .multilineTextAlignment(.center)
+        HStack {
+            Spacer(minLength: 0)
+            SageStylizedCard(background: SageColors.fogWhite) {
+                VStack(spacing: SageSpacing.medium) {
+                    Image(systemName: "waveform.circle")
+                        .font(.system(size: 48))
+                        .foregroundColor(SageColors.sageTeal)
+                    Text("No Recent Analysis")
+                        .font(SageTypography.headline)
+                        .foregroundColor(SageColors.espressoBrown)
+                    Text("Record your voice to see real-time vocal biomarker analysis including F0, jitter, shimmer, and HNR measurements.")
+                        .font(SageTypography.body)
+                        .foregroundColor(SageColors.earthClay)
+                        .multilineTextAlignment(.center)
+                }
             }
+            .frame(maxWidth: 400)
+            Spacer(minLength: 0)
         }
+        .padding(.vertical, 8)
     }
     
     /// GWT: Given comprehensive VocalBiomarkers from cloud analysis
