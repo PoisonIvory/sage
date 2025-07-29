@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-This document provides comprehensive technical documentation of the Sage voice analysis pipeline, featuring a **hybrid local/cloud architecture** that delivers immediate user feedback through iOS native processing while maintaining research-grade accuracy via cloud-based Parselmouth analysis. The system processes sustained vowel recordings to extract clinical voice biomarkers for menstrual cycle tracking applications.
+This document provides comprehensive technical documentation of the Sage voice analysis pipeline, featuring a **hybrid local/cloud architecture** that delivers immediate user feedback through iOS native processing while maintaining research-grade accuracy via cloud-based Parselmouth analysis. The system processes sustained vowel recordings to extract voice biomarkers for menstrual cycle tracking applications.
 
 **Architecture Performance:**
 - Local iOS Analysis: < 5 seconds response time
@@ -45,7 +45,7 @@ flowchart TB
         K --> O[Shimmer Analysis<br/>Local, dB, APQ3, APQ5 suite]
         K --> P[HNR Analysis<br/>Harmonicity measurement]
         
-        M --> Q[Composite Scoring<br/>Weighted clinical algorithm]
+        M --> Q[Composite Scoring<br/>Weighted research algorithm]
         N --> Q
         O --> Q
         P --> Q
@@ -82,8 +82,8 @@ flowchart TB
 - **Output**: Basic F0 statistics and confidence score
 
 **Cloud Research Analysis:**
-- **Purpose**: Research-grade clinical analysis
-- **Range**: 75-500 Hz (clinical precision)
+- **Purpose**: Research-grade analysis
+- **Range**: 75-500 Hz (research precision)
 - **Time Resolution**: 0.01s (10ms sampling)
 - **Algorithm**: Parselmouth pitch tracking
 
@@ -109,7 +109,7 @@ sequenceDiagram
     Cloud->>Cloud: Floor: 75Hz, Ceiling: 500Hz
     Cloud->>Results: Research-grade F0 Statistics
     
-    Note over Results: Hybrid results provide both<br/>immediate feedback and clinical accuracy
+    Note over Results: Hybrid results provide both<br/>immediate feedback and research accuracy
 ```
 
 ### 2. Voice Quality Analysis (Cloud-Only)
@@ -163,13 +163,13 @@ harmonicity = sound.to_harmonicity(
 hnr_values = harmonicity.values[harmonicity.values != -200]  # Filter undefined
 ```
 
-## Clinical Thresholds & Validation
+## Research Thresholds & Validation
 
 ### Demographic-Specific Thresholds
 
 ```mermaid
 ---
-title: Clinical Thresholds by Demographics
+title: Research Thresholds by Demographics
 ---
 classDiagram
     class AdultFemale {
@@ -200,7 +200,7 @@ classDiagram
         +Pathological Jitter: >5.0%
         +Pathological Shimmer: >10.0%
         +Poor HNR: <10.0 dB
-        +Clinical Intervention: Required
+        +Potential Hormonal Issue: Detected
     }
     
     AdultFemale --|> ResearchThresholds : References
@@ -229,7 +229,7 @@ flowchart TD
     
     J --> L[Voice Quality Analysis]
     L --> M[Feature Validation]
-    M --> N{Clinical Range Check}
+    M --> N{Research Range Check}
     N -->|Pass| O[Store Results]
     N -->|Fail| P[Flag for Manual Review]
     
@@ -253,7 +253,7 @@ flowchart TD
 ```python
 def _calculate_vocal_stability_score(self, features: Dict[str, Any]) -> float:
     """
-    Weighted clinical stability score combining all voice biomarkers.
+    Weighted research stability score combining all voice biomarkers.
     
     Weights: F0 confidence (40%), Jitter (20%), Shimmer (20%), HNR (20%)
     Output: 0-100 scale (higher = more stable)
@@ -312,7 +312,7 @@ def _calculate_vocal_stability_score(self, features: Dict[str, Any]) -> float:
 
 ```mermaid
 ---
-title: Clinical Data Storage Structure
+title: Research Data Storage Structure
 ---
 erDiagram
     VOICE_ANALYSIS {
@@ -353,7 +353,7 @@ erDiagram
 
 **Accuracy Metrics:**
 - F0 Detection: 95%+ accuracy on quality-validated samples
-- Voice Quality Measures: Clinical-grade precision matching Praat standards
+- Voice Quality Measures: Research-grade precision matching Praat standards
 - False Positive Rate: < 2% with quality gates enabled
 
 **Scalability:**
@@ -363,16 +363,16 @@ erDiagram
 
 ## Research Foundation
 
-**Clinical References:**
+**Research References:**
 - Titze, I.R. (1994) - F0 ranges by demographics
-- Baken & Orlikoff (2000) - Clinical voice analysis standards
+- Baken & Orlikoff (2000) - Voice analysis standards
 - Farrús et al. (2007) - Jitter/shimmer pathological thresholds
 
 **Algorithm Standards:**
 - Praat 6.4.1 equivalent algorithms via Parselmouth
 - eGeMAPS feature set compatibility (openSMILE v3.0)
-- Clinical voice quality assessment protocols
+- Voice quality assessment protocols
 
 ---
 
-**Technical Lead**: This pipeline demonstrates advanced voice processing capabilities, hybrid architecture design, and clinical-grade accuracy suitable for medical applications requiring regulatory compliance and research validity.
+**Technical Lead**: This pipeline demonstrates advanced voice processing capabilities, hybrid architecture design, and research-grade accuracy suitable for research applications requiring regulatory compliance and research validity.
