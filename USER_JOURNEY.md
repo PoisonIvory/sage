@@ -9,31 +9,30 @@ This document provides a comprehensive visual overview of all user journeys thro
 ### Welcome Screen User Actions
 ```mermaid
 graph TD
-    A[WelcomeView<br/>"Women have always spoken."] --> B{User Action}
+    A[WelcomeView] --> B{User Action}
     
-    B -->|Tap "Get Started"| C[SignUpView<br/>Registration Form]
-    B -->|Tap "I already have an account"| D[LoginView<br/>Sign In Form]
-    B -->|No action| E[Stay on WelcomeView]
+    B -->|Tap "Get Started"| C[SignUpView]
+    B -->|Tap "I already have an account"| D[LoginView]
     
     C --> F{Form Validation}
-    F -->|Valid Email + Password ≥6 chars| G[Firebase Auth<br/>Create Account]
-    F -->|Invalid Email| H[Show Error<br/>"Invalid email"]
-    F -->|Password <6 chars| I[Show Error<br/>"Invalid password"]
-    F -->|Tap "Continue Anonymously"| J[Anonymous Auth<br/>No credentials needed]
+    F -->|Valid Email + Password >=6 chars| G[Firebase Auth]
+    F -->|Invalid Email| H[Show Error]
+    F -->|Password <6 chars| I[Show Error]
+    F -->|Tap "Continue Anonymously"| J[Anonymous Auth]
     
     D --> K{Form Validation}
-    K -->|Valid Email + Password ≥6 chars| L[Firebase Auth<br/>Sign In]
-    K -->|Invalid Email| M[Show Error<br/>"Invalid email"]
-    K -->|Password <6 chars| N[Show Error<br/>"Invalid password"]
+    K -->|Valid Email + Password >=6 chars| L[Firebase Auth]
+    K -->|Invalid Email| M[Show Error]
+    K -->|Password <6 chars| N[Show Error]
     
     G --> O{Authentication Success?}
     L --> O
     J --> O
     
     O -->|Success| P[Check Onboarding Status]
-    O -->|Network Error| Q[Show Error<br/>"Check internet connection"]
-    O -->|Email in Use| R[Show Error<br/>"Email already registered"]
-    O -->|Unknown Error| S[Show Error<br/>"Unexpected error occurred"]
+    O -->|Network Error| Q[Show Error]
+    O -->|Email in Use| R[Show Error]
+    O -->|Unknown Error| S[Show Error]
     
     Q --> T[User Retry]
     R --> T
@@ -41,20 +40,8 @@ graph TD
     T --> C
     
     P --> U{Onboarding Complete?}
-    U -->|No| V[OnboardingJourneyView<br/>Voice Setup Flow]
-    U -->|Yes| W[ContentView<br/>Main App with Tabs]
-    
-    classDef welcome fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
-    classDef form fill:#fff3e0,stroke:#f57c00,stroke-width:2px
-    classDef validation fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
-    classDef error fill:#ffebee,stroke:#d32f2f,stroke-width:2px
-    classDef success fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-    
-    class A,B welcome
-    class C,D,F,K form
-    class G,H,I,J,L,M,N validation
-    class O,P,Q,R,S,U error
-    class V,W success
+    U -->|No| V[OnboardingJourneyView]
+    U -->|Yes| W[ContentView]
 ```
 
 ### Sign Up Flow with Requirements
@@ -155,7 +142,7 @@ graph TD
     H -->|Restricted| K[Show Error<br/>"Microphone restricted"]
     
     I --> L{Recording Quality Gate}
-    L -->|RMS ≥ Threshold| M[Proceed to Analysis]
+    L -->|RMS >= Threshold| M[Proceed to Analysis]
     L -->|RMS < Threshold| N[Show Quality Error<br/>"Signal too weak"]
     
     M --> O[Local Analysis<br/>Immediate F0]
@@ -230,7 +217,7 @@ sequenceDiagram
         U->>O: Cannot proceed
     end
     
-    Note over O: Quality Gate Requirements:<br/>- RMS signal level ≥ 0.01 (device)<br/>- RMS signal level ≥ 0.005 (simulator)<br/>- 10-second sustained vowel<br/>- WAV format, 48kHz, 24-bit
+    Note over O: Quality Gate Requirements:<br/>- RMS signal level >= 0.01 (device)<br/>- RMS signal level >= 0.005 (simulator)<br/>- 10-second sustained vowel<br/>- WAV format, 48kHz, 24-bit
 ```
 
 ### Onboarding Step Requirements
@@ -239,7 +226,7 @@ graph TD
     A[OnboardingJourneyView<br/>Entry] --> B[SignupMethodView<br/>Choose Method]
     B --> C{User Action}
     C -->|Tap "Anonymous"| D[UserInfoFormView<br/>Age & Gender Required]
-    C -->|Tap "Email"| E[SignUpView<br/>Email + Password ≥6 chars]
+    C -->|Tap "Email"| E[SignUpView<br/>Email + Password >=6 chars]
     
     D --> F[VoiceHeroView<br/>Explanation Screen]
     E --> F
