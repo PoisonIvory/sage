@@ -60,8 +60,8 @@ flowchart TD
 graph TD
     subgraph App["App Layer"]
         direction TB
-        A1(["SageApp.swift<br/>Entry Point"])
-        A2(["ContentView.swift<br/>Tab Navigation"])
+        A1["SageApp.swift<br/>Entry Point"]
+        A2["ContentView.swift<br/>Tab Navigation"]
     end
     
     subgraph Features["Feature Views"]
@@ -193,7 +193,7 @@ graph TD
     
     subgraph "Features Layer"
         D1[Authentication/<br/>Views & ViewModels]
-        D2[Dashboard/<br/>HomeView (Today's Analysis) + VoiceDashboardView (Longitudinal Placeholder)]
+        D2[Dashboard/<br/>HomeView and VoiceDashboardView]
         D3[Onboarding/<br/>Voice Setup]
         D4[Sessions/<br/>Recording Interface]
     end
@@ -248,13 +248,13 @@ sequenceDiagram
     participant S as SessionsView  
     participant H as HybridVocalAnalysisService
     participant L as LocalVoiceAnalyzer
-    participant C as CloudVoiceAnalysisService<br/>(internal class)
-    participant V as VocalResultsListener<br/>(internal class)
+    participant C as CloudVoiceAnalysisService<br/>internal class
+    participant V as VocalResultsListener<br/>internal class
     participant F as Firestore
     
     Note over U,F: Voice Analysis Flow
     
-    U->>+S: Tap Record (5s)
+    U->>+S: Tap Record 5s
     S->>S: Create VoiceRecording<br/>with userId
     S->>+H: analyzeVoice(recording)
     
@@ -263,7 +263,7 @@ sequenceDiagram
         H->>+L: analyzeImmediate(audioURL)
         L->>L: SFVoiceAnalytics<br/>F0 extraction only
         L->>-H: BasicVoiceMetrics
-        H->>S: Immediate Results<br/>(< 5 seconds)
+        H->>S: Immediate Results<br/>less than 5 seconds
     end
     
     rect rgb(240, 255, 240)
@@ -283,8 +283,8 @@ sequenceDiagram
     H->>+V: startListening(recordingId)
     V->>F: Listen to users/{userId}/voice_analyses/{recordingId}
     F-->>V: VocalBiomarkers update
-    V->>-H: VocalBiomarkers<br/>(Real-time stream)
-    H->>-S: Comprehensive Results<br/>(30-60 seconds)
+    V->>-H: VocalBiomarkers<br/>Real-time stream
+    H->>-S: Comprehensive Results<br/>30-60 seconds
     
     Note over U,F: Analysis Complete
 ```
@@ -507,10 +507,10 @@ classDiagram
 ```mermaid
 graph TD
     subgraph "Clinical Thresholds"
-        A1[Jitter Local<br/>< 1.04% Excellent<br/>< 2.5% Good<br/>> 2.5% Poor]
-        A2[Shimmer Local<br/>< 3.81% Excellent<br/>< 6.5% Good<br/>> 6.5% Poor]
-        A3[HNR Mean<br/>> 20dB Excellent<br/>> 15dB Good<br/>< 15dB Poor]
-        A4[F0 Stability<br/>> 80% Excellent<br/>> 60% Good<br/>< 60% Poor]
+        A1[Jitter Local<br/>less than 1.04% Excellent<br/>less than 2.5% Good<br/>greater than 2.5% Poor]
+        A2[Shimmer Local<br/>less than 3.81% Excellent<br/>less than 6.5% Good<br/>greater than 6.5% Poor]
+        A3[HNR Mean<br/>greater than 20dB Excellent<br/>greater than 15dB Good<br/>less than 15dB Poor]
+        A4[F0 Stability<br/>greater than 80% Excellent<br/>greater than 60% Good<br/>less than 60% Poor]
     end
     
     subgraph "Assessment Logic"
@@ -614,16 +614,16 @@ graph TD
     end
     
     subgraph "Specialized Components"
-        B1[SagePercentileBar<br/>Progress Indicators (in HomeView)]
-        B2[SageStylizedCard<br/>Content Containers (in HomeView)]
+        B1[SagePercentileBar<br/>Progress Indicators in HomeView]
+        B2[SageStylizedCard<br/>Content Containers in HomeView]
         B3[SageProgressView<br/>Loading States]
         B4[SageInsightCard<br/>Analysis Results]
     end
     
     subgraph "Voice-Specific UI"
-        C1[WaveformView<br/>Recording Animation (in OnboardingJourneyView)]
-        C2[CountdownTimerView<br/>Recording Timer (in OnboardingJourneyView)]
-        C3[ProgressBarView<br/>Analysis Progress (in OnboardingJourneyView)]
+        C1[WaveformView<br/>Recording Animation in OnboardingJourneyView]
+        C2[CountdownTimerView<br/>Recording Timer in OnboardingJourneyView]
+        C3[ProgressBarView<br/>Analysis Progress in OnboardingJourneyView]
     end
     
     subgraph "Application Views"
@@ -705,18 +705,18 @@ journey
 graph LR
     subgraph Performance["Performance Targets"]
         direction TB
-        A1["Local Analysis<br/>< 5 seconds<br/>SFVoiceAnalytics"]
-        A2["Cloud Upload<br/>< 10 seconds<br/>Firebase Storage"]
+        A1["Local Analysis<br/>less than 5 seconds<br/>SFVoiceAnalytics"]
+        A2["Cloud Upload<br/>less than 10 seconds<br/>Firebase Storage"]
         A3["Cloud Processing<br/>30-60 seconds<br/>Parselmouth"]
-        A4["Real-time Updates<br/>< 2 seconds<br/>Firestore Listener"]
+        A4["Real-time Updates<br/>less than 2 seconds<br/>Firestore Listener"]
     end
     
     subgraph Quality["Quality Metrics"]
         direction TB
-        B1["F0 Accuracy<br/>> 95% correlation<br/>with Praat reference"]
+        B1["F0 Accuracy<br/>greater than 95% correlation<br/>with Praat reference"]
         B2["Clinical Precision<br/>3 decimal places<br/>Research-grade"]
         B3["Audio Quality Check<br/>Minimum duration<br/>Noise validation"]
-        B4["Error Rate<br/>< 1% processing failures<br/>Robust error handling"]
+        B4["Error Rate<br/>less than 1% processing failures<br/>Robust error handling"]
     end
     
     subgraph Scalability["Scalability"]
