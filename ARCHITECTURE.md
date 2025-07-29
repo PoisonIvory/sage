@@ -44,9 +44,9 @@ flowchart TD
     C3 -->|"Clinical Results"| B3
     B3 -.->|"Real-time Updates"| A1
     
-    classDef ios fill:linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%),stroke:#1976d2,stroke-width:3px,color:#0d47a1
-    classDef cloud fill:linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%),stroke:#388e3c,stroke-width:3px,color:#1b5e20
-    classDef analysis fill:linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%),stroke:#f57c00,stroke-width:3px,color:#e65100
+    classDef ios fill:#e3f2fd,stroke:#1976d2,stroke-width:3px,color:#0d47a1
+    classDef cloud fill:#e8f5e8,stroke:#388e3c,stroke-width:3px,color:#1b5e20
+    classDef analysis fill:#fff3e0,stroke:#f57c00,stroke-width:3px,color:#e65100
     
     class iOS ios
     class Cloud cloud
@@ -151,13 +151,13 @@ graph TD
     B4 -.-> G5
     B1 -.-> G14
     
-    classDef app fill:linear-gradient(135deg, #ffebee 0%, #f8bbd9 100%),stroke:#d32f2f,stroke-width:3px,color:#c62828
-    classDef feature fill:linear-gradient(135deg, #e3f2fd 0%, #90caf9 100%),stroke:#1976d2,stroke-width:2px,color:#0d47a1
-    classDef viewmodel fill:linear-gradient(135deg, #f3e5f5 0%, #ce93d8 100%),stroke:#7b1fa2,stroke-width:2px,color:#4a148c
-    classDef domain fill:linear-gradient(135deg, #e8f5e8 0%, #81c784 100%),stroke:#388e3c,stroke-width:2px,color:#1b5e20
-    classDef model fill:linear-gradient(135deg, #fff3e0 0%, #ffcc02 100%),stroke:#f57c00,stroke-width:2px,color:#e65100
-    classDef infrastructure fill:linear-gradient(135deg, #fce4ec 0%, #f06292 100%),stroke:#c2185b,stroke-width:2px,color:#880e4f
-    classDef ui fill:linear-gradient(135deg, #e1f5fe 0%, #4fc3f7 100%),stroke:#0288d1,stroke-width:2px,color:#01579b
+    classDef app fill:#ffebee,stroke:#d32f2f,stroke-width:3px,color:#c62828
+    classDef feature fill:#e3f2fd,stroke:#1976d2,stroke-width:2px,color:#0d47a1
+    classDef viewmodel fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px,color:#4a148c
+    classDef domain fill:#e8f5e8,stroke:#388e3c,stroke-width:2px,color:#1b5e20
+    classDef model fill:#fff3e0,stroke:#f57c00,stroke-width:2px,color:#e65100
+    classDef infrastructure fill:#fce4ec,stroke:#c2185b,stroke-width:2px,color:#880e4f
+    classDef ui fill:#e1f5fe,stroke:#0288d1,stroke-width:2px,color:#01579b
     
     class App app
     class Features feature
@@ -418,11 +418,11 @@ flowchart LR
     E1 -->|"Update"| E2
     E2 -->|"Display"| E3
     
-    classDef client fill:linear-gradient(135deg, #e3f2fd 0%, #90caf9 100%),stroke:#1976d2,stroke-width:3px,color:#0d47a1
-    classDef storage fill:linear-gradient(135deg, #fff3e0 0%, #ffcc02 100%),stroke:#f57c00,stroke-width:3px,color:#e65100
-    classDef processing fill:linear-gradient(135deg, #e8f5e8 0%, #81c784 100%),stroke:#388e3c,stroke-width:3px,color:#1b5e20
-    classDef database fill:linear-gradient(135deg, #f3e5f5 0%, #ce93d8 100%),stroke:#7b1fa2,stroke-width:3px,color:#4a148c
-    classDef realtime fill:linear-gradient(135deg, #fce4ec 0%, #f06292 100%),stroke:#c2185b,stroke-width:3px,color:#880e4f
+    classDef client fill:#e3f2fd,stroke:#1976d2,stroke-width:3px,color:#0d47a1
+    classDef storage fill:#fff3e0,stroke:#f57c00,stroke-width:3px,color:#e65100
+    classDef processing fill:#e8f5e8,stroke:#388e3c,stroke-width:3px,color:#1b5e20
+    classDef database fill:#f3e5f5,stroke:#7b1fa2,stroke-width:3px,color:#4a148c
+    classDef realtime fill:#fce4ec,stroke:#c2185b,stroke-width:3px,color:#880e4f
     
     class Client client
     class Storage storage
@@ -736,9 +736,9 @@ graph LR
     B3 ==>|"Validation allows"| C3
     B4 ==>|"Reliability scales to"| C4
     
-    classDef performance fill:linear-gradient(135deg, #e8f5e8 0%, #81c784 100%),stroke:#388e3c,stroke-width:3px,color:#1b5e20
-    classDef quality fill:linear-gradient(135deg, #fff3e0 0%, #ffcc02 100%),stroke:#f57c00,stroke-width:3px,color:#e65100
-    classDef scalability fill:linear-gradient(135deg, #e3f2fd 0%, #90caf9 100%),stroke:#1976d2,stroke-width:3px,color:#0d47a1
+    classDef performance fill:#e8f5e8,stroke:#388e3c,stroke-width:3px,color:#1b5e20
+    classDef quality fill:#fff3e0,stroke:#f57c00,stroke-width:3px,color:#e65100
+    classDef scalability fill:#e3f2fd,stroke:#1976d2,stroke-width:3px,color:#0d47a1
     
     class Performance performance
     class Quality quality
