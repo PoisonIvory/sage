@@ -144,8 +144,8 @@ sequenceDiagram
 graph TD
     A[OnboardingJourneyView<br/>Entry Point] --> B[SignupMethodView<br/>Choose Signup Method]
     B --> C{User Selection}
-    C -->|Tap "Anonymous"| D[UserInfoFormView<br/>Basic Profile]
-    C -->|Tap "Email"| E[SignUpView<br/>Email Registration]
+    C -->|Tap Anonymous| D[UserInfoFormView<br/>Basic Profile]
+    C -->|Tap Email| E[SignUpView<br/>Email Registration]
     
     D --> F[VoiceHeroView<br/>Voice Test Explanation]
     E --> F
@@ -153,12 +153,12 @@ graph TD
     F --> G[OnboardingJourneyView<br/>Sustained Vowel Test]
     G --> H{Microphone Permission}
     H -->|Granted| I[Start 10-second Recording]
-    H -->|Denied| J[Show Error<br/>"Microphone access required"]
-    H -->|Restricted| K[Show Error<br/>"Microphone restricted"]
+    H -->|Denied| J[Show Error<br/>Microphone access required]
+    H -->|Restricted| K[Show Error<br/>Microphone restricted]
     
     I --> L{Recording Quality Gate}
     L -->|RMS >= Threshold| M[Proceed to Analysis]
-    L -->|RMS < Threshold| N[Show Quality Error<br/>"Signal too weak"]
+    L -->|RMS < Threshold| N[Show Quality Error<br/>Signal too weak]
     
     M --> O[Local Analysis<br/>Immediate F0]
     M --> P[Cloud Upload<br/>Comprehensive Analysis]
@@ -223,11 +223,11 @@ sequenceDiagram
         O->>O: Establish baseline (if ready)
     else Permission Denied
         M->>O: Permission denied
-        O->>O: Show "Microphone access required"
+        O->>O: Show Microphone access required
         U->>O: Go to Settings or retry
     else Permission Restricted
         M->>O: Permission restricted
-        O->>O: Show "Microphone restricted on device"
+        O->>O: Show Microphone restricted on device
         U->>O: Cannot proceed
     end
     
