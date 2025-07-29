@@ -157,41 +157,6 @@ sequenceDiagram
     H->>S: Comprehensive Results<br/>(30-60 seconds)
 ```
 
-### Onboarding & Baseline Establishment
-```mermaid
-journey
-    title Sage Voice Analysis User Journey
-    
-    section Discovery & Setup
-        Welcome Screen: 5: User
-        Choose Signup Method: 4: User
-        Create Account: 3: User, Firebase
-        Explain Voice Testing: 5: User
-    
-    section Onboarding Voice Test
-        Record Sustained Vowel: 4: User, iOS
-        Local Analysis (< 5s): 5: iOS, SFVoiceAnalytics
-        Show Immediate Results: 5: User, iOS
-        Proceed Through Steps: 5: User
-        Cloud Processing (Background): 3: Cloud, Parselmouth
-        Automatic Baseline Establishment: 5: User, iOS
-        Complete Onboarding: 5: User
-    
-    section Daily Usage
-        Navigate to Sessions: 5: User
-        Record Daily Sample: 4: User, iOS
-        View Immediate F0: 5: User, iOS
-        Receive Comprehensive Results: 5: User, Cloud
-        Check Home Analysis: 5: User, iOS
-        View Trends Dashboard: 4: User, iOS
-    
-    section Clinical Insights
-        View Voice Quality: 5: User
-        Understand Jitter/Shimmer: 4: User
-        Read Clinical Assessment: 5: User
-        Track Patterns: 4: User
-```
-
 ## Domain-Driven Architecture
 
 ### Core Domain Models
