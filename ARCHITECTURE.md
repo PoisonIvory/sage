@@ -14,40 +14,43 @@ Sage is a research-grade vocal analysis platform that combines immediate local a
 
 ```mermaid
 flowchart TD
-    subgraph "iOS App"
-        A1[User Interface]
-        A2[Local Analysis]
-        A3[Authentication]
+    subgraph iOS["iOS App"]
+        direction TB
+        A1["User Interface<br/>SwiftUI Views"]
+        A2["Local Analysis<br/>Immediate Response"]
+        A3["Authentication<br/>Firebase Auth"]
     end
     
-    subgraph "Cloud Infrastructure"
-        B1[Firebase Storage]
-        B2[Cloud Functions]
-        B3[Firestore Database]
+    subgraph Cloud["Cloud Infrastructure"]
+        direction TB
+        B1["Firebase Storage<br/>Audio Files"]
+        B2["Cloud Functions<br/>Serverless Processing"]
+        B3["Firestore Database<br/>Results & Metadata"]
     end
     
-    subgraph "Analysis Pipeline"
-        C1[SFVoiceAnalytics<br/>Local Analysis]
-        C2[Parselmouth<br/>Cloud Analysis]
-        C3[Clinical Assessment]
+    subgraph Pipeline["Analysis Pipeline"]
+        direction TB
+        C1["SFVoiceAnalytics<br/>iOS Native Analysis"]
+        C2["Parselmouth<br/>Research-Grade Processing"]
+        C3["Clinical Assessment<br/>Medical Interpretation"]
     end
     
-    A1 --> A2
-    A2 --> C1
-    A1 --> B1
-    B1 --> B2
-    B2 --> C2
-    C2 --> C3
-    C3 --> B3
-    B3 --> A1
+    A1 -.->|"User Interaction"| A2
+    A2 -->|"Immediate F0"| C1
+    A1 -->|"Audio Upload"| B1
+    B1 -->|"Storage Trigger"| B2
+    B2 -->|"Audio Processing"| C2
+    C2 -->|"Comprehensive Analysis"| C3
+    C3 -->|"Clinical Results"| B3
+    B3 -.->|"Real-time Updates"| A1
     
-    classDef ios fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
-    classDef cloud fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
-    classDef analysis fill:#fff3e0,stroke:#f57c00,stroke-width:2px
+    classDef ios fill:linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%),stroke:#1976d2,stroke-width:3px,color:#0d47a1
+    classDef cloud fill:linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%),stroke:#388e3c,stroke-width:3px,color:#1b5e20
+    classDef analysis fill:linear-gradient(135deg, #fff3e0 0%, #ffe0b2 100%),stroke:#f57c00,stroke-width:3px,color:#e65100
     
-    class A1,A2,A3 ios
-    class B1,B2,B3 cloud
-    class C1,C2,C3 analysis
+    class iOS ios
+    class Cloud cloud
+    class Pipeline analysis
 ```
 
 ## Detailed iOS Architecture
@@ -55,121 +58,114 @@ flowchart TD
 ### Application Structure
 ```mermaid
 graph TD
-    subgraph "App Layer"
-        A1[SageApp.swift<br/>Entry Point]
-        A2[ContentView.swift<br/>Tab Navigation]
+    subgraph App["App Layer"]
+        direction TB
+        A1(["SageApp.swift<br/>Entry Point"])
+        A2(["ContentView.swift<br/>Tab Navigation"])
     end
     
-    subgraph "Feature Views"
-        B1[WelcomeView<br/>Landing]
-        B2[OnboardingJourneyView<br/>Voice Setup with Baseline]
-        B3[SessionsView<br/>Daily Recording]
-        B4[VoiceDashboardView<br/>Longitudinal Trends Placeholder]
-        B5[HomeView<br/>Today's Voice Analysis]
-        B6[SimpleVocalDashboard<br/>Testing UI]
-        B7[VocalAnalysisDashboard<br/>Research UI]
-        B8[AuthChoiceView<br/>Method Selection]
-        B9[SignUpView<br/>Registration]
-        B10[LoginView<br/>Sign In]
+    subgraph Features["Feature Views"]
+        direction TB
+        B1{{"WelcomeView<br/>Landing"}}
+        B2{{"OnboardingJourneyView<br/>Voice Setup with Baseline"}}
+        B3{{"SessionsView<br/>Daily Recording"}}
+        B4{{"VoiceDashboardView<br/>Longitudinal Trends Placeholder"}}
+        B5{{"HomeView<br/>Today's Voice Analysis"}}
+        B6{{"SimpleVocalDashboard<br/>Testing UI"}}
+        B7{{"VocalAnalysisDashboard<br/>Research UI"}}
+        B8{{"AuthChoiceView<br/>Method Selection"}}
+        B9{{"SignUpView<br/>Registration"}}
+        B10{{"LoginView<br/>Sign In"}}
     end
     
-    subgraph "ViewModels"
-        C1[OnboardingJourneyViewModel<br/>Recording & Baseline Logic]
-        C2[AuthViewModel<br/>Authentication State]
-        C3[SessionsViewModel<br/>Daily Sessions]
+    subgraph ViewModels["ViewModels"]
+        direction TB
+        C1[["OnboardingJourneyViewModel<br/>Recording & Baseline Logic"]]
+        C2[["AuthViewModel<br/>Authentication State"]]
+        C3[["SessionsViewModel<br/>Daily Sessions"]]
     end
     
-    subgraph "Domain Services"
-        D1[HybridVocalAnalysisService<br/>Analysis Orchestration]
-        D2[VocalBaselineService<br/>Baseline Management]
-        D3[BaselineValidationService<br/>Clinical Validation]
-        D4[ClinicalThresholdsService<br/>Threshold Calculation]
-        D5[LocalVoiceAnalyzer<br/>iOS SFVoiceAnalytics]
-        D6[F0DataService<br/>Legacy F0 Pipeline]
+    subgraph Domain["Domain Services"]
+        direction TB
+        D1["HybridVocalAnalysisService<br/>Analysis Orchestration"]
+        D2["VocalBaselineService<br/>Baseline Management"]
+        D3["BaselineValidationService<br/>Clinical Validation"]
+        D4["ClinicalThresholdsService<br/>Threshold Calculation"]
+        D5["LocalVoiceAnalyzer<br/>iOS SFVoiceAnalytics"]
+        D6["F0DataService<br/>Legacy F0 Pipeline"]
     end
     
-    subgraph "Domain Models"
-        E1[VocalBiomarkers<br/>Clinical Models]
-        E2[VocalBaseline<br/>User Baseline]
-        E3[UserProfile<br/>User Data]
-        E4[Recording<br/>Recording Model]
-        E5[OnboardingTypes<br/>Flow Types]
-        E6[DomainError<br/>Error Models]
+    subgraph Models["Domain Models"]
+        direction TB
+        E1[/"VocalBiomarkers<br/>Clinical Models"/]
+        E2[/"VocalBaseline<br/>User Baseline"/]
+        E3[/"UserProfile<br/>User Data"/]
+        E4[/"Recording<br/>Recording Model"/]
+        E5[/"OnboardingTypes<br/>Flow Types"/]
+        E6[/"DomainError<br/>Error Models"/]
     end
     
-    subgraph "Infrastructure Services"
-        F1[AuthService<br/>Firebase Auth]
-        F2[AnalyticsService<br/>Event Tracking]
-        F3[MicrophonePermissionManager<br/>Audio Permissions]
-        F4[UserProfileRepository<br/>Profile Storage]
-        F5[VocalBaselineRepository<br/>Baseline Storage]
-        F6[VoiceAnalysisRepository<br/>Analysis Storage]
-        F7[OnboardingCoordinator<br/>Flow Coordination]
+    subgraph Infrastructure["Infrastructure Services"]
+        direction TB
+        F1["AuthService<br/>Firebase Auth"]
+        F2["AnalyticsService<br/>Event Tracking"]
+        F3["MicrophonePermissionManager<br/>Audio Permissions"]
+        F4["UserProfileRepository<br/>Profile Storage"]
+        F5["VocalBaselineRepository<br/>Baseline Storage"]
+        F6["VoiceAnalysisRepository<br/>Analysis Storage"]
+        F7["OnboardingCoordinator<br/>Flow Coordination"]
     end
     
-    subgraph "UI Components"
-        G1[SageColors<br/>Design System]
-        G2[SageTypography<br/>Text Styles]
-        G3[SageButton<br/>Interactions]
-        G4[SageProgressView<br/>Loading States]
-        G5[SageCard<br/>Content Cards]
-        G6[AbstractWaveBackground<br/>Wave Animation]
-        G7[SageAvatar<br/>User Avatar]
-        G8[SageDivider<br/>Dividers]
-        G9[SageEmptyState<br/>Empty States]
-        G10[SageInsightCard<br/>Insight Display]
-        G11[SageProgressRing<br/>Progress Rings]
-        G12[SageSectionHeader<br/>Section Headers]
-        G13[SageTextField<br/>Text Input]
-        G14[SageSpacing<br/>Layout Spacing]
+    subgraph Components["UI Components"]
+        direction TB
+        G1["SageColors<br/>Design System"]
+        G2["SageTypography<br/>Text Styles"]
+        G3["SageButton<br/>Interactions"]
+        G4["SageProgressView<br/>Loading States"]
+        G5["SageCard<br/>Content Cards"]
+        G6["AbstractWaveBackground<br/>Wave Animation"]
+        G7["SageAvatar<br/>User Avatar"]
+        G8["SageDivider<br/>Dividers"]
+        G9["SageEmptyState<br/>Empty States"]
+        G10["SageInsightCard<br/>Insight Display"]
+        G11["SageProgressRing<br/>Progress Rings"]
+        G12["SageSectionHeader<br/>Section Headers"]
+        G13["SageTextField<br/>Text Input"]
+        G14["SageSpacing<br/>Layout Spacing"]
     end
     
-    A1 --> A2
-    A2 --> B1
-    A2 --> B2
-    A2 --> B3
-    A2 --> B4
-    A2 --> B5
-    B2 --> C1
-    B8 --> C2
-    B3 --> C3
-    C1 --> D1
-    C1 --> D2
-    C1 --> D3
-    C1 --> D4
-    D1 --> D5
-    D2 --> D3
-    D2 --> D4
+    A1 ==> A2
+    A2 -.-> B1 & B2 & B3 & B4 & B5
+    B2 ==> C1
+    B8 ==> C2
+    B3 ==> C3
+    C1 ==> D1 & D2 & D3 & D4
+    D1 ==> D5
+    D2 ==> D3 & D4
     D1 --> E1
-    D2 --> E2
-    D2 --> E3
-    C1 --> F1
-    C1 --> F2
-    C1 --> F3
-    C1 --> F4
+    D2 --> E2 & E3
+    C1 --> F1 & F2 & F3 & F4 & F7
     D2 --> F5
     D1 --> F6
-    C1 --> F7
-    B2 --> G1
-    B2 --> G6
-    B4 --> G5
-    B1 --> G14
+    B2 -.-> G1 & G6
+    B4 -.-> G5
+    B1 -.-> G14
     
-    classDef app fill:#ffebee,stroke:#d32f2f,stroke-width:2px
-    classDef feature fill:#e3f2fd,stroke:#1976d2,stroke-width:1px
-    classDef viewmodel fill:#f3e5f5,stroke:#7b1fa2,stroke-width:1px
-    classDef domain fill:#e8f5e8,stroke:#388e3c,stroke-width:1px
-    classDef model fill:#fff3e0,stroke:#f57c00,stroke-width:1px
-    classDef infrastructure fill:#fce4ec,stroke:#c2185b,stroke-width:1px
-    classDef ui fill:#e1f5fe,stroke:#0288d1,stroke-width:1px
+    classDef app fill:linear-gradient(135deg, #ffebee 0%, #f8bbd9 100%),stroke:#d32f2f,stroke-width:3px,color:#c62828
+    classDef feature fill:linear-gradient(135deg, #e3f2fd 0%, #90caf9 100%),stroke:#1976d2,stroke-width:2px,color:#0d47a1
+    classDef viewmodel fill:linear-gradient(135deg, #f3e5f5 0%, #ce93d8 100%),stroke:#7b1fa2,stroke-width:2px,color:#4a148c
+    classDef domain fill:linear-gradient(135deg, #e8f5e8 0%, #81c784 100%),stroke:#388e3c,stroke-width:2px,color:#1b5e20
+    classDef model fill:linear-gradient(135deg, #fff3e0 0%, #ffcc02 100%),stroke:#f57c00,stroke-width:2px,color:#e65100
+    classDef infrastructure fill:linear-gradient(135deg, #fce4ec 0%, #f06292 100%),stroke:#c2185b,stroke-width:2px,color:#880e4f
+    classDef ui fill:linear-gradient(135deg, #e1f5fe 0%, #4fc3f7 100%),stroke:#0288d1,stroke-width:2px,color:#01579b
     
-    class A1,A2 app
-    class B1,B2,B3,B4,B5,B6,B7,B8,B9,B10 feature
-    class C1,C2,C3 viewmodel
-    class D1,D2,D3,D4,D5,D6 domain
-    class E1,E2,E3,E4,E5,E6 model
-    class F1,F2,F3,F4,F5,F6,F7 infrastructure
-    class G1,G2,G3,G4,G5,G6,G7,G8,G9,G10,G11,G12,G13,G14 ui
+    class App app
+    class Features feature
+    class ViewModels viewmodel
+    class Domain domain
+    class Models model
+    class Infrastructure infrastructure
+    class Components ui
 ```
 
 ### Current Directory Structure
@@ -249,38 +245,48 @@ graph TD
 ```mermaid
 sequenceDiagram
     participant U as User
-    participant S as SessionsView
+    participant S as SessionsView  
     participant H as HybridVocalAnalysisService
     participant L as LocalVoiceAnalyzer
-    participant C as CloudVoiceAnalysisService (internal class)
-    participant V as VocalResultsListener (internal class)
+    participant C as CloudVoiceAnalysisService<br/>(internal class)
+    participant V as VocalResultsListener<br/>(internal class)
     participant F as Firestore
     
-    U->>S: Tap Record (5s)
+    Note over U,F: Voice Analysis Flow
+    
+    U->>+S: Tap Record (5s)
     S->>S: Create VoiceRecording<br/>with userId
-    S->>H: analyzeVoice(recording)
+    S->>+H: analyzeVoice(recording)
     
-    Note over H: Phase 1: Local Analysis
-    H->>L: analyzeImmediate(audioURL)
-    L->>L: SFVoiceAnalytics<br/>F0 extraction only
-    L->>H: BasicVoiceMetrics
-    H->>S: Immediate Results<br/>(< 5 seconds)
+    rect rgb(240, 248, 255)
+        Note over H,L: Phase 1: Local Analysis
+        H->>+L: analyzeImmediate(audioURL)
+        L->>L: SFVoiceAnalytics<br/>F0 extraction only
+        L->>-H: BasicVoiceMetrics
+        H->>S: Immediate Results<br/>(< 5 seconds)
+    end
     
-    Note over H: Phase 2: Cloud Analysis
-    H->>C: uploadAndAnalyze(recording)
-    C->>C: Upload to Storage<br/>sage-audio-files/{userId}/{recordingId}.wav
-    C->>C: Trigger Cloud Function
+    rect rgb(240, 255, 240)
+        Note over H,C: Phase 2: Cloud Analysis
+        H->>+C: uploadAndAnalyze(recording)
+        C->>C: Upload to Storage<br/>sage-audio-files/{userId}/{recordingId}.wav
+        C->>-C: Trigger Cloud Function
+    end
     
-    Note over F: Cloud Processing
-    F->>F: Parselmouth Analysis<br/>F0, Jitter, Shimmer, HNR
-    F->>F: Write to recordings/{recordingId}/insights
-    F->>F: Write to users/{userId}/voice_analyses/{recordingId}
+    rect rgb(255, 248, 240)
+        Note over F: Cloud Processing
+        F->>F: Parselmouth Analysis<br/>F0, Jitter, Shimmer, HNR
+        F->>F: Write to recordings/{recordingId}/insights
+        F->>F: Write to users/{userId}/voice_analyses/{recordingId}
+    end
     
-    H->>V: startListening(recordingId)
+    H->>+V: startListening(recordingId)
     V->>F: Listen to users/{userId}/voice_analyses/{recordingId}
-    F->>V: VocalBiomarkers update
-    V->>H: VocalBiomarkers<br/>(Real-time stream)
-    H->>S: Comprehensive Results<br/>(30-60 seconds)
+    F-->>V: VocalBiomarkers update
+    V->>-H: VocalBiomarkers<br/>(Real-time stream)
+    H->>-S: Comprehensive Results<br/>(30-60 seconds)
+    
+    Note over U,F: Analysis Complete
 ```
 
 ## Cloud Infrastructure Architecture
@@ -360,70 +366,69 @@ graph TD
 ### Data Flow & Storage
 ```mermaid
 flowchart LR
-    subgraph "iOS Client"
-        A1[Voice Recording<br/>5s sustained vowel]
-        A2[Local Analysis<br/>Immediate F0]
-        A3[Upload Trigger<br/>Cloud processing]
+    subgraph Client["iOS Client"]
+        direction TB
+        A1["Voice Recording<br/>5s sustained vowel"]
+        A2["Local Analysis<br/>Immediate F0"]
+        A3["Upload Trigger<br/>Cloud processing"]
     end
     
-    subgraph "Cloud Storage"
-        B1[sage-audio-files/<br/>{userId}/{recordingId}.wav]
-        B2[Storage Trigger<br/>Function invocation]
+    subgraph Storage["Cloud Storage"]
+        direction TB
+        B1["sage-audio-files/<br/>{userId}/{recordingId}.wav"]
+        B2["Storage Trigger<br/>Function invocation"]
     end
     
-    subgraph "Analysis Processing"
-        C1[Audio Validation<br/>Quality checks]
-        C2[Parselmouth Analysis<br/>Research-grade extraction]
-        C3[Clinical Assessment<br/>Threshold evaluation]
+    subgraph Processing["Analysis Processing"]
+        direction TB
+        C1["Audio Validation<br/>Quality checks"]
+        C2["Parselmouth Analysis<br/>Research-grade extraction"]
+        C3["Clinical Assessment<br/>Threshold evaluation"]
     end
     
-    subgraph "Firestore Structure"
-        D1[recordings/{recordingId}/<br/>insights/{insightId}]
-        D2[users/{userId}/<br/>voice_analyses/{recordingId}]
-        D3[vocal_analysis_f0_mean: 220.5<br/>vocal_analysis_f0_std: 15.2<br/>vocal_analysis_f0_confidence: 88.5]
-        D4[vocal_analysis_jitter_local: 0.824<br/>vocal_analysis_jitter_rap: 0.756<br/>vocal_analysis_jitter_ppq5: 0.891]
-        D5[vocal_analysis_shimmer_local: 3.245<br/>vocal_analysis_shimmer_apq3: 2.876<br/>vocal_analysis_shimmer_apq5: 3.521]
-        D6[vocal_analysis_hnr_mean: 19.2<br/>vocal_analysis_hnr_std: 2.1<br/>vocal_analysis_vocal_stability_score: 82.5]
+    subgraph Database["Firestore Structure"]
+        direction TB
+        D1["recordings/{recordingId}/<br/>insights/{insightId}"]
+        D2["users/{userId}/<br/>voice_analyses/{recordingId}"]
+        D3["F0 Data<br/>mean: 220.5Hz | std: 15.2 | conf: 88.5%"]
+        D4["Jitter Measures<br/>local: 0.824% | rap: 0.756% | ppq5: 0.891%"]
+        D5["Shimmer Analysis<br/>local: 3.245% | apq3: 2.876% | apq5: 3.521%"]
+        D6["Voice Quality<br/>HNR: 19.2dB | stability: 82.5%"]
     end
     
-    subgraph "Real-time Updates"
-        E1[Firestore Listener<br/>VocalResultsListener]
-        E2[UI Update<br/>Dashboard refresh]
-        E3[Clinical Interpretation<br/>User-friendly display]
+    subgraph Updates["Real-time Updates"]
+        direction TB
+        E1["Firestore Listener<br/>VocalResultsListener"]
+        E2["UI Update<br/>Dashboard refresh"]
+        E3["Clinical Interpretation<br/>User-friendly display"]
     end
     
-    A1 --> A2
-    A1 --> A3
-    A3 --> B1
-    B1 --> B2
-    B2 --> C1
-    C1 --> C2
-    C2 --> C3
-    C3 --> D1
-    C3 --> D2
-    D1 --> D3
-    D1 --> D4
-    D1 --> D5
-    D1 --> D6
-    D2 --> D3
-    D2 --> D4
-    D2 --> D5
-    D2 --> D6
-    D2 --> E1
-    E1 --> E2
-    E2 --> E3
+    A1 -->|"Record"| A2
+    A1 -->|"Upload"| A3
+    A3 -.->|"Audio File"| B1
+    B1 -->|"Trigger"| B2
+    B2 -->|"Process"| C1
+    C1 -->|"Validate"| C2
+    C2 -->|"Extract"| C3
+    C3 -.->|"Store"| D1
+    C3 -.->|"Store"| D2
+    D1 --> D3 & D4 & D5 & D6
+    D2 --> D3 & D4 & D5 & D6
+    D2 -.->|"Listen"| E1
+    E1 -->|"Update"| E2
+    E2 -->|"Display"| E3
     
-    classDef client fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
-    classDef storage fill:#fff3e0,stroke:#f57c00,stroke-width:2px
-    classDef processing fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
-    classDef database fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
-    classDef realtime fill:#fce4ec,stroke:#c2185b,stroke-width:2px
+    classDef client fill:linear-gradient(135deg, #e3f2fd 0%, #90caf9 100%),stroke:#1976d2,stroke-width:3px,color:#0d47a1
+    classDef storage fill:linear-gradient(135deg, #fff3e0 0%, #ffcc02 100%),stroke:#f57c00,stroke-width:3px,color:#e65100
+    classDef processing fill:linear-gradient(135deg, #e8f5e8 0%, #81c784 100%),stroke:#388e3c,stroke-width:3px,color:#1b5e20
+    classDef database fill:linear-gradient(135deg, #f3e5f5 0%, #ce93d8 100%),stroke:#7b1fa2,stroke-width:3px,color:#4a148c
+    classDef realtime fill:linear-gradient(135deg, #fce4ec 0%, #f06292 100%),stroke:#c2185b,stroke-width:3px,color:#880e4f
     
-    class A1,A2,A3 client
-    class B1,B2 storage
-    class C1,C2,C3 processing
-    class D1,D2,D3,D4,D5,D6 database
-    class E1,E2,E3 realtime
+    class Client client
+    class Storage storage
+    class Processing processing
+    class Database database
+    class Updates realtime
 ```
 
 ## Clinical Voice Analysis Models
@@ -671,11 +676,11 @@ journey
     
     section Onboarding Voice Test
         Record Sustained Vowel: 4: User, iOS
-        Local Analysis (< 5s): 5: iOS, SFVoiceAnalytics
+        Local Analysis: 5: iOS, SFVoiceAnalytics
         Show Immediate Results: 5: User, iOS
         Proceed Through Steps: 5: User
-        Cloud Processing (Background): 3: Cloud, Parselmouth
-        Automatic Baseline Establishment: 5: User, iOS
+        Cloud Processing: 3: Cloud, Parselmouth
+        Automatic Baseline: 5: User, iOS
         Complete Onboarding: 5: User
     
     section Daily Usage
@@ -698,43 +703,46 @@ journey
 ### Analysis Performance Metrics
 ```mermaid
 graph LR
-    subgraph "Performance Targets"
-        A1[Local Analysis<br/>< 5 seconds<br/>SFVoiceAnalytics]
-        A2[Cloud Upload<br/>< 10 seconds<br/>Firebase Storage]
-        A3[Cloud Processing<br/>30-60 seconds<br/>Parselmouth]
-        A4[Real-time Updates<br/>< 2 seconds<br/>Firestore Listener]
+    subgraph Performance["Performance Targets"]
+        direction TB
+        A1["Local Analysis<br/>< 5 seconds<br/>SFVoiceAnalytics"]
+        A2["Cloud Upload<br/>< 10 seconds<br/>Firebase Storage"]
+        A3["Cloud Processing<br/>30-60 seconds<br/>Parselmouth"]
+        A4["Real-time Updates<br/>< 2 seconds<br/>Firestore Listener"]
     end
     
-    subgraph "Quality Metrics"  
-        B1[F0 Accuracy<br/>> 95% correlation<br/>with Praat reference]
-        B2[Clinical Precision<br/>3 decimal places<br/>Research-grade]
-        B3[Audio Quality Check<br/>Minimum duration<br/>Noise validation]
-        B4[Error Rate<br/>< 1% processing failures<br/>Robust error handling]
+    subgraph Quality["Quality Metrics"]
+        direction TB
+        B1["F0 Accuracy<br/>> 95% correlation<br/>with Praat reference"]
+        B2["Clinical Precision<br/>3 decimal places<br/>Research-grade"]
+        B3["Audio Quality Check<br/>Minimum duration<br/>Noise validation"]
+        B4["Error Rate<br/>< 1% processing failures<br/>Robust error handling"]
     end
     
-    subgraph "Scalability"
-        C1[Concurrent Users<br/>1000+ simultaneous<br/>Firebase autoscaling]
-        C2[Daily Recordings<br/>10,000+ per day<br/>Cloud Functions]
-        C3[Storage Growth<br/>1TB+ audio files<br/>Cost optimization]
-        C4[Database Queries<br/>Sub-second response<br/>Firestore indexing]
+    subgraph Scalability["Scalability"]
+        direction TB
+        C1["Concurrent Users<br/>1000+ simultaneous<br/>Firebase autoscaling"]
+        C2["Daily Recordings<br/>10,000+ per day<br/>Cloud Functions"]
+        C3["Storage Growth<br/>1TB+ audio files<br/>Cost optimization"]
+        C4["Database Queries<br/>Sub-second response<br/>Firestore indexing"]
     end
     
-    A1 --> B1
-    A2 --> B2
-    A3 --> B3
-    A4 --> B4
-    B1 --> C1
-    B2 --> C2
-    B3 --> C3
-    B4 --> C4
+    A1 -.->|"Speed leads to"| B1
+    A2 -.->|"Reliability enables"| B2
+    A3 -.->|"Accuracy supports"| B3
+    A4 -.->|"Responsiveness ensures"| B4
+    B1 ==>|"Quality enables"| C1
+    B2 ==>|"Precision supports"| C2
+    B3 ==>|"Validation allows"| C3
+    B4 ==>|"Reliability scales to"| C4
     
-    classDef performance fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
-    classDef quality fill:#fff3e0,stroke:#f57c00,stroke-width:2px
-    classDef scalability fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
+    classDef performance fill:linear-gradient(135deg, #e8f5e8 0%, #81c784 100%),stroke:#388e3c,stroke-width:3px,color:#1b5e20
+    classDef quality fill:linear-gradient(135deg, #fff3e0 0%, #ffcc02 100%),stroke:#f57c00,stroke-width:3px,color:#e65100
+    classDef scalability fill:linear-gradient(135deg, #e3f2fd 0%, #90caf9 100%),stroke:#1976d2,stroke-width:3px,color:#0d47a1
     
-    class A1,A2,A3,A4 performance
-    class B1,B2,B3,B4 quality
-    class C1,C2,C3,C4 scalability
+    class Performance performance
+    class Quality quality
+    class Scalability scalability
 ```
 
 ## Development & Deployment
