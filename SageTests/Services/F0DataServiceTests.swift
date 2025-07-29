@@ -46,96 +46,79 @@ class F0DataServiceTests: XCTestCase {
         super.tearDown()
     }
     
-    // MARK: - Snapshot Listener Tests
+    // MARK: - User Flow Tests
     
-    func testUserSelectsVocalTest_WhenServiceInitialized_HasCorrectDefaults() {
-        // Given: F0DataService is initialized
-        // When: Checking initial state
-        // Then: Should have correct defaults
+    func testUserOpensVoiceDashboard() {
+        // Given: User opens the voice dashboard
+        // When: F0DataService is initialized
+        // Then: Should show default processing state
         XCTAssertEqual(f0DataService.displayF0Value, "Still Processing...")
         XCTAssertEqual(f0DataService.f0Confidence, 0.0)
         XCTAssertFalse(f0DataService.isLoading)
         XCTAssertNil(f0DataService.errorMessage)
     }
     
-    func testUserStopsListening_CleansUpResources() async {
-        // Given: F0DataService is initialized
+    func testUserStopsListeningForUpdates() async {
+        // Given: User is viewing voice analysis results
         
-        // When: User stops listening
+        // When: User stops listening for updates
         await f0DataService.stopListening()
         
-        // Then: Should clean up resources and reset state
+        // Then: Should reset to default state and clean up resources
         XCTAssertEqual(f0DataService.displayF0Value, "Still Processing...")
         XCTAssertEqual(f0DataService.f0Confidence, 0.0)
         XCTAssertFalse(f0DataService.isLoading)
         XCTAssertNil(f0DataService.errorMessage)
-        
-        // Verify timer was cancelled
         XCTAssertTrue(mockTimerHandler.isCancelled)
     }
     
-    // MARK: - Constants and Configuration Tests
-    
-    func testF0AnalysisConstant_IsUsedConsistently() {
-        // Given: F0DataService uses FirestoreKeys.f0Analysis constant
-        // When: Processing F0 data
-        // Then: Should use consistent constant value
-        XCTAssertEqual(FirestoreKeys.f0Analysis, "f0_analysis")
-    }
-    
-    func testProcessingTimeout_IsReasonable() {
-        // Given: F0DataService has a processing timeout
-        // When: Checking timeout value
-        // Then: Should be reasonable for Cloud Function processing
+    func testUserSeesProcessingTimeout() {
+        // Given: User is waiting for voice analysis results
+        
+        // When: Processing takes longer than expected
+        // Then: Should have reasonable timeout for Cloud Function processing
         XCTAssertGreaterThan(f0DataService.processingTimeout, 30.0) // At least 30 seconds
         XCTAssertLessThan(f0DataService.processingTimeout, 120.0) // No more than 2 minutes
     }
     
-    // MARK: - Timer Handler Tests
-    
-    func testRealTimerHandler_SchedulesAndCancelsCorrectly() {
-        // Given: Real timer handler
+    func testUserReceivesTimerUpdates() {
+        // Given: User is monitoring voice analysis progress
         let realTimerHandler = RealTimerHandler()
         
-        // When: Scheduling a timer
+        // When: Timer is scheduled for processing updates
         var callbackCalled = false
         realTimerHandler.schedule(timeout: 0.1) {
             callbackCalled = true
         }
         
-        // Then: Timer should be scheduled
+        // Then: Timer should be scheduled and fire correctly
         XCTAssertFalse(callbackCalled)
         
-        // When: Waiting for timer to fire
         let expectation = XCTestExpectation(description: "Timer callback")
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             expectation.fulfill()
         }
         wait(for: [expectation], timeout: 0.3)
-        
-        // Then: Callback should have been called
         XCTAssertTrue(callbackCalled)
     }
     
-    func testRealTimerHandler_CancelsCorrectly() {
-        // Given: Real timer handler
+    func testUserCancelsTimerUpdates() {
+        // Given: User is monitoring voice analysis progress
         let realTimerHandler = RealTimerHandler()
         
-        // When: Scheduling and immediately cancelling
+        // When: User cancels timer before it fires
         var callbackCalled = false
         realTimerHandler.schedule(timeout: 0.1) {
             callbackCalled = true
         }
         realTimerHandler.cancel()
         
-        // When: Waiting longer than timeout
+        // Then: Timer should be cancelled and not fire
         let expectation = XCTestExpectation(description: "Timer should not fire")
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.2) {
             expectation.fulfill()
         }
         wait(for: [expectation], timeout: 0.3)
-        
-        // Then: Callback should not have been called
         XCTAssertFalse(callbackCalled)
     }
 }

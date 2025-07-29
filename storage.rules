@@ -3,11 +3,16 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     // Allow authenticated users to read and write their own voice recordings
+    match /sage-audio-files/{userId}/{audioFile} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Legacy path support for existing audio files (old structure)
     match /voice_recordings/{userId}/{audioFile} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
     }
     
-    // Legacy path support for existing audio files
+    // Legacy path support for files without user ID
     match /sage-audio-files/{audioFile} {
       allow read, write: if request.auth != null;
     }

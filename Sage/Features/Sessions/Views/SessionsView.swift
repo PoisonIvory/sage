@@ -1,5 +1,6 @@
 import SwiftUI
 import AVFoundation
+import FirebaseAuth
 
 /// SessionsView for daily voice recording and analysis using HybridVocalAnalysisService
 /// GWT: Given user wants to record daily voice session
@@ -211,8 +212,12 @@ struct SessionsView: View {
                 audioRecorder = try AVAudioRecorder(url: tempURL, settings: settings)
                 audioRecorder?.record()
                 
-                // Get current user ID
-                let userId = "session_user_\(UUID().uuidString)" // In production, use actual auth
+                // Get current authenticated user ID
+                guard let userId = Auth.auth().currentUser?.uid else {
+                    errorMessage = "Authentication required for voice analysis"
+                    isRecording = false
+                    return
+                }
                 
                 let voiceRecording = VoiceRecording(
                     audioURL: tempURL,

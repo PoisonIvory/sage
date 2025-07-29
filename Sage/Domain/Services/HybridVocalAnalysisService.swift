@@ -374,12 +374,12 @@ public class CloudVoiceAnalysisService {
             try validateRecordingForCloudAnalysis(recording)
             
             let storageRef = storage.reference()
-                .child("voice_recordings")
-                .child(userId)
+                .child("sage-audio-files")
+                .child(recording.userId)
                 .child("\(recording.id).wav")
             
             operation.logProgress("Storage reference created", extra: [
-                "storage_path": "voice_recordings/\(userId)/\(recording.id).wav"
+                "storage_path": "sage-audio-files/\(recording.userId)/\(recording.id).wav"
             ])
             
             // Attempt upload with retry logic

@@ -136,25 +136,42 @@ class VocalAnalysisExtractor(BaseFeatureExtractor):
                     features['jitter_ppq5'] = round(jitter_ppq5 * 100, 3)  # % - 5-point Period Perturbation
                     
                     # Shimmer measures (amplitude perturbation) - Research-grade suite
-                    shimmer_local = parselmouth.praat.call(
-                        [sound, point_process], "Get shimmer (local)", 0, 0, 0.0001, 0.02, 1.3, 1.6
-                    )
-                    features['shimmer_local'] = round(shimmer_local * 100, 3)  # % - 3 decimal precision
+                    # Shimmer calculations require both sound and point process objects
+                    try:
+                        shimmer_local = parselmouth.praat.call(
+                            [sound, point_process], "Get shimmer (local)", 0, 0, 0.0001, 0.02, 1.3, 1.6
+                        )
+                        features['shimmer_local'] = round(shimmer_local * 100, 3)  # % - 3 decimal precision
+                    except Exception as shimmer_e:
+                        self.logger.warning(f"Shimmer local calculation failed: {shimmer_e}")
+                        features['shimmer_local'] = 0.0
                     
-                    shimmer_db = parselmouth.praat.call(
-                        [sound, point_process], "Get shimmer (local_db)", 0, 0, 0.0001, 0.02, 1.3, 1.6
-                    )
-                    features['shimmer_db'] = round(shimmer_db, 3)  # dB
+                    try:
+                        shimmer_db = parselmouth.praat.call(
+                            [sound, point_process], "Get shimmer (local, dB)", 0, 0, 0.0001, 0.02, 1.3, 1.6
+                        )
+                        features['shimmer_db'] = round(shimmer_db, 3)  # dB
+                    except Exception as shimmer_e:
+                        self.logger.warning(f"Shimmer dB calculation failed: {shimmer_e}")
+                        features['shimmer_db'] = 0.0
                     
-                    shimmer_apq3 = parselmouth.praat.call(
-                        [sound, point_process], "Get shimmer (apq3)", 0, 0, 0.0001, 0.02, 1.3, 1.6
-                    )
-                    features['shimmer_apq3'] = round(shimmer_apq3 * 100, 3)  # % - 3-point Amplitude Perturbation
+                    try:
+                        shimmer_apq3 = parselmouth.praat.call(
+                            [sound, point_process], "Get shimmer (apq3)", 0, 0, 0.0001, 0.02, 1.3, 1.6
+                        )
+                        features['shimmer_apq3'] = round(shimmer_apq3 * 100, 3)  # % - 3-point Amplitude Perturbation
+                    except Exception as shimmer_e:
+                        self.logger.warning(f"Shimmer apq3 calculation failed: {shimmer_e}")
+                        features['shimmer_apq3'] = 0.0
                     
-                    shimmer_apq5 = parselmouth.praat.call(
-                        [sound, point_process], "Get shimmer (apq5)", 0, 0, 0.0001, 0.02, 1.3, 1.6
-                    )
-                    features['shimmer_apq5'] = round(shimmer_apq5 * 100, 3)  # % - 5-point Amplitude Perturbation
+                    try:
+                        shimmer_apq5 = parselmouth.praat.call(
+                            [sound, point_process], "Get shimmer (apq5)", 0, 0, 0.0001, 0.02, 1.3, 1.6
+                        )
+                        features['shimmer_apq5'] = round(shimmer_apq5 * 100, 3)  # % - 5-point Amplitude Perturbation
+                    except Exception as shimmer_e:
+                        self.logger.warning(f"Shimmer apq5 calculation failed: {shimmer_e}")
+                        features['shimmer_apq5'] = 0.0
                     
                 except Exception as e:
                     self.logger.warning(f"Jitter/Shimmer calculation failed: {e}")

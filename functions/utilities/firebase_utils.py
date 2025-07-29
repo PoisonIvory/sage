@@ -94,7 +94,8 @@ class FirestoreOperations:
         features: Dict[str, Any], 
         processing_metadata: Dict[str, Any],
         tool_versions: Dict[str, str],
-        analysis_version: str = ANALYSIS_VERSION
+        analysis_version: str = ANALYSIS_VERSION,
+        user_id: Optional[str] = None
     ) -> str:
         """
         Store voice analysis results in Firestore.
@@ -104,6 +105,8 @@ class FirestoreOperations:
             features: Dictionary of extracted features (already namespaced)
             processing_metadata: Metadata about the processing
             tool_versions: Dictionary of tool versions used
+            analysis_version: Version string for analysis results
+            user_id: User ID for storing in users collection (optional)
             
         Returns:
             Document ID of the stored insight
@@ -146,6 +149,31 @@ class FirestoreOperations:
                 f"Voice analysis insights stored successfully for recording {recording_id} "
                 f"at document {doc_ref.id}"
             )
+            
+            # Also write to users collection if user_id is provided
+            if user_id:
+                try:
+                    # Add timestamp for sorting in users collection
+                    user_insight_data = insight_data.copy()
+                    user_insight_data['timestamp'] = firestore.SERVER_TIMESTAMP
+                    user_insight_data['recording_id'] = recording_id
+                    
+                    # Write to users/{user_id}/voice_analyses/{recording_id}
+                    user_doc_ref = self.firebase_manager.firestore_client.collection(
+                        'users'
+                    ).document(user_id).collection('voice_analyses').document(recording_id)
+                    
+                    user_doc_ref.set(user_insight_data)
+                    
+                    self.logger.info(
+                        f"Voice analysis results also stored in users collection: "
+                        f"users/{user_id}/voice_analyses/{recording_id}"
+                    )
+                except Exception as e:
+                    self.logger.warning(
+                        f"Failed to store results in users collection for user {user_id}: {e}"
+                    )
+                    # Don't fail the entire operation if users collection write fails
             
             return doc_ref.id
             

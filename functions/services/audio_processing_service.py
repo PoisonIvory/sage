@@ -86,13 +86,15 @@ class AudioProcessingService:
 
     def parse_file_path(self, file_name: str) -> Dict[str, str]:
         """
-        Parse file path to extract recording ID from storage path.
+        Parse file path to extract recording ID and user ID from storage path.
+        
+        Expected path structure: sage-audio-files/{user_id}/{recording_id}.wav
         
         Args:
             file_name: Storage file path
             
         Returns:
-            Dictionary containing recording_id
+            Dictionary containing recording_id and user_id
             
         Raises:
             ValueError: If file path structure is invalid
@@ -100,9 +102,24 @@ class AudioProcessingService:
         try:
             if not file_name.startswith(SAGE_AUDIO_FILES_PREFIX):
                 raise ValueError(f"Invalid file path structure: {file_name}")
-            filename = file_name.split('/')[-1]
-            recording_id = filename.replace(WAV_EXTENSION, '')
-            return {'recording_id': recording_id}
+            
+            # Remove prefix and split path components
+            path_without_prefix = file_name[len(SAGE_AUDIO_FILES_PREFIX):]
+            path_parts = path_without_prefix.split('/')
+            
+            if len(path_parts) >= 2:
+                # New structure: sage-audio-files/{user_id}/{recording_id}.wav
+                user_id = path_parts[0]
+                filename = path_parts[-1]
+                recording_id = filename.replace(WAV_EXTENSION, '')
+                return {'recording_id': recording_id, 'user_id': user_id}
+            elif len(path_parts) == 1:
+                # Legacy structure: sage-audio-files/{recording_id}.wav
+                filename = path_parts[0]
+                recording_id = filename.replace(WAV_EXTENSION, '')
+                return {'recording_id': recording_id}
+            else:
+                raise ValueError(f"Invalid path structure: {file_name}")
         except Exception as e:
             self.logger.exception("File path parsing failed")
             raise
@@ -163,8 +180,9 @@ class AudioProcessingService:
             tool_versions = ToolVersions.get_analysis_versions()
             file_info = self.parse_file_path(file_name)
             recording_id = file_info['recording_id']
+            user_id = file_info.get('user_id')  # May be None for legacy paths
             doc_id = self.firestore_ops.store_voice_analysis_results(
-                recording_id, features, processing_metadata, tool_versions, self.analysis_version
+                recording_id, features, processing_metadata, tool_versions, self.analysis_version, user_id
             )
             self.logger.info(f"Processing completed successfully for {file_name}")
             return doc_id

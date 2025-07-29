@@ -7,6 +7,8 @@
 
 import SwiftUI
 import Combine
+import FirebaseFirestore
+import FirebaseAuth
 
 // MARK: - Percentile Bar (New UI Pattern, see FEEDBACK_LOG.md)
 struct SagePercentileBar: View {
@@ -432,6 +434,12 @@ struct VoiceDashboardView: View {
     // MARK: - Helper Methods
     
     private func setupRealTimeSubscription() {
+        // Query for the most recent voice analysis result
+        Task {
+            await queryMostRecentAnalysis()
+        }
+        
+        // Also listen to the ongoing analysis service for real-time updates
         let resultsStream = analysisService.subscribeToResults()
         
         Task {
@@ -441,6 +449,105 @@ struct VoiceDashboardView: View {
                 }
             }
         }
+    }
+    
+    private func queryMostRecentAnalysis() async {
+        guard let userId = Auth.auth().currentUser?.uid else { return }
+        
+        let firestore = Firestore.firestore()
+        let query = firestore
+            .collection("users")
+            .document(userId)
+            .collection("voice_analyses")
+            .order(by: "timestamp", descending: true)
+            .limit(to: 1)
+        
+        do {
+            let snapshot = try await query.getDocuments()
+            guard let document = snapshot.documents.first else {
+                return
+            }
+            let data = document.data()
+            
+            // Parse the most recent analysis result
+            if let biomarkers = parseVocalBiomarkers(from: data) {
+                await MainActor.run {
+                    currentBiomarkers = biomarkers
+                }
+            }
+        } catch {
+            print("Error querying most recent analysis: \(error)")
+        }
+    }
+    
+    // Helper method to parse VocalBiomarkers (extracted from VocalResultsListener)
+    private func parseVocalBiomarkers(from data: [String: Any]) -> VocalBiomarkers? {
+        // Extract vocal analysis features from Firestore document
+        guard let f0Mean = data["vocal_analysis_f0_mean"] as? Double,
+              let f0Std = data["vocal_analysis_f0_std"] as? Double,
+              let f0Confidence = data["vocal_analysis_f0_confidence"] as? Double,
+              let jitterLocal = data["vocal_analysis_jitter_local"] as? Double,
+              let jitterAbsolute = data["vocal_analysis_jitter_absolute"] as? Double,
+              let jitterRap = data["vocal_analysis_jitter_rap"] as? Double,
+              let jitterPpq5 = data["vocal_analysis_jitter_ppq5"] as? Double,
+              let shimmerLocal = data["vocal_analysis_shimmer_local"] as? Double,
+              let shimmerDb = data["vocal_analysis_shimmer_db"] as? Double,
+              let shimmerApq3 = data["vocal_analysis_shimmer_apq3"] as? Double,
+              let shimmerApq5 = data["vocal_analysis_shimmer_apq5"] as? Double,
+              let hnrMean = data["vocal_analysis_hnr_mean"] as? Double,
+              let hnrStd = data["vocal_analysis_hnr_std"] as? Double,
+              let stabilityScore = data["vocal_analysis_vocal_stability_score"] as? Double else {
+            return nil
+        }
+        
+        // Construct domain models
+        let f0Analysis = F0Analysis(mean: f0Mean, std: f0Std, confidence: f0Confidence)
+        
+        let jitterMeasures = JitterMeasures(
+            local: jitterLocal,
+            absolute: jitterAbsolute,
+            rap: jitterRap,
+            ppq5: jitterPpq5
+        )
+        
+        let shimmerMeasures = ShimmerMeasures(
+            local: shimmerLocal,
+            db: shimmerDb,
+            apq3: shimmerApq3,
+            apq5: shimmerApq5
+        )
+        
+        let hnrAnalysis = HNRAnalysis(mean: hnrMean, std: hnrStd)
+        
+        let voiceQuality = VoiceQualityAnalysis(
+            jitter: jitterMeasures,
+            shimmer: shimmerMeasures,
+            hnr: hnrAnalysis
+        )
+        
+        let stabilityComponents = StabilityComponents(
+            f0Score: f0Confidence * 0.4,
+            jitterScore: max(0, 100 - jitterLocal * 20) * 0.2,
+            shimmerScore: max(0, 100 - shimmerLocal * 10) * 0.2,
+            hnrScore: min(100, hnrMean * 5) * 0.2
+        )
+        
+        let stability = VocalStabilityScore(score: stabilityScore, components: stabilityComponents)
+        
+        let metadata = VoiceAnalysisMetadata(
+            recordingDuration: data["vocal_analysis_metadata_duration"] as? Double ?? 0.0,
+            sampleRate: data["vocal_analysis_metadata_sample_rate"] as? Double ?? 48000.0,
+            voicedRatio: data["vocal_analysis_metadata_voiced_ratio"] as? Double ?? 0.0,
+            analysisTimestamp: Date(),
+            analysisSource: .cloudParselmouth
+        )
+        
+        return VocalBiomarkers(
+            f0: f0Analysis,
+            voiceQuality: voiceQuality,
+            stability: stability,
+            metadata: metadata
+        )
     }
     
     private func colorForAssessment(_ assessment: VoiceQualityLevel) -> Color {

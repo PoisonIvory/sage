@@ -11,7 +11,7 @@ Reference: DATA_STANDARDS.md §3.2.1
 WAV_EXTENSION = '.wav'
 
 # File path patterns
-SAGE_AUDIO_FILES_PREFIX = 'voice_recordings/'
+SAGE_AUDIO_FILES_PREFIX = 'sage-audio-files/'
 
 # Firestore schema constants
 FIRESTORE_COLLECTION = 'recordings'
