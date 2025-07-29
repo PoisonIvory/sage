@@ -63,10 +63,10 @@ final class FeatureObservationCoordinator: ObservableObject {
     func startObserving(
         _ featureType: SpeechFeatureType,
         recordingID: String,
-        completion: ((Result<Void, DomainError>) -> Void)? = nil
+        completion: ((Result<Void, any Error>) -> Void)? = nil
     ) {
         guard !activeFeatures.contains(featureType) else {
-            completion?(.failure(.duplicateValue(feature: featureType, value: 0)))
+            completion?(.failure(NSError(domain: "DuplicateFeature", code: -1, userInfo: [NSLocalizedDescriptionKey: "Feature \(featureType) already being observed"])))
             return
         }
         
@@ -93,7 +93,7 @@ final class FeatureObservationCoordinator: ObservableObject {
     func startObservingMultiple(
         _ featureTypes: [SpeechFeatureType],
         recordingID: String,
-        completion: ((Result<Void, DomainError>) -> Void)? = nil
+        completion: ((Result<Void, any Error>) -> Void)? = nil
     ) {
         let group = DispatchGroup()
         var errors: [DomainError] = []
@@ -105,7 +105,12 @@ final class FeatureObservationCoordinator: ObservableObject {
                 case .success:
                     break
                 case .failure(let error):
-                    errors.append(error)
+                    if let domainError = error as? DomainError {
+                        errors.append(domainError)
+                    } else {
+                        // Convert generic error to domain error
+                        errors.append(VoiceAnalysisError.unknown)
+                    }
                 }
                 group.leave()
             }
@@ -202,7 +207,7 @@ final class FeatureObservationCoordinator: ObservableObject {
         case let domainError as DomainError:
             return domainError
         default:
-            return .networkError(underlying: error)
+            return VoiceAnalysisError.networkUnavailable
         }
     }
 }
@@ -219,12 +224,12 @@ private class MockListenerRegistration: NSObject, ListenerRegistration {
 
 extension FeatureObservationCoordinator {
     /// Convenience method to observe F0 feature
-    func observeF0(recordingID: String, completion: ((Result<Void, DomainError>) -> Void)? = nil) {
+    func observeF0(recordingID: String, completion: ((Result<Void, any Error>) -> Void)? = nil) {
         startObserving(.f0, recordingID: recordingID, completion: completion)
     }
     
     /// Convenience method to observe all available features
-    func observeAllFeatures(recordingID: String, completion: ((Result<Void, DomainError>) -> Void)? = nil) {
+    func observeAllFeatures(recordingID: String, completion: ((Result<Void, any Error>) -> Void)? = nil) {
         let allFeatures = SpeechFeatureType.allCases
         startObservingMultiple(allFeatures, recordingID: recordingID, completion: completion)
     }
@@ -233,7 +238,7 @@ extension FeatureObservationCoordinator {
     func observeFeatures(
         _ features: [SpeechFeatureType],
         recordingID: String,
-        completion: ((Result<Void, DomainError>) -> Void)? = nil
+        completion: ((Result<Void, any Error>) -> Void)? = nil
     ) {
         startObservingMultiple(features, recordingID: recordingID, completion: completion)
     }

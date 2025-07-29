@@ -12,7 +12,7 @@ struct RecordingValidationResult: Codable, Hashable {
 /// RecordingValidator performs all pre-upload and feature-level validation for research-grade compliance.
 /// - See DATA_STANDARDS.md §3.4 for required checks.
 /// - See RESOURCES.md §6 for reference sample QA.
-final class RecordingValidator {
+final class RecordingValidator: RecordingValidatorProtocol {
     // MARK: - Validation Thresholds (DATA_STANDARDS.md §3.4)
     private struct Thresholds {
         static let minDuration: TimeInterval = 3.0 // seconds, task-specific
@@ -27,7 +27,7 @@ final class RecordingValidator {
     /// Full validation pipeline for a recording.
     /// - Returns: RecordingValidationResult with reasons and metrics.
     /// - References DATA_STANDARDS.md §3.4, DATA_DICTIONARY.md, RESOURCES.md.
-    static func validateFull(recording: Recording) -> RecordingValidationResult {
+    func validateFull(recording: Recording) -> RecordingValidationResult {
         print("[RecordingValidator] Starting validation for recording id=\(recording.id)")
         var reasons: [String] = []
         var metrics: [String: AnyCodable] = [:]

@@ -64,8 +64,8 @@ graph TD
         B1[WelcomeView<br/>Landing]
         B2[OnboardingJourneyView<br/>Voice Setup with Baseline]
         B3[SessionsView<br/>Daily Recording]
-        B4[VoiceDashboardView<br/>Analysis Results]
-        B5[HomeView<br/>Insights]
+        B4[VoiceDashboardView<br/>Longitudinal Trends Placeholder]
+        B5[HomeView<br/>Today's Voice Analysis]
         B6[SimpleVocalDashboard<br/>Testing UI]
         B7[VocalAnalysisDashboard<br/>Research UI]
         B8[AuthChoiceView<br/>Method Selection]
@@ -197,7 +197,7 @@ graph TD
     
     subgraph "Features Layer"
         D1[Authentication/<br/>Views & ViewModels]
-        D2[Dashboard/<br/>Analysis Results]
+        D2[Dashboard/<br/>HomeView (Today's Analysis) + VoiceDashboardView (Longitudinal Placeholder)]
         D3[Onboarding/<br/>Voice Setup]
         D4[Sessions/<br/>Recording Interface]
     end
@@ -609,8 +609,8 @@ graph TD
     end
     
     subgraph "Specialized Components"
-        B1[SagePercentileBar<br/>Progress Indicators (in VoiceDashboardView)]
-        B2[SageStylizedCard<br/>Content Containers (in VoiceDashboardView)]
+        B1[SagePercentileBar<br/>Progress Indicators (in HomeView)]
+        B2[SageStylizedCard<br/>Content Containers (in HomeView)]
         B3[SageProgressView<br/>Loading States]
         B4[SageInsightCard<br/>Analysis Results]
     end
@@ -622,10 +622,11 @@ graph TD
     end
     
     subgraph "Application Views"
-        D1[VoiceDashboardView<br/>Analysis Results]
-        D2[SessionsView<br/>Recording Interface]
-        D3[OnboardingJourneyView<br/>Setup Flow]
-        D4[SimpleVocalDashboard<br/>Testing Interface]
+        D1[HomeView<br/>Today's Voice Analysis]
+        D2[VoiceDashboardView<br/>Longitudinal Trends Placeholder]
+        D3[SessionsView<br/>Recording Interface]
+        D4[OnboardingJourneyView<br/>Setup Flow with Baseline Establishment]
+        D5[SimpleVocalDashboard<br/>Testing Interface]
     end
     
     A1 --> B1
@@ -638,11 +639,11 @@ graph TD
     A4 --> C2
     B1 --> D1
     B2 --> D1
-    B3 --> D2
+    B3 --> D3
     B4 --> D1
-    C1 --> D3
-    C2 --> D3
-    C3 --> D2
+    C1 --> D4
+    C2 --> D4
+    C3 --> D3
     
     classDef design fill:#fce4ec,stroke:#c2185b,stroke-width:2px
     classDef component fill:#fff3e0,stroke:#f57c00,stroke-width:2px
@@ -672,7 +673,9 @@ journey
         Record Sustained Vowel: 4: User, iOS
         Local Analysis (< 5s): 5: iOS, SFVoiceAnalytics
         Show Immediate Results: 5: User, iOS
-        Cloud Processing (30-60s): 3: Cloud, Parselmouth
+        Proceed Through Steps: 5: User
+        Cloud Processing (Background): 3: Cloud, Parselmouth
+        Automatic Baseline Establishment: 5: User, iOS
         Complete Onboarding: 5: User
     
     section Daily Usage
@@ -680,7 +683,8 @@ journey
         Record Daily Sample: 4: User, iOS
         View Immediate F0: 5: User, iOS
         Receive Comprehensive Results: 5: User, Cloud
-        Check Dashboard: 5: User, iOS
+        Check Home Analysis: 5: User, iOS
+        View Trends Dashboard: 4: User, iOS
     
     section Clinical Insights
         View Voice Quality: 5: User
@@ -841,8 +845,8 @@ These components exist but are internal classes within other files, not separate
 
 - **CloudVoiceAnalysisService**: Internal class in HybridVocalAnalysisService.swift
 - **VocalResultsListener**: Internal class in HybridVocalAnalysisService.swift  
-- **SagePercentileBar**: Internal struct in VoiceDashboardView.swift
-- **SageStylizedCard**: Internal struct in VoiceDashboardView.swift
+- **SagePercentileBar**: Internal struct in HomeView.swift
+- **SageStylizedCard**: Internal struct in HomeView.swift
 - **CountdownTimerView**: Internal struct in OnboardingJourneyView.swift
 - **ProgressBarView**: Internal struct in OnboardingJourneyView.swift
 - **WaveformView**: Internal struct in OnboardingJourneyView.swift
@@ -871,12 +875,25 @@ The key difference from typical architecture is that many "components" are imple
 - **Real-time updates** via Firestore listeners
 - **Dual Firestore writes** for compatibility with both recordings and users collections
 
-#### 🔄 Latest Pipeline Fixes (January 2025)
+#### 🔄 Latest Updates (January 2025)
+
+**Pipeline Fixes:**
 - **Upload Path Update**: Changed from `sage-audio-files/{recordingId}.wav` to `sage-audio-files/{userId}/{recordingId}.wav`
 - **User ID Correlation**: Sessions now use authenticated Firebase user ID instead of fake session IDs
 - **Cloud Function Enhancement**: Added user_id extraction from file paths and dual Firestore writes
 - **Memory Optimization**: Increased cloud function memory from 256MB to 512MB
-- **Dashboard Integration**: VoiceDashboardView now queries both real-time and historical analysis results
+
+**Baseline Establishment Flow:**
+- **Non-blocking Onboarding**: Users proceed through onboarding steps while cloud analysis processes in background
+- **Automatic Baseline**: Baseline establishment happens seamlessly at onboarding completion if comprehensive analysis is ready
+- **Comprehensive Analysis Tracking**: Added `hasComprehensiveAnalysis` state tracking for proper timing
+- **Error Handling**: Graceful fallback if baseline can't be established during onboarding
+
+**UI Architecture Reorganization:**
+- **HomeView Enhancement**: Moved comprehensive voice analysis content from VoiceDashboardView to HomeView
+- **Dashboard Placeholder**: VoiceDashboardView now serves as placeholder for future longitudinal voice trends
+- **Clear Separation**: Home = "today's voice analysis", Dashboard = "voice patterns over time"
+- **Component Migration**: SagePercentileBar and SageStylizedCard now used in HomeView instead of VoiceDashboardView
 
 ### Architectural Principles
 
@@ -929,8 +946,15 @@ This document has been thoroughly reviewed against the actual codebase to ensure
 - ✅ Directory structure matches actual project organization
 - ✅ Service dependencies and relationships are accurate
 
-**Last Verified**: January 2025  
+**Last Verified**: January 2025 (Updated post-dashboard reorganization)  
 **Verification Method**: Comprehensive codebase analysis with file system validation
+
+### Recent Architecture Updates
+This architecture document has been updated to reflect the latest changes including:
+- Dashboard content migration from VoiceDashboardView to HomeView
+- Improved baseline establishment flow during onboarding
+- Non-blocking user experience with background cloud processing
+- Clear separation between today's analysis (Home) and longitudinal trends (Dashboard placeholder)
 
 ---
 

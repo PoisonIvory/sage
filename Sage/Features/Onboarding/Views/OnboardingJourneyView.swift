@@ -25,6 +25,17 @@ struct OnboardingJourneyView: View {
             userProfileRepository: userProfileRepository,
             microphonePermissionManager: microphonePermissionManager,
             vocalAnalysisService: vocalAnalysisService,
+            vocalBaselineService: VocalBaselineService(
+                validationService: BaselineValidationService(
+                    clinicalThresholdsService: ClinicalThresholdsService(
+                        researchDataService: ResearchDataService()
+                    )
+                ),
+                repository: VocalBaselineRepository(
+                    firestoreClient: MockFirestoreClientProtocol()
+                ),
+                userProfileRepository: userProfileRepository
+            ),
             coordinator: coordinator,
             dateProvider: dateProvider
         ))
@@ -196,6 +207,82 @@ struct SustainedVowelTestView: View {
                         .padding(.horizontal, SageSpacing.xlarge)
                 }
                 
+                // Baseline Establishment (AC-002: Display Baseline Summary)
+                if viewModel.hasEstablishedBaseline, let baseline = viewModel.vocalBaseline {
+                    VStack(spacing: SageSpacing.medium) {
+                        Text("✓ Your Voice Profile Established")
+                            .font(SageTypography.headline)
+                            .foregroundColor(SageColors.sageTeal)
+                        
+                        VStack(alignment: .leading, spacing: SageSpacing.small) {
+                            HStack {
+                                Text("F0:")
+                                    .font(SageTypography.body)
+                                    .foregroundColor(SageColors.earthClay)
+                                Spacer()
+                                Text("\(String(format: "%.1f", baseline.biomarkers.f0.mean)) Hz")
+                                    .font(SageTypography.body)
+                                    .foregroundColor(SageColors.espressoBrown)
+                            }
+                            
+                            HStack {
+                                Text("Stability:")
+                                    .font(SageTypography.body)
+                                    .foregroundColor(SageColors.earthClay)
+                                Spacer()
+                                Text("\(String(format: "%.0f", baseline.biomarkers.stability.score))%")
+                                    .font(SageTypography.body)
+                                    .foregroundColor(SageColors.espressoBrown)
+                            }
+                            
+                            HStack {
+                                Text("Quality:")
+                                    .font(SageTypography.body)
+                                    .foregroundColor(SageColors.earthClay)
+                                Spacer()
+                                Text(baseline.biomarkers.voiceQuality.qualityLevel.rawValue)
+                                    .font(SageTypography.body)
+                                    .foregroundColor(SageColors.espressoBrown)
+                            }
+                        }
+                        .padding(SageSpacing.medium)
+                        .background(SageColors.fogWhite)
+                        .cornerRadius(12)
+                        
+                        Text("This baseline will be used for future voice comparisons")
+                            .font(SageTypography.caption)
+                            .foregroundColor(SageColors.earthClay)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(.horizontal, SageSpacing.large)
+                }
+                
+                // Baseline Error Display
+                if let baselineError = viewModel.baselineError {
+                    VStack(spacing: SageSpacing.small) {
+                        Text("⚠️ Baseline Quality Issue")
+                            .font(SageTypography.headline)
+                            .foregroundColor(SageColors.coralBlush)
+                        
+                        Text(baselineError)
+                            .font(SageTypography.body)
+                            .foregroundColor(SageColors.cinnamonBark)
+                            .multilineTextAlignment(.center)
+                        
+                        // Re-record button (AC-003: Re-record Baseline)
+                        Button(action: {
+                            Task {
+                                await viewModel.reRecordBaseline()
+                            }
+                        }) {
+                            Text("Re-record Baseline")
+                                .font(SageTypography.body)
+                                .foregroundColor(SageColors.sageTeal)
+                        }
+                    }
+                    .padding(.horizontal, SageSpacing.large)
+                }
+                
                 // Action Buttons
                 if viewModel.isRecording {
                     // Recording in progress - show stop button
@@ -212,13 +299,35 @@ struct SustainedVowelTestView: View {
                             .cornerRadius(16)
                     }
                     .accessibilityLabel("Stop recording. Complete the vocal test.")
-                } else if viewModel.shouldShowNextButton {
-                    // Recording complete - show next button
+                } else if viewModel.shouldShowNextButton && !viewModel.hasEstablishedBaseline {
+                    // Recording complete - show next button to proceed through onboarding
+                    VStack(spacing: SageSpacing.medium) {
+                        Button(action: {
+                            print("[SustainedVowelTestView] Next tapped after recording")
+                            viewModel.selectNext()
+                        }) {
+                            Text("Next")
+                                .font(SageTypography.headline)
+                                .foregroundColor(SageColors.fogWhite)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, SageSpacing.medium)
+                                .background(SageColors.sageTeal)
+                                .cornerRadius(16)
+                        }
+                        .accessibilityLabel("Continue to next step")
+                        
+                        Text("Continue through onboarding while analysis processes")
+                            .font(SageTypography.caption)
+                            .foregroundColor(SageColors.earthClay)
+                            .multilineTextAlignment(.center)
+                    }
+                } else if viewModel.hasEstablishedBaseline {
+                    // Baseline established - show continue button
                     Button(action: {
-                        print("[SustainedVowelTestView] Next button tapped")
+                        print("[SustainedVowelTestView] Continue after baseline established")
                         viewModel.selectNext()
                     }) {
-                        Text(viewModel.nextButtonTitle)
+                        Text("Continue")
                             .font(SageTypography.headline)
                             .foregroundColor(SageColors.fogWhite)
                             .frame(maxWidth: .infinity)
@@ -226,7 +335,7 @@ struct SustainedVowelTestView: View {
                             .background(SageColors.sageTeal)
                             .cornerRadius(16)
                     }
-                    .accessibilityLabel("Continue to next step. Move to reading prompt.")
+                    .accessibilityLabel("Continue to next step with established baseline")
                 } else if !viewModel.isRecording && !viewModel.shouldShowNextButton && !viewModel.hasCompletedRecording {
                     // Ready to start recording - only show if no recording has been completed
                     Button(action: {

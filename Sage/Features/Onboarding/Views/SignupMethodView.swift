@@ -133,6 +133,17 @@ struct SignupMethodView_Previews: PreviewProvider {
             userProfileRepository: UserProfileRepository(),
             microphonePermissionManager: MicrophonePermissionManager(),
             vocalAnalysisService: HybridVocalAnalysisService(),
+            vocalBaselineService: VocalBaselineService(
+                validationService: BaselineValidationService(
+                    clinicalThresholdsService: ClinicalThresholdsService(
+                        researchDataService: ResearchDataService()
+                    )
+                ),
+                repository: VocalBaselineRepository(
+                    firestoreClient: MockFirestoreClientProtocol()
+                ),
+                userProfileRepository: UserProfileRepository()
+            ),
             coordinator: nil,
             dateProvider: SystemDateProvider()
         ))

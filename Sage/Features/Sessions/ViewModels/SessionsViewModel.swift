@@ -74,28 +74,43 @@ final class SessionsViewModel: ObservableObject {
     }
 
     // MARK: - Validation & Upload
-    /// Validates and uploads a recording, logging errors and updating FEEDBACK_LOG.md as needed.
+    /// Validates and uploads a recording using standardized error handling.
     /// - References DATA_STANDARDS.md §3.4, DATA_DICTIONARY.md, RESOURCES.md §6.
     func validateAndUpload(recording: Recording) {
-        // Pre-upload validation: duration, silence, clipping
-        let validation = RecordingValidator.validateFull(recording: recording)
-        lastValidationResult = validation
-        guard validation.isValid else {
-            errorMessage = "Validation failed: \(validation.reasons.joined(separator: ", "))"
-            logValidationFailure(recording: recording, reasons: validation.reasons)
-            return
-        }
-        isUploading = true
-        uploader.uploadRecording(recording) { [weak self] result in
-            DispatchQueue.main.async {
-                self?.isUploading = false
-                switch result {
-                case .success:
-                    self?.uploadProgress = 1.0
-                    self?.uploadSuccess = true
-                case .failure(let error):
-                    self?.errorMessage = "Upload failed: \(error.localizedDescription)"
-                    self?.logUploadFailure(recording: recording, error: error)
+        Task {
+            // Pre-upload validation: duration, silence, clipping
+            let validator = RecordingValidator()
+            let validation = validator.validateFull(recording: recording)
+            lastValidationResult = validation
+            
+            if !validation.isValid {
+                let error = VoiceAnalysisError.validationFailed(reasons: validation.reasons)
+                error.logError(context: "Recording validation failed")
+                await MainActor.run {
+                    errorMessage = error.userMessage
+                }
+                return
+            }
+            
+            await MainActor.run {
+                isUploading = true
+            }
+            
+            // Use application service for standardized operations
+            let applicationService = await VoiceAnalysisApplicationService(
+                voiceAnalyzer: HybridVocalAnalysisService()
+            )
+            let result = await applicationService.analyzeVoiceSample(recording)
+            
+            await MainActor.run {
+                isUploading = false
+                
+                if result.isSuccess {
+                    uploadProgress = 1.0
+                    uploadSuccess = true
+                } else {
+                    errorMessage = result.userMessage
+                    result.error?.logError(context: "Voice analysis failed")
                 }
             }
         }

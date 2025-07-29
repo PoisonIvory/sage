@@ -85,7 +85,7 @@ struct AnalyticsProperties {
 
 final class AnalyticsService: AnalyticsServiceProtocol {
     static let shared = AnalyticsService()
-    private init() {}
+    internal init() {}
 
     /// Identifies a user in Mixpanel and sets their profile properties
     ///

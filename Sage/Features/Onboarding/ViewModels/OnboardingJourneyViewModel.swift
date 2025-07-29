@@ -39,6 +39,7 @@ final class OnboardingJourneyViewModel: ObservableObject {
     private let userProfileRepository: UserProfileRepositoryProtocol
     private let microphonePermissionManager: MicrophonePermissionManagerProtocol
     private let vocalAnalysisService: HybridVocalAnalysisService
+    private let vocalBaselineService: VocalBaselineServiceProtocol
     private weak var coordinator: OnboardingCoordinatorProtocol?
     private let dateProvider: DateProvider
     
@@ -46,9 +47,17 @@ final class OnboardingJourneyViewModel: ObservableObject {
     private var currentVoiceRecording: VoiceRecording?
     @Published var currentAnalysisResult: VocalAnalysisResult?
     private var audioRecorder: AVAudioRecorder?
+    private var retryCount: Int = 0
     
     // MARK: - Recording State
     @Published var recordingState: RecordingUIState = .idle()
+    
+    // MARK: - Baseline State (AC-001, AC-002, AC-003)
+    @Published var vocalBaseline: Sage.VocalBaseline?
+    @Published var hasEstablishedBaseline: Bool = false
+    @Published var baselineError: String?
+    @Published var onboardingComplete: Bool = false
+    @Published var hasComprehensiveAnalysis: Bool = false
     
     // MARK: - Initialization
     init(
@@ -57,6 +66,7 @@ final class OnboardingJourneyViewModel: ObservableObject {
         userProfileRepository: UserProfileRepositoryProtocol,
         microphonePermissionManager: MicrophonePermissionManagerProtocol,
         vocalAnalysisService: HybridVocalAnalysisService? = nil,
+        vocalBaselineService: VocalBaselineServiceProtocol,
         coordinator: OnboardingCoordinatorProtocol?,
         dateProvider: DateProvider = SystemDateProvider()
     ) {
@@ -65,9 +75,13 @@ final class OnboardingJourneyViewModel: ObservableObject {
         self.userProfileRepository = userProfileRepository
         self.microphonePermissionManager = microphonePermissionManager
         self.vocalAnalysisService = vocalAnalysisService ?? HybridVocalAnalysisService()
+        self.vocalBaselineService = vocalBaselineService
         self.coordinator = coordinator
         self.dateProvider = dateProvider
-        Logger.info("[OnboardingJourneyViewModel] Initialized with HybridVocalAnalysisService")
+        Logger.info("[OnboardingJourneyViewModel] Initialized with domain services")
+        
+        // Start listening for comprehensive analysis results
+        setupComprehensiveAnalysisListener()
     }
     
     // MARK: - Signup Flow Methods
@@ -188,11 +202,33 @@ final class OnboardingJourneyViewModel: ObservableObject {
     /// Handles user tapping "Finish" on final step
     func selectFinish() {
         Logger.debug("[OnboardingJourneyViewModel] User tapped Finish")
-        currentStep = .completed
-        if let profile = userProfile {
-            coordinator?.onboardingDidComplete(userProfile: profile)
-        } else {
-            Logger.error("[OnboardingJourneyViewModel] No user profile found during completion")
+        
+        Task {
+            // Try to establish baseline if comprehensive analysis is ready
+            if hasComprehensiveAnalysis && !hasEstablishedBaseline {
+                do {
+                    try await establishBaseline()
+                    Logger.info("[OnboardingJourneyViewModel] Baseline established during onboarding completion")
+                } catch {
+                    Logger.warning("[OnboardingJourneyViewModel] Could not establish baseline during completion: \(error.localizedDescription)")
+                    // Continue onboarding even if baseline fails - user can establish it later
+                }
+            } else if !hasComprehensiveAnalysis {
+                Logger.info("[OnboardingJourneyViewModel] Comprehensive analysis not ready yet - onboarding will complete without baseline")
+            }
+            
+            // Mark onboarding as completed in UserDefaults
+            UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+            Logger.debug("[OnboardingJourneyViewModel] Onboarding completion flag set in UserDefaults")
+            
+            await MainActor.run {
+                currentStep = .completed
+                if let profile = userProfile {
+                    coordinator?.onboardingDidComplete(userProfile: profile)
+                } else {
+                    Logger.error("[OnboardingJourneyViewModel] No user profile found during completion")
+                }
+            }
         }
     }
     
@@ -224,6 +260,7 @@ final class OnboardingJourneyViewModel: ObservableObject {
             recordingState = .idle()
             currentVoiceRecording = nil
             currentAnalysisResult = nil
+            hasComprehensiveAnalysis = false
         }
     }
     
@@ -435,9 +472,150 @@ final class OnboardingJourneyViewModel: ObservableObject {
         isRecording = false
         recordingState = .idle()
         
+        // Check if comprehensive analysis is already available
+        hasComprehensiveAnalysis = result.comprehensiveAnalysis != nil
+        
         // Track analytics
         trackSustainedVowelTestCompleted()
         trackVocalAnalysisCompleted(result: result)
+    }
+    
+    // MARK: - Comprehensive Analysis Listener
+    
+    /// Sets up listener for comprehensive analysis results from cloud
+    private func setupComprehensiveAnalysisListener() {
+        Task {
+            for await biomarkers in vocalAnalysisService.subscribeToResults() {
+                await MainActor.run {
+                    Logger.debug("[OnboardingJourneyViewModel] Received comprehensive analysis results")
+                    
+                    // Update current analysis result with comprehensive data
+                    if let currentResult = currentAnalysisResult {
+                        currentAnalysisResult = VocalAnalysisResult(
+                            recordingId: currentResult.recordingId,
+                            localMetrics: currentResult.localMetrics,
+                            comprehensiveAnalysis: biomarkers,
+                            status: .complete
+                        )
+                    }
+                    
+                    hasComprehensiveAnalysis = true
+                    
+                    // Update success message to indicate comprehensive analysis is ready
+                    let f0Mean = biomarkers.f0.mean
+                    let confidence = biomarkers.f0.confidence
+                    successMessage = "Comprehensive analysis complete! F0: \(String(format: "%.1f", f0Mean))Hz (\(Int(confidence))% confidence)"
+                    
+                    Logger.info("[OnboardingJourneyViewModel] Comprehensive analysis complete - ready for baseline establishment")
+                }
+            }
+        }
+    }
+    
+    // MARK: - Baseline Establishment Methods (AC-001, AC-002, AC-003)
+    
+    /// Establishes vocal baseline from current analysis result using domain service
+    func establishBaseline() async throws {
+        Logger.debug("[OnboardingJourneyViewModel] Establishing vocal baseline using domain service")
+        
+        guard let analysisResult = currentAnalysisResult else {
+            let error = "No analysis result available for baseline establishment"
+            baselineError = error
+            Logger.error("[OnboardingJourneyViewModel] \(error)")
+            throw VocalAnalysisError.noAnalysisResult
+        }
+        
+        guard let userId = authService.currentUserId else {
+            let error = "User authentication required for baseline"
+            baselineError = error
+            Logger.error("[OnboardingJourneyViewModel] \(error)")
+            throw VocalAnalysisError.userNotAuthenticated
+        }
+        
+        // Get user profile for demographic data
+        guard let userProfile = userProfile else {
+            let error = "User profile required for baseline establishment"
+            baselineError = error
+            Logger.error("[OnboardingJourneyViewModel] \(error)")
+            throw VocalBaselineError.userProfileNotFound
+        }
+        
+        do {
+            // Use domain service to establish baseline with real data
+            let baseline = try await vocalBaselineService.establishBaseline(
+                from: analysisResult,
+                userId: UUID(uuidString: userId) ?? UUID(),
+                userProfile: userProfile
+            )
+            
+            // Update UI state
+            vocalBaseline = baseline
+            hasEstablishedBaseline = true
+            baselineError = nil
+            
+            Logger.info("[OnboardingJourneyViewModel] Vocal baseline established successfully using domain service")
+            
+            // Track analytics with real baseline data
+            trackAnalyticsEvent("onboarding_baseline_established", properties: [
+                "f0_mean": baseline.biomarkers.f0.mean,
+                "f0_confidence": baseline.biomarkers.f0.confidence,
+                "clinical_quality": baseline.clinicalQuality.rawValue,
+                "stability_score": baseline.biomarkers.stability.score,
+                "demographic": baseline.demographic.rawValue,
+                "voiced_ratio": baseline.biomarkers.metadata.voicedRatio,
+                "recording_duration": baseline.biomarkers.metadata.recordingDuration
+            ])
+            
+        } catch let baselineError as VocalBaselineError {
+            // Handle domain-specific errors with contextual guidance
+            let contextualGuidance = getErrorGuidance(for: baselineError)
+            self.baselineError = baselineError.localizedDescription + (contextualGuidance.isEmpty ? "" : " " + contextualGuidance)
+            Logger.error("[OnboardingJourneyViewModel] Baseline establishment failed: \(baselineError.localizedDescription)")
+            
+            // Track analytics for failure with reason
+            trackAnalyticsEvent("onboarding_baseline_failed", properties: [
+                "reason": baselineError.localizedDescription,
+                "error_type": String(describing: baselineError)
+            ])
+            throw baselineError
+        } catch {
+            // Handle other errors
+            self.baselineError = "Baseline establishment failed: \(error.localizedDescription)"
+            Logger.error("[OnboardingJourneyViewModel] Unexpected error during baseline establishment: \(error.localizedDescription)")
+            throw error
+        }
+    }
+    
+    /// Re-records baseline during onboarding (AC-003)
+    func reRecordBaseline() async {
+        Logger.debug("[OnboardingJourneyViewModel] User requested to re-record baseline")
+        
+        // Reset state for new recording
+        hasCompletedRecording = false
+        shouldShowNextButton = false
+        currentAnalysisResult = nil
+        baselineError = nil
+        successMessage = nil
+        hasComprehensiveAnalysis = false
+        
+        // Track analytics
+        trackAnalyticsEvent("onboarding_baseline_re_record_requested", properties: [:])
+    }
+    
+    /// Completes onboarding with established baseline
+    func completeOnboarding() async {
+        // Update completion tracking
+        onboardingComplete = true
+        
+        // Track analytics with baseline context
+        let properties: [String: Any] = [
+            "has_baseline": hasEstablishedBaseline,
+            "baseline_quality": vocalBaseline?.clinicalQuality.rawValue ?? "none"
+        ]
+        
+        trackAnalyticsEvent("onboarding_completed_with_baseline", properties: properties)
+        
+        Logger.info("[OnboardingJourneyViewModel] Onboarding completed with baseline: \(hasEstablishedBaseline)")
     }
     
     // MARK: - Analytics Methods
@@ -495,6 +673,29 @@ final class OnboardingJourneyViewModel: ObservableObject {
         ])
     }
     
+    /// Provides contextual guidance based on the specific baseline error
+    /// - Parameter error: The baseline error that occurred
+    /// - Returns: User-friendly guidance string, or empty if no specific guidance available
+    private func getErrorGuidance(for error: VocalBaselineError) -> String {
+        switch error {
+        case .clinicalValidationFailed(let reason):
+            if reason.contains("F0 confidence") || reason.contains("confidence") {
+                return "Try recording in a quieter room and speak more clearly."
+            } else if reason.contains("duration") || reason.contains("short") {
+                return "Please speak for the full duration when recording."
+            } else if reason.contains("voiced") {
+                return "Make sure to speak continuously without long pauses."
+            }
+            return "Please try recording again with better audio quality."
+        case .userProfileNotFound:
+            return "Please complete your profile setup first."
+        case .incompleteAnalysis:
+            return "Please complete the voice recording first."
+        default:
+            return ""
+        }
+    }
+    
     // MARK: - Computed Properties for UI Content
     
     /// Centralized UI strings for onboarding flow
@@ -530,7 +731,11 @@ final class OnboardingJourneyViewModel: ObservableObject {
     }
     
     var finalStepMessage: String {
-        return OnboardingStrings.finalStepMessage
+        if hasComprehensiveAnalysis {
+            return "Perfect! Your voice analysis is complete. Finish setup to establish your baseline."
+        } else {
+            return OnboardingStrings.finalStepMessage
+        }
     }
     
     var beginButtonTitle: String {
@@ -543,6 +748,19 @@ final class OnboardingJourneyViewModel: ObservableObject {
     
     var finishButtonTitle: String {
         return OnboardingStrings.finishButtonTitle
+    }
+    
+    /// Returns a formatted baseline summary for UI display
+    /// - Returns: Formatted string with baseline metrics and explanation
+    func getBaselineSummary() -> String {
+        guard let baseline = vocalBaseline else {
+            return "No baseline established"
+        }
+        let f0Mean = baseline.biomarkers.f0.mean
+        let confidence = baseline.biomarkers.f0.confidence
+        let quality = baseline.clinicalQuality.rawValue
+        let explanation = "Your vocal baseline captures your unique voice characteristics during onboarding. This establishes your personal reference point for future voice analysis."
+        return "F0: \(String(format: "%.1f", f0Mean))Hz, Confidence: \(Int(confidence))%, Quality: \(quality)\n\n\(explanation)"
     }
 }
 

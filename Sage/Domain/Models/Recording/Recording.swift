@@ -180,3 +180,18 @@ extension Recording {
 }
 
 /// NOTE: As of 2024-07, frame-level features are stored in Firestore subcollection 'frames' as FrameBatch documents. See DATA_STANDARDS.md §3.4. 
+
+// MARK: - Conversion to VoiceRecording
+#if canImport(Sage)
+extension Recording {
+    func toVoiceRecording() -> VoiceRecording {
+        return VoiceRecording(
+            id: self.id.uuidString,
+            audioURL: self.fileURL,
+            duration: self.duration,
+            recordedAt: self.sessionTime,
+            userId: self.userID
+        )
+    }
+}
+#endif 

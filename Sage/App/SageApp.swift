@@ -138,17 +138,28 @@ struct SageApp: App {
     }
     
     private func shouldShowOnboarding() -> Bool {
-        // TODO: Check if user has completed onboarding in UserDefaults or Firestore
-        // For now, always show onboarding to test the new flow
+        // Check if user has completed onboarding in UserDefaults
+        let hasCompletedOnboarding = UserDefaults.standard.bool(forKey: "hasCompletedOnboarding")
         
         // Debug: Print Firebase Auth state
         if let user = Auth.auth().currentUser {
             print("Firebase Auth: User logged in - \(user.uid)")
+            print("Firebase Auth: Has completed onboarding: \(hasCompletedOnboarding)")
         } else {
             print("Firebase Auth: No user authenticated")
         }
         
-        return true
+        // For new users or users who haven't completed onboarding, show onboarding
+        return !hasCompletedOnboarding
+    }
+    
+    // MARK: - Debug Helper Methods
+    
+    /// Resets onboarding completion flag for testing purposes
+    /// Call this method to force onboarding to show again
+    private func resetOnboardingCompletion() {
+        UserDefaults.standard.removeObject(forKey: "hasCompletedOnboarding")
+        print("SageApp: Onboarding completion flag reset")
     }
 
     @ViewBuilder

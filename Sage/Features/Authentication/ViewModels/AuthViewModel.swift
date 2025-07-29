@@ -89,25 +89,36 @@ class AuthViewModel: ObservableObject {
     func signUpWithEmail() {
         clearSignOutFlag() // Clear flag when user explicitly signs up
         os_log("AuthViewModel: Attempting sign up with email: %{public}@", email)
+        
         guard isEmailValid, isPasswordValid else {
+            let domainError: AuthenticationError
             if !isEmailValid {
-                state = .failed(error: AuthError.invalidEmail.message)
+                domainError = AuthenticationError.invalidCredentials
+                domainError.logError(context: "Email validation failed")
+                state = .failed(error: domainError.userMessage)
             } else if !isPasswordValid {
-                state = .failed(error: AuthError.invalidPassword.message)
+                domainError = AuthenticationError.invalidCredentials
+                domainError.logError(context: "Password validation failed")
+                state = .failed(error: domainError.userMessage)
             }
             os_log("AuthViewModel: Invalid email or password")
             return
         }
+        
         state = .loading
         auth.signUpWithEmail(email: email, password: password) { [weak self] success, error in
             DispatchQueue.main.async {
                 if let error = error {
-                    self?.state = .failed(error: error.localizedDescription)
+                    let domainError = AuthenticationError.networkError
+                    domainError.logError(context: "Sign up failed")
+                    self?.state = .failed(error: domainError.userMessage)
                     os_log("AuthViewModel: Sign up failed: %{public}@", error.localizedDescription)
                 } else if success {
                     self?.handleAuthenticationSuccess(signUpMethod: "email")
                 } else {
-                    self?.state = .failed(error: "Unknown error during sign up")
+                    let domainError = AuthenticationError.unknown
+                    domainError.logError(context: "Unknown sign up error")
+                    self?.state = .failed(error: domainError.userMessage)
                 }
             }
         }

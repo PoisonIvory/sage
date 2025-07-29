@@ -59,6 +59,22 @@ public final class HybridVocalAnalysisService: VocalAnalysisService, ObservableO
         setupSubscriptions()
     }
     
+    /// Set up subscriptions to listen for real-time analysis updates
+    private func setupSubscriptions() {
+        // Listen for VocalResultsListener updates and update our state
+        firestoreListener.$latestResults
+            .compactMap { $0 } // Only emit when we have results
+            .sink { [weak self] biomarkers in
+                guard let self = self else { return }
+                
+                DispatchQueue.main.async {
+                    self.currentState = .complete(biomarkers)
+                    self.logger.info("[HybridVocalAnalysisService] Comprehensive analysis completed - updated state")
+                }
+            }
+            .store(in: &cancellables)
+    }
+    
     // MARK: - VocalAnalysisService Implementation
     
     /// Performs hybrid voice analysis with immediate local feedback
@@ -209,26 +225,6 @@ public final class HybridVocalAnalysisService: VocalAnalysisService, ObservableO
         }
     }
     
-    /// Setup subscriptions to child service state changes
-    private func setupSubscriptions() {
-        // Listen to Firestore results and update state
-        firestoreListener.resultsPublisher
-            .receive(on: DispatchQueue.main)
-            .sink(
-                receiveCompletion: { [weak self] completion in
-                    if case .failure(let error) = completion {
-                        self?.currentState = .error("Results listening failed: \(error.localizedDescription)")
-                    }
-                },
-                receiveValue: { [weak self] biomarkers in
-                    if let biomarkers = biomarkers {
-                        self?.currentState = .complete(biomarkers)
-                        self?.logger.info("Comprehensive analysis complete - Stability: \(biomarkers.stability.score)")
-                    }
-                }
-            )
-            .store(in: &cancellables)
-    }
 }
 
 // MARK: - Supporting Types
@@ -319,6 +315,9 @@ public enum VocalAnalysisError: Error, LocalizedError {
     case userNotAuthenticated
     case networkError(Error)
     case timeout
+    case noAnalysisResult
+    case incompleteAnalysis
+    case baselineValidationFailed
     
     public var errorDescription: String? {
         switch self {
@@ -334,6 +333,12 @@ public enum VocalAnalysisError: Error, LocalizedError {
             return "Network error: \(error.localizedDescription)"
         case .timeout:
             return "Analysis timed out, please try again"
+        case .noAnalysisResult:
+            return "No analysis result available"
+        case .incompleteAnalysis:
+            return "Analysis incomplete - comprehensive data required"
+        case .baselineValidationFailed:
+            return "Baseline does not meet clinical quality standards"
         }
     }
 }
@@ -517,65 +522,86 @@ public class CloudVoiceAnalysisService {
     }
 }
 
+
 // MARK: - Vocal Results Listener
 
-/// Listens for comprehensive analysis results from Firestore
+/// Service for listening to real-time Firestore updates for vocal analysis results
 public class VocalResultsListener: ObservableObject {
-    @Published public var resultsPublisher = PassthroughSubject<VocalBiomarkers?, Error>()
-    
-    private var listener: ListenerRegistration?
     private let firestore = Firestore.firestore()
-    private let logger = os.Logger(subsystem: "com.sage.voice", category: "ResultsListener")
+    private let logger = StructuredLogger(component: "VocalResultsListener")
+    private var listener: ListenerRegistration?
+    
+    @Published public private(set) var latestResults: VocalBiomarkers?
+    @Published public private(set) var isListening = false
+    
+    /// Publisher for real-time results updates
+    public var resultsPublisher: AnyPublisher<VocalBiomarkers?, Never> {
+        return $latestResults.eraseToAnyPublisher()
+    }
     
     public init() {}
     
     /// Start listening for analysis results for a specific recording
-    /// GWT: Given cloud analysis writes results to Firestore
-    /// GWT: When starting real-time listener
-    /// GWT: Then receives VocalBiomarkers when analysis completes
     public func startListening(for recordingId: String) {
+        logger.debug("[VocalResultsListener] Starting to listen for recording: \(recordingId)")
+        
+        // Stop any previous listener
+        stopListening()
+        
         guard let userId = Auth.auth().currentUser?.uid else {
-            resultsPublisher.send(completion: .failure(VocalAnalysisError.userNotAuthenticated))
+            logger.error("[VocalResultsListener] No authenticated user")
             return
         }
         
+        isListening = true
+        
+        // Listen to user-specific path for real-time updates
         let documentRef = firestore
             .collection("users")
             .document(userId)
             .collection("voice_analyses")
             .document(recordingId)
         
-        listener = documentRef.addSnapshotListener { [weak self] snapshot, error in
+        listener = documentRef.addSnapshotListener { [weak self] documentSnapshot, error in
+            guard let self = self else { return }
+            
             if let error = error {
-                self?.logger.error("Firestore listener error: \(error.localizedDescription)")
-                self?.resultsPublisher.send(completion: .failure(error))
+                self.logger.error("[VocalResultsListener] Firestore listener error: \(error.localizedDescription)")
                 return
             }
             
-            guard let document = snapshot, document.exists,
+            guard let document = documentSnapshot,
+                  document.exists,
                   let data = document.data() else {
+                self.logger.debug("[VocalResultsListener] No data found for recording: \(recordingId)")
                 return
             }
             
-            // Parse comprehensive analysis results
-            if let biomarkers = self?.parseVocalBiomarkers(from: data) {
-                self?.logger.info("Received comprehensive analysis results for: \(recordingId)")
-                self?.resultsPublisher.send(biomarkers)
+            // Parse Firestore data into VocalBiomarkers
+            if let biomarkers = self.parseFirestoreData(data) {
+                DispatchQueue.main.async {
+                    self.latestResults = biomarkers
+                    self.logger.info("[VocalResultsListener] Received comprehensive analysis results for: \(recordingId)")
+                }
+            } else {
+                self.logger.warning("[VocalResultsListener] Failed to parse Firestore data for: \(recordingId)")
             }
         }
+        
+        logger.info("[VocalResultsListener] Started listening for recording: \(recordingId)")
     }
     
-    /// Stop listening to Firestore updates
+    /// Stop listening for analysis results
     public func stopListening() {
         listener?.remove()
         listener = nil
+        isListening = false
+        logger.debug("[VocalResultsListener] Stopped listening for results")
     }
     
-    /// Parse VocalBiomarkers from Firestore document data with clinical assessment
-    private func parseVocalBiomarkers(from data: [String: Any]) -> VocalBiomarkers? {
-        // Extract vocal analysis features from Firestore document
-        // This maps the backend vocal_analysis_* fields to domain models
-        
+    /// Parse Firestore document data into VocalBiomarkers
+    private func parseFirestoreData(_ data: [String: Any]) -> VocalBiomarkers? {
+        // Extract all required fields with validation
         guard let f0Mean = data["vocal_analysis_f0_mean"] as? Double,
               let f0Std = data["vocal_analysis_f0_std"] as? Double,
               let f0Confidence = data["vocal_analysis_f0_confidence"] as? Double,
@@ -591,17 +617,12 @@ public class VocalResultsListener: ObservableObject {
               let hnrStd = data["vocal_analysis_hnr_std"] as? Double,
               let stabilityScore = data["vocal_analysis_vocal_stability_score"] as? Double else {
             
-            logger.warning("Incomplete vocal analysis data in Firestore document")
+            logger.warning("[VocalResultsListener] Incomplete vocal analysis data in Firestore document")
             return nil
         }
         
-        // Construct domain models with clinical validation
+        // Construct domain models
         let f0Analysis = F0Analysis(mean: f0Mean, std: f0Std, confidence: f0Confidence)
-        
-        // Validate F0 against clinical ranges (adult female default)
-        if !f0Analysis.isWithinClinicalRange(for: .adultFemale) {
-            logger.warning("F0 analysis outside clinical range: mean=\(f0Mean)Hz, confidence=\(f0Confidence)%")
-        }
         
         let jitterMeasures = JitterMeasures(
             local: jitterLocal,
@@ -625,11 +646,6 @@ public class VocalResultsListener: ObservableObject {
             hnr: hnrAnalysis
         )
         
-        // Log clinical assessment for monitoring
-        let clinicalQuality = voiceQuality.qualityLevel
-        logger.info("Clinical voice quality assessment: \(clinicalQuality.rawValue)")
-        
-        // Calculate stability components with clinical thresholds
         let stabilityComponents = StabilityComponents(
             f0Score: f0Confidence * 0.4,
             jitterScore: max(0, 100 - jitterLocal * 20) * 0.2,
@@ -640,29 +656,22 @@ public class VocalResultsListener: ObservableObject {
         let stability = VocalStabilityScore(score: stabilityScore, components: stabilityComponents)
         
         let metadata = VoiceAnalysisMetadata(
-            recordingDuration: data["vocal_analysis_metadata_duration"] as? Double ?? 0.0,
+            recordingDuration: data["vocal_analysis_metadata_duration"] as? Double ?? 10.0,
             sampleRate: data["vocal_analysis_metadata_sample_rate"] as? Double ?? 48000.0,
-            voicedRatio: data["vocal_analysis_metadata_voiced_ratio"] as? Double ?? 0.0,
+            voicedRatio: data["vocal_analysis_metadata_voiced_ratio"] as? Double ?? 0.8,
             analysisTimestamp: Date(),
             analysisSource: .cloudParselmouth
         )
         
-        let biomarkers = VocalBiomarkers(
+        return VocalBiomarkers(
             f0: f0Analysis,
             voiceQuality: voiceQuality,
             stability: stability,
             metadata: metadata
         )
-        
-        // Generate and log clinical assessment
-        let clinicalAssessment = biomarkers.clinicalSummary
-        logger.info("Clinical assessment: quality=\(clinicalAssessment.overallQuality.rawValue), stability=\(clinicalAssessment.f0Stability.rawValue), recommendation=\(clinicalAssessment.recommendedAction.rawValue)")
-        
-        // Alert for pathological findings
-        if clinicalAssessment.recommendedAction == .consultSpecialist {
-            logger.warning("Pathological voice patterns detected - specialist consultation recommended")
-        }
-        
-        return biomarkers
+    }
+    
+    deinit {
+        stopListening()
     }
 }

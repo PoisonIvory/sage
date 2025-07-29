@@ -17,17 +17,31 @@ public struct F0Analysis: Equatable, Codable {
         self.confidence = confidence
     }
     
-    /// Validate F0 values against clinical ranges for adult females
-    /// Research: Adult Female F0: 165-265 Hz (speaking), 175-400 Hz (sustained vowels)
+    /// Checks if F0 is within clinical range for the given demographic
+    /// - Parameter demographic: Voice demographic to check against
+    /// - Returns: True if F0 is within expected range for the demographic
     public func isWithinClinicalRange(for demographic: VoiceDemographic) -> Bool {
+        // These ranges are based on research from Titze (1994), Baken & Orlikoff (2000)
+        let expectedRange: F0Range
+        
         switch demographic {
+        case .adolescent:
+            expectedRange = F0Range(min: 150.0, max: 300.0)
         case .adultFemale:
-            return mean >= 165.0 && mean <= 400.0 && confidence >= 50.0
+            expectedRange = F0Range(min: 165.0, max: 255.0)
         case .adultMale:
-            return mean >= 85.0 && mean <= 250.0 && confidence >= 50.0
-        case .unknown:
-            return mean >= 75.0 && mean <= 500.0 && confidence >= 30.0
+            expectedRange = F0Range(min: 85.0, max: 180.0)
+        case .adultOther:
+            expectedRange = F0Range(min: 120.0, max: 220.0)
+        case .seniorFemale:
+            expectedRange = F0Range(min: 140.0, max: 220.0)
+        case .seniorMale:
+            expectedRange = F0Range(min: 80.0, max: 160.0)
+        case .seniorOther:
+            expectedRange = F0Range(min: 100.0, max: 180.0)
         }
+        
+        return mean >= expectedRange.min && mean <= expectedRange.max
     }
     
     /// Clinical interpretation of F0 stability for PMDD/PCOS tracking
@@ -228,6 +242,29 @@ public struct VocalBiomarkers: Equatable, Codable {
         self.metadata = metadata
     }
     
+    /// Empty instance for fallback scenarios
+    public static var empty: VocalBiomarkers {
+        return VocalBiomarkers(
+            f0: F0Analysis(mean: 0.0, std: 0.0, confidence: 0.0),
+            voiceQuality: VoiceQualityAnalysis(
+                jitter: JitterMeasures(local: 0.0, absolute: 0.0, rap: 0.0, ppq5: 0.0),
+                shimmer: ShimmerMeasures(local: 0.0, db: 0.0, apq3: 0.0, apq5: 0.0),
+                hnr: HNRAnalysis(mean: 0.0, std: 0.0)
+            ),
+            stability: VocalStabilityScore(
+                score: 0.0,
+                components: StabilityComponents(f0Score: 0.0, jitterScore: 0.0, shimmerScore: 0.0, hnrScore: 0.0)
+            ),
+            metadata: VoiceAnalysisMetadata(
+                recordingDuration: 0.0,
+                sampleRate: 0.0,
+                voicedRatio: 0.0,
+                analysisTimestamp: Date(),
+                analysisSource: .unknown
+            )
+        )
+    }
+    
     /// Overall clinical assessment for PMDD/PCOS screening
     public var clinicalSummary: ClinicalVoiceAssessment {
         return ClinicalVoiceAssessment(
@@ -273,11 +310,22 @@ public struct VoiceAnalysisMetadata: Equatable, Codable {
 
 // MARK: - Supporting Enums and Types
 
-public enum VoiceDemographic: String, Codable, CaseIterable {
+// MARK: - Voice Demographics
+
+/// Voice demographic categories for clinical threshold selection
+/// - Used to determine appropriate clinical thresholds based on age and gender
+/// - Based on research from Titze (1994), Baken & Orlikoff (2000)
+public enum VoiceDemographic: String, CaseIterable, Codable {
+    case adolescent = "adolescent"
     case adultFemale = "adult_female"
-    case adultMale = "adult_male"  
-    case unknown = "unknown"
+    case adultMale = "adult_male"
+    case adultOther = "adult_other"
+    case seniorFemale = "senior_female"
+    case seniorMale = "senior_male"
+    case seniorOther = "senior_other"
 }
+
+
 
 public enum F0StabilityLevel: String, Codable, CaseIterable {
     case excellent = "excellent"
@@ -307,6 +355,7 @@ public enum AnalysisSource: String, Codable, CaseIterable {
     case localIOS = "local_ios"
     case cloudParselmouth = "cloud_parselmouth"
     case hybrid = "hybrid"
+    case unknown = "unknown"
 }
 
 public enum ClinicalRecommendation: String, Codable, CaseIterable {
@@ -330,3 +379,4 @@ public struct ClinicalVoiceAssessment: Equatable, Codable {
         self.recommendedAction = recommendedAction
     }
 }
+

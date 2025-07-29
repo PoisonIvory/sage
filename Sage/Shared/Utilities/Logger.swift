@@ -33,6 +33,11 @@ enum Logger {
         #endif
     }
     
+    static func warning(_ message: String, category: LogCategory = .general) {
+        let log = logForCategory(category)
+        os_log(.default, log: log, "%{public}@", message)
+    }
+    
     // MARK: - Private Helpers
     
     private static func logForCategory(_ category: LogCategory) -> OSLog {
