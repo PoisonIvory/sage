@@ -197,6 +197,7 @@ sequenceDiagram
     participant O as OnboardingJourneyView
     participant M as MicrophonePermissionManager
     participant R as AudioRecorder
+    participant Q as QualityGate
     participant L as LocalVoiceAnalyzer
     participant C as CloudVoiceAnalysisService
     participant F as Firestore
@@ -211,16 +212,26 @@ sequenceDiagram
         O->>O: Show countdown timer
         
         R->>O: Recording complete
-        O->>L: Analyze locally (F0)
-        L->>O: Immediate F0 feedback
+        O->>Q: Check audio quality
         
-        O->>C: Upload to cloud
-        C->>C: Process with Parselmouth
-        C->>F: Store comprehensive results
-        F->>O: Real-time updates via listener
-        
-        O->>O: Show comprehensive analysis
-        O->>O: Establish baseline (if ready)
+        alt Quality Gate Passed
+            Q->>O: RMS >= threshold (0.01 device, 0.005 simulator)
+            O->>L: Analyze locally (F0)
+            L->>O: Immediate F0 feedback
+            
+            O->>C: Upload to cloud
+            C->>C: Process with Parselmouth
+            C->>F: Store comprehensive results
+            F->>O: Real-time updates via listener
+            
+            O->>O: Show comprehensive analysis
+            O->>O: Establish baseline (if ready)
+        else Quality Gate Failed
+            Q->>O: RMS < threshold - Signal too weak
+            O->>O: Show quality error message
+            U->>O: Retry recording
+            O->>R: Start new recording
+        end
     else Permission Denied
         M->>O: Permission denied
         O->>O: Show Microphone access required
@@ -231,8 +242,36 @@ sequenceDiagram
         U->>O: Cannot proceed
     end
     
-    Note over O: Quality Gate Requirements:<br/>- RMS signal level >= 0.01 (device)<br/>- RMS signal level >= 0.005 (simulator)<br/>- 10-second sustained vowel<br/>- WAV format, 48kHz, 24-bit
+    Note over Q: Quality Gate Requirements:<br/>- RMS signal level >= 0.01 (device)<br/>- RMS signal level >= 0.005 (simulator)<br/>- 10-second sustained vowel<br/>- WAV format, 48kHz, 24-bit
 ```
+
+### Quality Gate Decision Flow
+```mermaid
+graph TD
+    A[Recording Complete] --> B[Calculate RMS Signal Level]
+    B --> C{Platform Check}
+    
+    C -->|Device| D[RMS >= 0.01?]
+    C -->|Simulator| E[RMS >= 0.005?]
+    
+    D -->|Yes| F[Quality Gate PASSED]
+    D -->|No| G[Quality Gate FAILED]
+    E -->|Yes| F
+    E -->|No| G
+    
+    F --> H[Proceed to Analysis]
+    G --> I[Show Error: Signal too weak]
+    I --> J[User Retry]
+    J --> K[Start New Recording]
+    K --> A
+    
+    classDef success fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    classDef error fill:#ffebee,stroke:#d32f2f,stroke-width:2px
+    classDef neutral fill:#f5f5f5,stroke:#757575,stroke-width:1px
+    
+    class F,H success
+    class G,I error
+    class A,B,C,D,E,J,K neutral
 
 ### Onboarding Step Requirements
 ```mermaid
