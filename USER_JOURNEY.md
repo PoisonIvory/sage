@@ -6,6 +6,12 @@ This document provides a comprehensive visual overview of all user journeys thro
 
 ## Authentication Journey
 
+**Color Legend:**
+- 🟢 **Green**: Successful paths and completion states
+- 🔴 **Red**: Error states and failure paths  
+- 🟡 **Yellow**: Decision points and user choices
+- ⚪ **Gray**: Neutral states and entry points
+
 ### Welcome Screen User Actions
 ```mermaid
 graph TD
@@ -42,6 +48,15 @@ graph TD
     P --> U{Onboarding Complete?}
     U -->|No| V[OnboardingJourneyView]
     U -->|Yes| W[ContentView]
+    
+    classDef success fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    classDef error fill:#ffebee,stroke:#d32f2f,stroke-width:2px
+    classDef neutral fill:#f5f5f5,stroke:#757575,stroke-width:1px
+    
+    class G,L,J,P,V,W success
+    class H,I,M,N,Q,R,S error
+    class A,B,C,D,F,K,O,U,T neutral
+```
 ```
 
 ### Sign Up Flow with Requirements
@@ -163,17 +178,16 @@ graph TD
     N --> X[User Retry]
     X --> G
     
-    classDef step fill:#e3f2fd,stroke:#1976d2,stroke-width:2px
-    classDef decision fill:#fff3e0,stroke:#f57c00,stroke-width:2px
-    classDef recording fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
+    classDef success fill:#e8f5e8,stroke:#388e3c,stroke-width:2px
     classDef error fill:#ffebee,stroke:#d32f2f,stroke-width:2px
-    classDef completion fill:#f3e5f5,stroke:#7b1fa2,stroke-width:2px
+    classDef neutral fill:#f5f5f5,stroke:#757575,stroke-width:1px
+    classDef decision fill:#fff3e0,stroke:#f57c00,stroke-width:2px
     
-    class A,B,D,E,F,T step
+    class A,B,D,E,F,T neutral
     class C,H,L,U decision
-    class G,I,M,O,P,Q,R,S recording
+    class G,I,M,O,P,Q,R,S success
     class J,K,N,X error
-    class V,W completion
+    class V,W success
 ```
 
 ### Voice Recording Process with Quality Gates
