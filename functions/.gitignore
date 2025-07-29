@@ -1,0 +1,37 @@
+# Python bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Python virtual environment
+venv/
+*.local
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+test_trigger*.txt
+check_firestore_*.py
+*_firestore_check.sh
+verify_firestore_*.sh
+test_main_simple.py
+
+# Documentation bloat
+*_SUMMARY.md
+*_IMPROVEMENTS.md
+*_VERIFICATION_SUMMARY.md
