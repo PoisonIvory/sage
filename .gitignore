@@ -54,3 +54,11 @@ functions/.pytest_cache/
 # User-specific
 *.orig
 *.bak
+
+# Local/staging and Firebase config files
+build.log
+cloud_function.zip
+TestPlan.xctestplan
+.firebaserc
+firebase.json
+storage.rules
