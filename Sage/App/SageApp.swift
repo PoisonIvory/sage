@@ -85,8 +85,10 @@ struct SageApp: App {
 
     init() {
         print("Firebase configured") // UI_STANDARDS.md §5.2
-        Mixpanel.initialize(token: "9cc09c14ce1dd1002def610c46d338ed", trackAutomaticEvents: false)
-        print("Mixpanel initialized with project token")
+        // Mixpanel initialization
+        let mixpanelToken = ProcessInfo.processInfo.environment["MIXPANEL_TOKEN"] ?? "YOUR_MIXPANEL_TOKEN_HERE"
+        Mixpanel.initialize(token: mixpanelToken, trackAutomaticEvents: false)
+        print("Mixpanel initialized with project token (from env or local config)")
     }
 
     var body: some Scene {
