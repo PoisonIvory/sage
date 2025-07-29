@@ -97,16 +97,16 @@ public class LocalVoiceAnalyzer: ObservableObject {
     /// GWT: Given recorded audio buffer from user
     /// GWT: When performing local iOS analysis
     /// GWT: Then returns BasicVoiceMetrics within 5 seconds
-    public func analyzeImmediate(audioURL: URL) async throws -> BasicVoiceMetrics {
+    public func analyzeImmediate(audioURL: URL, bypassQualityCheck: Bool = false) async throws -> BasicVoiceMetrics {
         // Ensure speech recognition is available and authorized
         try await ensureSpeechRecognitionAvailable()
         
-        return try await performLocalAnalysis(audioURL: audioURL)
+        return try await performLocalAnalysis(audioURL: audioURL, bypassQualityCheck: bypassQualityCheck)
     }
     
-    /// Performs local analysis using iOS built-in capabilities
+    /// Performs local analysis using iOS built-in capabilities  
     /// Analyzes real recorded audio files only - throws error if file invalid
-    private func performLocalAnalysis(audioURL: URL) async throws -> BasicVoiceMetrics {
+    private func performLocalAnalysis(audioURL: URL, bypassQualityCheck: Bool = false) async throws -> BasicVoiceMetrics {
         let fileManager = FileManager.default
         
         guard fileManager.fileExists(atPath: audioURL.path) else {
@@ -146,7 +146,7 @@ public class LocalVoiceAnalyzer: ObservableObject {
             Logger.info("Speech recognition failed, trying direct audio analysis: \(error.localizedDescription)", category: .audio)
             
             // Fallback to direct audio analysis for sustained vowels, humming, etc.
-            return try await performDirectAudioAnalysis(audioURL: audioURL)
+            return try await performDirectAudioAnalysis(audioURL: audioURL, bypassQualityCheck: bypassQualityCheck)
         }
     }
     
@@ -174,7 +174,7 @@ public class LocalVoiceAnalyzer: ObservableObject {
     }
     
     /// Performs direct audio analysis for sustained vowels, humming, etc.
-    private func performDirectAudioAnalysis(audioURL: URL) async throws -> BasicVoiceMetrics {
+    private func performDirectAudioAnalysis(audioURL: URL, bypassQualityCheck: Bool = false) async throws -> BasicVoiceMetrics {
         Logger.info("Performing direct audio analysis for sustained vowel/non-speech content", category: .audio)
         
         do {
@@ -195,6 +195,21 @@ public class LocalVoiceAnalyzer: ObservableObject {
             
             let sampleCount = Int(buffer.frameLength)
             let sampleRate = format.sampleRate
+            
+            // MVP Quality Gate: Check minimum signal level before analysis (unless bypassed)
+            if !bypassQualityCheck {
+                let rmsLevel = calculateRMSLevel(audioData: audioData, sampleCount: sampleCount)
+                let minimumSignalLevel = 0.01 // Threshold for meaningful audio (1% of full scale)
+                
+                guard rmsLevel >= minimumSignalLevel else {
+                    Logger.info("Audio signal too weak for analysis - RMS: \(String(format: "%.4f", rmsLevel)), required: \(minimumSignalLevel)", category: .audio)
+                    throw LocalAnalysisError.insufficientSignalLevel(rmsLevel: rmsLevel, required: minimumSignalLevel)
+                }
+                
+                Logger.info("Audio signal level acceptable - RMS: \(String(format: "%.4f", rmsLevel))", category: .audio)
+            } else {
+                Logger.warning("Quality check bypassed for testing purposes", category: .audio)
+            }
             
             // Perform basic pitch analysis
             let analysisResult = performBasicPitchAnalysis(audioData: audioData, sampleCount: sampleCount, sampleRate: sampleRate)
@@ -593,6 +608,7 @@ public enum LocalAnalysisError: Error, LocalizedError {
     case audioProcessingFailed
     case unsupportedAudioFormat
     case analysisTimeout
+    case insufficientSignalLevel(rmsLevel: Double, required: Double)
     
     public var errorDescription: String? {
         switch self {
@@ -612,6 +628,8 @@ public enum LocalAnalysisError: Error, LocalizedError {
             return "Audio format not supported for local analysis"
         case .analysisTimeout:
             return "Local analysis timed out"
+        case .insufficientSignalLevel(let rmsLevel, let required):
+            return "Audio signal too quiet for analysis. Signal level: \(String(format: "%.3f", rmsLevel)), required: \(String(format: "%.3f", required))"
         }
     }
     
@@ -670,6 +688,17 @@ extension LocalVoiceAnalyzer {
         }
         
         return AudioQualityResult(isValid: true, reason: "Audio quality sufficient for local analysis")
+    }
+    
+    /// Calculate RMS (Root Mean Square) level of audio signal
+    /// Used for quality gate validation to prevent false analysis results
+    private func calculateRMSLevel(audioData: UnsafePointer<Float>, sampleCount: Int) -> Double {
+        var sum: Double = 0.0
+        for i in 0..<sampleCount {
+            let sample = Double(audioData[i])
+            sum += sample * sample
+        }
+        return sqrt(sum / Double(sampleCount))
     }
 }
 

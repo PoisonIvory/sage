@@ -14,7 +14,7 @@ import os.log
 @MainActor
 public protocol VocalAnalysisService: ObservableObject {
     /// Perform hybrid voice analysis (local immediate + cloud comprehensive)
-    func analyzeVoice(recording: VoiceRecording) async throws -> VocalAnalysisResult
+    func analyzeVoice(recording: VoiceRecording, bypassQualityCheck: Bool) async throws -> VocalAnalysisResult
     
     /// Subscribe to real-time comprehensive analysis results
     func subscribeToResults() -> AsyncStream<VocalBiomarkers>
