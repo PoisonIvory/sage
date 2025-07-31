@@ -1,15 +1,73 @@
 import Foundation
 
-/// Validates and creates user profiles with proper data
-/// - Prevents creation of profiles with invalid/incomplete data
-/// - Provides validation logic for user profile data
-/// - Ensures data integrity before profile creation
-struct UserProfileValidator {
+/// Simple validator for UserProfile creation and validation
+public struct UserProfileValidator {
     
-    /// Validates user profile data for completeness
-    /// - Parameter data: User profile data to validate
-    /// - Returns: Validation result with errors if any
-    static func validate(_ data: UserProfileData) -> UserProfileValidationResult {
+    // MARK: - Profile Creation
+    
+    /// Creates a minimal user profile for onboarding
+    public static func createMinimalProfile(
+        userId: String,
+        deviceModel: String,
+        osVersion: String,
+        dateProvider: DateProvider = SystemDateProvider()
+    ) -> UserProfile {
+        do {
+            return try UserProfile.createMinimal(
+                userId: userId,
+                deviceModel: deviceModel,
+                osVersion: osVersion
+            )
+        } catch {
+            fatalError("Failed to create minimal profile: \(error)")
+        }
+    }
+    
+    /// Creates complete profile from form data with validation
+    public static func createCompleteProfile(
+        from data: UserProfileData,
+        userId: String,     
+        deviceModel: String,
+        osVersion: String,
+        dateProvider: DateProvider = SystemDateProvider() 
+    ) throws -> UserProfile {
+        return try UserProfile(
+            id: userId,
+            age: data.age,
+            genderIdentity: data.genderIdentity,
+            sexAssignedAtBirth: data.sexAssignedAtBirth,
+            voiceConditions: data.voiceConditions,
+            diagnosedConditions: data.diagnosedConditions,
+            suspectedConditions: [],
+            deviceModel: deviceModel,
+            osVersion: osVersion
+        )
+    }
+    
+    // MARK: - Validation
+    
+    /// Validates user profile data - throws ValidationError on first failure
+    public static func validateProfileData(_ data: UserProfileData) throws {
+        // Age validation
+        if data.age <= 0 {
+            throw ValidationError.ageRequired()
+        } else if data.age < 13 || data.age > 120 {
+            throw ValidationError.ageInvalid()
+        }
+        
+        // Voice conditions validation
+        if data.voiceConditions.isEmpty {
+            throw ValidationError.ageRequired(fieldName: "voiceConditions")
+        }
+        
+        // Diagnosed conditions validation
+        if data.diagnosedConditions.isEmpty {
+            throw ValidationError.ageRequired(fieldName: "diagnosedConditions")
+        }
+    }
+    
+    /// Validates user profile data - returns all errors at once
+    public static func validate(_ data: UserProfileData) -> UserProfileValidationResult {
         var errors: [ValidationError] = []
         
         // Age validation
@@ -19,76 +77,20 @@ struct UserProfileValidator {
             errors.append(.ageInvalid())
         }
         
-        // Gender validation (optional but if provided, should be valid)
-        if !data.gender.isEmpty {
-            let validGenders = ["male", "female", "other", "prefer not to say"]
-            if !validGenders.contains(data.gender.lowercased()) {
-                errors.append(.genderInvalid())
-            }
+        // Voice conditions validation
+        if data.voiceConditions.isEmpty {
+            errors.append(.ageRequired(fieldName: "voiceConditions"))
+        }
+        
+        // Diagnosed conditions validation
+        if data.diagnosedConditions.isEmpty {
+            errors.append(.ageRequired(fieldName: "diagnosedConditions"))
         }
         
         return UserProfileValidationResult(isValid: errors.isEmpty, errors: errors)
     }
     
-    /// Creates a minimal user profile for onboarding
-    /// - Parameters:
-    ///   - userId: User identifier
-    ///   - deviceModel: Device model string
-    ///   - osVersion: Operating system version
-    ///   - dateProvider: Date provider for consistent testing
-    /// - Returns: UserProfile with minimal valid data
-    static func createMinimalProfile(
-        userId: String,
-        deviceModel: String,
-        osVersion: String,
-        dateProvider: DateProvider = SystemDateProvider()
-    ) -> UserProfile {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        
-        return UserProfile(
-            id: userId,
-            age: 0, // Will be updated when user provides age
-            gender: "", // Will be updated when user provides gender
-            deviceModel: deviceModel,
-            osVersion: osVersion,
-            createdAt: formatter.string(from: dateProvider.currentDate)
-        )
-    }
-    
-    /// Creates a complete user profile from validated data
-    /// - Parameters:
-    ///   - data: Validated user profile data
-    ///   - userId: User identifier
-    ///   - deviceModel: Device model string
-    ///   - osVersion: Operating system version
-    ///   - dateProvider: Date provider for consistent testing
-    /// - Returns: Complete UserProfile
-    /// - Throws: ValidationError if data is invalid
-    static func createCompleteProfile(
-        from data: UserProfileData,
-        userId: String,
-        deviceModel: String,
-        osVersion: String,
-        dateProvider: DateProvider = SystemDateProvider()
-    ) throws -> UserProfile {
-        let validation = validate(data)
-        
-        guard validation.isValid else {
-            throw validation.errors.first ?? ValidationError.ageRequired()
-        }
-        
-        return data.toUserProfile(
-            id: userId,
-            deviceModel: deviceModel,
-            osVersion: osVersion,
-            dateProvider: dateProvider
-        )
-    }
+
 }
 
-/// Result of user profile validation
-struct UserProfileValidationResult {
-    let isValid: Bool
-    let errors: [ValidationError]
-} 
+// UserProfileValidationResult is now defined in OnboardingTypes.swift 

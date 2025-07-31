@@ -135,7 +135,7 @@ class OnboardingTypesTests: XCTestCase {
         
         // Then: Should create correct UserProfile
         XCTAssertEqual(profile.id, "test-id")
-        XCTAssertEqual(profile.age, 25)
+        XCTAssertEqual(profile.age.value, 25)
         XCTAssertEqual(profile.gender, "Female")
         XCTAssertEqual(profile.deviceModel, "iPhone 15")
         XCTAssertEqual(profile.osVersion, "17.0")

@@ -30,6 +30,9 @@ final class OnboardingJourneyViewModel: ObservableObject {
     @Published var email: String = ""
     @Published var password: String = ""
     
+    // MARK: - User Info Form Data
+    @Published var userProfileData: UserProfileData = UserProfileData(age: 0)
+    
     // MARK: - Field-Level Error State
     @Published var fieldErrors: [String: String] = [:]
     
@@ -123,7 +126,7 @@ final class OnboardingJourneyViewModel: ObservableObject {
     /// Handles user tapping "Begin" button on explainer screen
     func selectBegin() {
         Logger.debug("[OnboardingJourneyViewModel] User tapped Begin button")
-        currentStep = .sustainedVowelTest
+        currentStep = .userInfoForm
     }
     
     // MARK: - View 2: Vocal Test Methods
@@ -190,6 +193,10 @@ final class OnboardingJourneyViewModel: ObservableObject {
     func selectNext() {
         Logger.debug("[OnboardingJourneyViewModel] User tapped Next")
         switch currentStep {
+        case .explainer:
+            currentStep = .userInfoForm
+        case .userInfoForm:
+            currentStep = .sustainedVowelTest
         case .sustainedVowelTest:
             currentStep = .readingPrompt
         case .readingPrompt:
@@ -198,6 +205,35 @@ final class OnboardingJourneyViewModel: ObservableObject {
             break
         }
     }
+    
+    /// Handles user info form completion
+    func completeUserInfo() {
+        Logger.debug("[OnboardingJourneyViewModel] User completed info form")
+        
+        // Clear previous errors
+        clearFieldErrors()
+        
+        // Use UserProfileData for consistent validation
+        do {
+            // Validate using centralized validator in UserProfileData
+            try userProfileData.validate()
+            
+            // Update user profile with the validated data
+            try finalizeUserProfile(with: userProfileData)
+            Logger.info("[OnboardingJourneyViewModel] User profile finalized successfully")
+            
+            // Proceed to next step
+            currentStep = .sustainedVowelTest
+        } catch let validationError as ValidationError {
+            // Handle validation errors
+            fieldErrors[validationError.fieldName] = validationError.localizedDescription
+            Logger.warning("[OnboardingJourneyViewModel] User info validation failed: \(validationError.localizedDescription)")
+        } catch {
+            Logger.error("[OnboardingJourneyViewModel] Failed to finalize user profile: \(error.localizedDescription)")
+            errorMessage = "Failed to save profile. Please try again."
+        }
+    }
+    
     
     /// Handles user tapping "Finish" on final step
     func selectFinish() {
@@ -272,12 +308,18 @@ final class OnboardingJourneyViewModel: ObservableObject {
     /// - Age and gender are set to default values (0 and empty string)
     private func createMinimalUserProfile() {
         let userId = authService.currentUserId ?? UUID().uuidString
-        userProfile = UserProfileValidator.createMinimalProfile(
-            userId: userId,
-            deviceModel: UIDevice.current.model,
-            osVersion: UIDevice.current.systemVersion,
-            dateProvider: dateProvider
-        )
+        do {
+            userProfile = try UserProfileData.createMinimalProfile(
+                userId: userId,
+                deviceModel: UIDevice.current.model,
+                osVersion: UIDevice.current.systemVersion,
+                dateProvider: dateProvider
+            )
+        } catch {
+            Logger.error("[OnboardingJourneyViewModel] Failed to create minimal profile: \(error.localizedDescription)")
+            // Fallback to basic profile creation
+            userProfile = nil
+        }
         
         // Identify user in analytics
         if let profile = userProfile {
@@ -294,7 +336,7 @@ final class OnboardingJourneyViewModel: ObservableObject {
     /// - Parameter data: Complete user profile data including age and gender
     /// - Throws: ValidationError if data is invalid
     func finalizeUserProfile(with data: UserProfileData) throws {
-        Logger.debug("[OnboardingJourneyViewModel] Finalizing user profile with data: age=\(data.age), gender=\(data.gender)")
+        Logger.debug("[OnboardingJourneyViewModel] Finalizing user profile with data: age=\(data.age), genderIdentity=\(data.genderIdentity.rawValue)")
         
         // Clear previous field errors
         fieldErrors.removeAll()
@@ -307,9 +349,8 @@ final class OnboardingJourneyViewModel: ObservableObject {
         }
         
         do {
-            let finalizedProfile = try UserProfileValidator.createCompleteProfile(
-                from: data,
-                userId: currentProfile.id,
+            let finalizedProfile = try data.toUserProfile(
+                id: currentProfile.id,
                 deviceModel: currentProfile.deviceModel,
                 osVersion: currentProfile.osVersion,
                 dateProvider: dateProvider
@@ -668,8 +709,8 @@ final class OnboardingJourneyViewModel: ObservableObject {
     
     private func trackProfileFinalized(profile: UserProfile) {
         trackAnalyticsEvent("onboarding_profile_finalized", properties: [
-            "age": profile.age,
-            "gender": profile.gender
+            "age": profile.age.value,
+            "genderIdentity": profile.genderIdentity.rawValue
         ])
     }
     

@@ -133,22 +133,22 @@ final class VocalBaselineService: VocalBaselineServiceProtocol {
         // Use real age from user profile
         let age = userProfile.age
         
-        // Use real gender from user profile
-        let gender = userProfile.gender
+        // Use real gender identity enum from user profile
+        let genderIdentity = userProfile.genderIdentity
         
-        // Calculate demographic based on real data
-        switch (age, gender) {
+        // Calculate demographic based on real data using enum values
+        switch (age.value, genderIdentity) {
         case (0..<18, _):
             return .adolescent
-        case (18..<65, "female"):
+        case (18..<65, .woman):
             return .adultFemale
-        case (18..<65, "male"):
+        case (18..<65, .man):
             return .adultMale
         case (18..<65, _):
             return .adultOther
-        case (65..., "female"):
+        case (65..., .woman):
             return .seniorFemale
-        case (65..., "male"):
+        case (65..., .man):
             return .seniorMale
         case (65..., _):
             return .seniorOther

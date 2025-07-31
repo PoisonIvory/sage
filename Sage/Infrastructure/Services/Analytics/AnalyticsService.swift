@@ -101,8 +101,8 @@ final class AnalyticsService: AnalyticsServiceProtocol {
         // Set user profile properties
         Mixpanel.mainInstance().people.set(properties: [
             "$name": userProfile.id,
-            "age": userProfile.age,
-            "gender": userProfile.gender,
+            "age": userProfile.age.value,
+            "genderIdentity": userProfile.genderIdentity.rawValue,
             "device_model": userProfile.deviceModel,
             "os_version": userProfile.osVersion,
             "created_at": userProfile.createdAt

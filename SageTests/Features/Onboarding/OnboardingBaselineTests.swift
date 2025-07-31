@@ -16,51 +16,22 @@ import AVFoundation
 @MainActor
 final class OnboardingBaselineTests: XCTestCase {
     
+    // MARK: - Test Properties
+    private var harness: OnboardingTestHarness!
     private var sut: OnboardingJourneyViewModel!
-    private var mockAudioRecorder: MockOnboardingAudioRecorder!
-    private var mockPermissionManager: MockMicrophonePermissionManager!
-    private var mockAnalysisService: MockHybridVocalAnalysisService!
-    private var mockAnalyticsService: MockAnalyticsService!
-    private var mockVocalBaselineService: MockVocalBaselineService!
-    private var mockUserProfileRepository: MockUserProfileRepository!
-    private var cancellables: Set<AnyCancellable>!
     
+    // MARK: - Setup & Teardown
     override func setUp() async throws {
         try await super.setUp()
         
-        mockAudioRecorder = MockOnboardingAudioRecorder()
-        mockPermissionManager = MockMicrophonePermissionManager()
-        mockAnalysisService = MockHybridVocalAnalysisService()
-        mockAnalyticsService = MockAnalyticsService()
-        mockVocalBaselineService = MockVocalBaselineService()
-        mockUserProfileRepository = MockUserProfileRepository()
-        
-        // Create properly initialized OnboardingJourneyViewModel with domain services
-        let mockAuth = MockAuthService()
-        mockAuth.currentUserId = "test-user-123"
-        
-        sut = OnboardingJourneyViewModel(
-            analyticsService: mockAnalyticsService,
-            authService: mockAuth,
-            userProfileRepository: mockUserProfileRepository,
-            microphonePermissionManager: mockPermissionManager,
-            vocalAnalysisService: mockAnalysisService,
-            vocalBaselineService: mockVocalBaselineService,
-            coordinator: nil
-        )
-        
-        cancellables = []
+        harness = OnboardingTestHarness()
+        sut = harness.makeViewModel()
     }
     
     override func tearDown() async throws {
-        cancellables = nil
+        harness.resetAllMocks()
+        harness = nil
         sut = nil
-        mockAudioRecorder = nil
-        mockPermissionManager = nil
-        mockAnalysisService = nil
-        mockAnalyticsService = nil
-        mockVocalBaselineService = nil
-        mockUserProfileRepository = nil
         
         try await super.tearDown()
     }
@@ -69,13 +40,13 @@ final class OnboardingBaselineTests: XCTestCase {
     
     func testUserRecordsBaselineDuringOnboarding() async throws {
         // Given: User completes onboarding voice recording with valid analysis
-        mockPermissionManager.mockPermissionStatus = .authorized
+        harness.mockMicrophonePermissionManager.mockPermissionStatus = .authorized
         let mockUserProfile = createUserProfile()
         let mockAnalysis = createAnalysisResult(quality: .good)
         
         sut.userProfile = mockUserProfile
-        mockAnalysisService.mockAnalysisResult = mockAnalysis
-        mockVocalBaselineService.mockBaseline = createVocalBaseline(quality: .good)
+        harness.mockHybridVocalAnalysisService.mockAnalysisResult = mockAnalysis
+        harness.mockVocalBaselineService.mockBaseline = createVocalBaseline(quality: .good)
         
         // When: User records baseline during onboarding
         try await sut.establishBaseline()
@@ -85,20 +56,20 @@ final class OnboardingBaselineTests: XCTestCase {
         XCTAssertNotNil(sut.vocalBaseline)
         XCTAssertEqual(sut.vocalBaseline?.recordingContext, .onboarding)
         XCTAssertTrue(sut.vocalBaseline?.isClinicallValid ?? false)
-        XCTAssertEqual(mockAnalyticsService.lastLoggedEvent, "onboarding_baseline_established")
+        XCTAssertEqual(harness.mockAnalyticsService.lastLoggedEvent, "onboarding_baseline_established")
     }
     
     
     func testBaselineValidationFailsWithPoorQuality() async throws {
         // Given: User completes low-quality recording below clinical threshold
-        mockPermissionManager.mockPermissionStatus = .authorized
+        harness.mockMicrophonePermissionManager.mockPermissionStatus = .authorized
         let mockUserProfile = createUserProfile()
         let poorAnalysis = createAnalysisResult(quality: .poor)
         
         sut.userProfile = mockUserProfile
-        mockAnalysisService.mockAnalysisResult = poorAnalysis
-        mockVocalBaselineService.shouldThrowError = true
-        mockVocalBaselineService.mockError = VocalBaselineError.clinicalValidationFailed(reason: "F0 confidence \(TestConstants.poorConfidence)% below minimum \(TestConstants.minimumClinicalConfidence)%")
+        harness.mockHybridVocalAnalysisService.mockAnalysisResult = poorAnalysis
+        harness.mockVocalBaselineService.shouldThrowError = true
+        harness.mockVocalBaselineService.mockError = VocalBaselineError.clinicalValidationFailed(reason: "F0 confidence \(TestConstants.poorConfidence)% below minimum \(TestConstants.minimumClinicalConfidence)%")
         
         // When: User attempts to establish baseline
         do {

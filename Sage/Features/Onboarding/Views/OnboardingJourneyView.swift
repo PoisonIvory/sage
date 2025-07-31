@@ -70,6 +70,12 @@ struct OnboardingJourneyView: View {
                 SignupMethodView(viewModel: viewModel)
             case .explainer:
                 ExplainerView(viewModel: viewModel)
+            case .userInfoForm:
+                UserInfoFormView(
+                    isAnonymous: viewModel.selectedSignupMethod == .anonymous,
+                    userInfo: $viewModel.userProfileData,
+                    onComplete: { viewModel.completeUserInfo() }
+                )
             case .sustainedVowelTest:
                 SustainedVowelTestView(viewModel: viewModel)
             case .readingPrompt:
@@ -131,12 +137,12 @@ struct ExplainerView: View {
             
             Spacer()
             
-            // Begin Button
+            // Continue Button
             Button(action: {
-                print("[ExplainerView] Begin button tapped")
+                print("[ExplainerView] Continue button tapped")
                 viewModel.selectBegin()
             }) {
-                Text(viewModel.beginButtonTitle)
+                Text("Continue")
                     .font(SageTypography.headline)
                     .foregroundColor(SageColors.fogWhite)
                     .frame(maxWidth: .infinity)
@@ -145,7 +151,7 @@ struct ExplainerView: View {
                     .cornerRadius(16)
             }
             .padding(.horizontal, SageSpacing.xlarge)
-            .accessibilityLabel("Begin voice testing. Start the vocal assessment.")
+            .accessibilityLabel("Continue to profile setup. Provide your information.")
             
             Spacer(minLength: 60)
         }

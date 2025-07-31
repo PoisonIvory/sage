@@ -382,7 +382,7 @@ struct OnboardingTestDataFactory {
         osVersion: String = TestConstants.testOSVersion,
         dateProvider: DateProvider = MockDateProvider(currentDate: Date(timeIntervalSince1970: TestConstants.testTimestamp))
     ) -> UserProfile {
-        return UserProfileValidator.createMinimalProfile(
+        return UserProfileData.createMinimalProfile(
             userId: userId,
             deviceModel: deviceModel,
             osVersion: osVersion,
@@ -400,9 +400,8 @@ struct OnboardingTestDataFactory {
     ) -> UserProfile {
         let data = createValidUserProfileData(age: age, gender: gender)
         do {
-            return try UserProfileValidator.createCompleteProfile(
-                from: data,
-                userId: userId,
+            return try data.toUserProfile(
+                id: userId,
                 deviceModel: deviceModel,
                 osVersion: osVersion,
                 dateProvider: dateProvider
