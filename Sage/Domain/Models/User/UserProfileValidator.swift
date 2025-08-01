@@ -5,23 +5,7 @@ public struct UserProfileValidator {
     
     // MARK: - Profile Creation
     
-    /// Creates a minimal user profile for onboarding
-    public static func createMinimalProfile(
-        userId: String,
-        deviceModel: String,
-        osVersion: String,
-        dateProvider: DateProvider = SystemDateProvider()
-    ) -> UserProfile {
-        do {
-            return try UserProfile.createMinimal(
-                userId: userId,
-                deviceModel: deviceModel,
-                osVersion: osVersion
-            )
-        } catch {
-            fatalError("Failed to create minimal profile: \(error)")
-        }
-    }
+
     
     /// Creates complete profile from form data with validation
     public static func createCompleteProfile(

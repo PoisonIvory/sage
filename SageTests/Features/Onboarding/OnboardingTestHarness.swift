@@ -382,7 +382,7 @@ struct OnboardingTestDataFactory {
         osVersion: String = TestConstants.testOSVersion,
         dateProvider: DateProvider = MockDateProvider(currentDate: Date(timeIntervalSince1970: TestConstants.testTimestamp))
     ) -> UserProfile {
-        return UserProfileData.createMinimalProfile(
+        return try! UserProfile.createMinimal(
             userId: userId,
             deviceModel: deviceModel,
             osVersion: osVersion,

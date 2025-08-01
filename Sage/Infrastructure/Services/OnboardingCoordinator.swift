@@ -1,10 +1,5 @@
 import Foundation
 
-/// Protocol for onboarding flow coordination (for testability)
-protocol OnboardingCoordinatorProtocol: AnyObject {
-    func onboardingDidComplete(userProfile: UserProfile)
-}
-
 /// Coordinates onboarding flow completion and navigation
 /// - Handles transition to main app after onboarding
 /// - Provides clean interface for onboarding flow

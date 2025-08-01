@@ -46,15 +46,16 @@ class OnboardingTypesTests: XCTestCase {
     
     // MARK: - SignupResult Tests
     func testSignupResultEquality() {
-        // Given: Same signup results
-        let result1 = SignupResult.created
-        let result2 = SignupResult.created
+        // Given: Same signup results with UserProfile data
+        let testProfile = OnboardingTestDataFactory.createMinimalUserProfile()
+        let result1 = SignupResult.created(testProfile)
+        let result2 = SignupResult.created(testProfile)
         
         // Then: Should be equal
         XCTAssertEqual(result1, result2)
         
         // Given: Different signup results
-        let result3 = SignupResult.exists
+        let result3 = SignupResult.exists(testProfile)
         
         // Then: Should not be equal
         XCTAssertNotEqual(result1, result3)
@@ -77,6 +78,40 @@ class OnboardingTypesTests: XCTestCase {
         
         // Then: Should not be equal
         XCTAssertNotEqual(result1, result3)
+    }
+    
+    func testSignupResultWithDifferentUserProfiles() {
+        // Given: Different UserProfile instances
+        let profile1 = OnboardingTestDataFactory.createMinimalUserProfile(userId: "user1")
+        let profile2 = OnboardingTestDataFactory.createMinimalUserProfile(userId: "user2")
+        
+        let result1 = SignupResult.created(profile1)
+        let result2 = SignupResult.created(profile2)
+        
+        // Then: Should not be equal (different profiles)
+        XCTAssertNotEqual(result1, result2)
+        
+        // Given: Same profile in different result types
+        let result3 = SignupResult.exists(profile1)
+        
+        // Then: Should not be equal (different result types)
+        XCTAssertNotEqual(result1, result3)
+    }
+    
+    func testSignupResultDirectProfileAccess() {
+        // Given: SignupResult with UserProfile data
+        let testProfile = OnboardingTestDataFactory.createMinimalUserProfile(userId: "test-user")
+        let result = SignupResult.created(testProfile)
+        
+        // When: Extracting profile data directly
+        switch result {
+        case .created(let profile):
+            // Then: Should have direct access to profile without re-fetching
+            XCTAssertEqual(profile.id, "test-user")
+            XCTAssertEqual(profile.age.value, 25) // Default age from factory
+        case .exists, .error:
+            XCTFail("Expected created case")
+        }
     }
     
     // MARK: - ValidationError Tests

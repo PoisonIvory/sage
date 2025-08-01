@@ -309,7 +309,7 @@ final class OnboardingJourneyViewModel: ObservableObject {
     private func createMinimalUserProfile() {
         let userId = authService.currentUserId ?? UUID().uuidString
         do {
-            userProfile = try UserProfileData.createMinimalProfile(
+            userProfile = try UserProfile.createMinimal(
                 userId: userId,
                 deviceModel: UIDevice.current.model,
                 osVersion: UIDevice.current.systemVersion,

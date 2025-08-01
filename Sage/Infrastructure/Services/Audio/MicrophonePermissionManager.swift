@@ -1,11 +1,6 @@
 import Foundation
 import AVFoundation
 
-/// Protocol for microphone permission management (for testability)
-protocol MicrophonePermissionManagerProtocol {
-    func checkPermission(completion: @escaping (Bool) -> Void)
-}
-
 /// Manages microphone permission requests and status
 /// - Handles permission checking and requesting
 /// - Provides clean interface for onboarding flow

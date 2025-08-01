@@ -40,12 +40,10 @@ public struct UserProfile: Codable, Identifiable, Equatable {
     
     // MARK: - Static Formatter
     
-    /// Shared ISO8601 formatter for consistent date formatting
-    private static let isoFormatter: ISO8601DateFormatter = {
-        let formatter = ISO8601DateFormatter()
-        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return formatter
-    }()
+    /// Formats a date using the shared ISO8601 formatter
+    public static func formatDate(_ date: Date) -> String {
+        return DateFormatting.formatDate(date)
+    }
     
     // MARK: - Initialization
     
@@ -86,7 +84,7 @@ public struct UserProfile: Codable, Identifiable, Equatable {
         if let createdAt = createdAt {
             self.createdAt = createdAt
         } else {
-            self.createdAt = Self.isoFormatter.string(from: Date())
+            self.createdAt = Self.formatDate(Date())
         }
     }
     
@@ -94,7 +92,100 @@ public struct UserProfile: Codable, Identifiable, Equatable {
     
     /// Demographic category for voice analysis
     public var voiceDemographic: VoiceDemographic {
-        switch (age.value, genderIdentity) {
+        return Self.demographicCategory(for: age, genderIdentity: genderIdentity)
+    }
+}
+
+// MARK: - Custom Codable Implementation
+
+extension UserProfile {
+    /// Custom encoding to optimize for backend compatibility
+    /// - Omits empty suspectedConditions array to reduce payload size
+    /// - Maintains all validation during encoding
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        
+        try container.encode(id, forKey: .id)
+        try container.encode(age, forKey: .age)
+        try container.encode(genderIdentity, forKey: .genderIdentity)
+        try container.encode(sexAssignedAtBirth, forKey: .sexAssignedAtBirth)
+        try container.encode(voiceConditions, forKey: .voiceConditions)
+        try container.encode(diagnosedConditions, forKey: .diagnosedConditions)
+        
+        // Only encode suspectedConditions if not empty
+        if !suspectedConditions.isEmpty {
+            try container.encode(suspectedConditions, forKey: .suspectedConditions)
+        }
+        
+        try container.encode(deviceModel, forKey: .deviceModel)
+        try container.encode(osVersion, forKey: .osVersion)
+        try container.encode(createdAt, forKey: .createdAt)
+    }
+    
+    /// Custom decoding to handle optional suspectedConditions
+    /// - Provides empty array as default for missing suspectedConditions
+    /// - Maintains all validation during decoding
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        
+        let id = try container.decode(String.self, forKey: .id)
+        let age = try container.decode(Age.self, forKey: .age)
+        let genderIdentity = try container.decode(GenderIdentity.self, forKey: .genderIdentity)
+        let sexAssignedAtBirth = try container.decode(SexAssignedAtBirth.self, forKey: .sexAssignedAtBirth)
+        let voiceConditions = try container.decode([String].self, forKey: .voiceConditions)
+        let diagnosedConditions = try container.decode([String].self, forKey: .diagnosedConditions)
+        
+        // Decode suspectedConditions with empty array as default
+        let suspectedConditions = try container.decodeIfPresent([String].self, forKey: .suspectedConditions) ?? []
+        
+        let deviceModel = try container.decode(String.self, forKey: .deviceModel)
+        let osVersion = try container.decode(String.self, forKey: .osVersion)
+        let createdAt = try container.decode(String.self, forKey: .createdAt)
+        
+        // Validate required conditions are not empty
+        guard !voiceConditions.isEmpty else {
+            throw UserProfileError.invalidVoiceConditions("At least one voice condition must be selected")
+        }
+        
+        guard !diagnosedConditions.isEmpty else {
+            throw UserProfileError.invalidMedicalConditions("At least one diagnosed condition must be selected")
+        }
+        
+        self.id = id
+        self.age = age
+        self.genderIdentity = genderIdentity
+        self.sexAssignedAtBirth = sexAssignedAtBirth
+        self.voiceConditions = voiceConditions
+        self.diagnosedConditions = diagnosedConditions
+        self.suspectedConditions = suspectedConditions
+        self.deviceModel = deviceModel
+        self.osVersion = osVersion
+        self.createdAt = createdAt
+    }
+    
+    /// Coding keys for custom Codable implementation
+    private enum CodingKeys: String, CodingKey {
+        case id, age, genderIdentity, sexAssignedAtBirth, voiceConditions, diagnosedConditions, suspectedConditions, deviceModel, osVersion, createdAt
+    }
+}
+
+// MARK: - Demographic Mapping Extension
+
+extension UserProfile {
+    /// Maps age and gender identity to voice demographic category
+    /// - Parameter age: User's age (validated Age value object)
+    /// - Parameter genderIdentity: User's gender identity
+    /// - Returns: Appropriate VoiceDemographic category for voice analysis
+    public static func demographicCategory(for age: Age, genderIdentity: GenderIdentity) -> VoiceDemographic {
+        return demographicCategory(for: age.value, genderIdentity: genderIdentity)
+    }
+    
+    /// Maps age and gender identity to voice demographic category
+    /// - Parameter age: User's age value (Int)
+    /// - Parameter genderIdentity: User's gender identity
+    /// - Returns: Appropriate VoiceDemographic category for voice analysis
+    public static func demographicCategory(for age: Int, genderIdentity: GenderIdentity) -> VoiceDemographic {
+        switch (age, genderIdentity) {
         case (13...17, _):
             return .adolescent
         case (18...64, .woman):

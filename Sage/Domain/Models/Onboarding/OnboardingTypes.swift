@@ -32,24 +32,15 @@ enum SignupErrorType: String, Error, LocalizedError {
 }
 
 /// Results of signup method selection operation
-/// - created: New profile created successfully
-/// - exists: Profile already exists for this user
+/// - created: New profile created successfully with UserProfile data
+/// - exists: Profile already exists for this user with UserProfile data
 /// - error: Operation failed with specific error type
+/// 
+/// Rationale: This allows direct use of the created profile without requiring re-fetching
 enum SignupResult: Equatable {
-    case created
-    case exists
+    case created(UserProfile)
+    case exists(UserProfile)
     case error(SignupErrorType)
-    
-    static func == (lhs: SignupResult, rhs: SignupResult) -> Bool {
-        switch (lhs, rhs) {
-        case (.created, .created), (.exists, .exists):
-            return true
-        case (.error(let lhsError), .error(let rhsError)):
-            return lhsError == rhsError
-        default:
-            return false
-        }
-    }
 }
 
 // MARK: - Value Objects
@@ -69,8 +60,8 @@ public struct Age: Equatable, Codable {
     
     /// Creates age from optional value with validation
     public init?(optional value: Int?) {
-        guard let value = value else { return nil }
-        try? self.init(value)
+        guard let value = value, value.isValidAge else { return nil }
+        self.value = value
     }
     
     /// Validates age without creating instance
@@ -83,6 +74,37 @@ public struct Age: Equatable, Codable {
     
     /// Maximum valid age for research purposes
     public static let maximum = 120
+    
+    // MARK: - Codable Implementation
+    
+    /// Custom encoding to ensure validation during serialization
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(value)
+    }
+    
+    /// Custom decoding to ensure validation during deserialization
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawValue = try container.decode(Int.self)
+        
+        // Validate the decoded value
+        guard rawValue >= 13 && rawValue <= 120 else {
+            throw ValidationError.ageInvalid()
+        }
+        
+        self.value = rawValue
+    }
+}
+
+
+
+/// Extension to provide conditions validation on optional string arrays
+extension Optional where Wrapped == [String] {
+    /// Validates if the optional array contains at least one condition
+    var hasValidConditions: Bool {
+        return !(self?.isEmpty ?? true)
+    }
 }
 
 /// Voice conditions value object
@@ -95,6 +117,37 @@ public struct VoiceConditions: Equatable, Codable {
         }
         self.conditions = conditions
     }
+    
+    /// Represents no voice conditions
+    public static var none: Self {
+        return Self(unsafeConditions: [])
+    }
+    
+    /// Private initializer for creating .none case without validation
+    private init(unsafeConditions: [String]) {
+        self.conditions = unsafeConditions
+    }
+    
+    // MARK: - Codable Implementation
+    
+    /// Custom encoding to ensure validation during serialization
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(conditions)
+    }
+    
+    /// Custom decoding to ensure validation during deserialization
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawConditions = try container.decode([String].self)
+        
+        // Validate the decoded conditions
+        guard !rawConditions.isEmpty else {
+            throw ValidationError.voiceConditionsRequired()
+        }
+        
+        self.conditions = rawConditions
+    }
 }
 
 /// Diagnosed conditions value object
@@ -106,6 +159,37 @@ public struct DiagnosedConditions: Equatable, Codable {
             throw ValidationError.diagnosedConditionsRequired()
         }
         self.conditions = conditions
+    }
+    
+    /// Represents no diagnosed conditions
+    public static var none: Self {
+        return Self(unsafeConditions: [])
+    }
+    
+    /// Private initializer for creating .none case without validation
+    private init(unsafeConditions: [String]) {
+        self.conditions = unsafeConditions
+    }
+    
+    // MARK: - Codable Implementation
+    
+    /// Custom encoding to ensure validation during serialization
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(conditions)
+    }
+    
+    /// Custom decoding to ensure validation during deserialization
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.singleValueContainer()
+        let rawConditions = try container.decode([String].self)
+        
+        // Validate the decoded conditions
+        guard !rawConditions.isEmpty else {
+            throw ValidationError.diagnosedConditionsRequired()
+        }
+        
+        self.conditions = rawConditions
     }
 }
 
@@ -136,6 +220,21 @@ public enum ValidationError: LocalizedError, Equatable {
         }
     }
     
+    public var recoverySuggestion: String? {
+        switch self {
+        case .ageRequired:
+            return "Please enter your age to proceed."
+        case .ageInvalid:
+            return "Enter a valid age between \(Age.minimum) and \(Age.maximum)."
+        case .genderInvalid:
+            return "Please select a gender option from the list."
+        case .voiceConditionsRequired:
+            return "Select at least one voice condition or choose 'None' if you don't have any."
+        case .diagnosedConditionsRequired:
+            return "Select at least one diagnosed condition or choose 'None' if you don't have any."
+        }
+    }
+    
     public var fieldName: String {
         switch self {
         case .ageRequired(let fieldName), 
@@ -145,6 +244,28 @@ public enum ValidationError: LocalizedError, Equatable {
              .diagnosedConditionsRequired(let fieldName):
             return fieldName
         }
+    }
+}
+
+/// Completion data for onboarding final step
+/// - Encapsulates data collected during onboarding completion
+/// - Provides extensible structure for future onboarding requirements
+public struct OnboardingCompletionData: Equatable, Codable {
+    public let completedAt: Date
+    public let totalDuration: TimeInterval
+    public let stepsCompleted: Int
+    public let userProfileData: UserProfileData?
+    
+    public init(
+        completedAt: Date = Date(),
+        totalDuration: TimeInterval = 0,
+        stepsCompleted: Int = 0,
+        userProfileData: UserProfileData? = nil
+    ) {
+        self.completedAt = completedAt
+        self.totalDuration = totalDuration
+        self.stepsCompleted = stepsCompleted
+        self.userProfileData = userProfileData
     }
 }
 
@@ -172,21 +293,131 @@ public struct MockDateProvider: DateProvider {
 }
 
 /// Onboarding steps for the new GWT-compliant onboarding flow
-/// - signupMethod: User chooses [anonymous, email] signup
+/// - signupMethod: User chooses [anonymous, email] signup with optional selected method
 /// - explainer: View 1 - "Let's run some quick tests" screen
-/// - userInfoForm: View 2 - User provides age, gender, and optional name
-/// - sustainedVowelTest: View 3 - "Ahhh" test with 10-second recording
-/// - readingPrompt: View 4 - Reading prompt placeholder
-/// - finalStep: View 5 - Final completion step
-/// - completed: Onboarding is complete
-enum OnboardingStep: String, Equatable {
-    case signupMethod = "signup_method"
-    case explainer = "explainer"
-    case userInfoForm = "user_info_form"
-    case sustainedVowelTest = "sustained_vowel_test"
-    case readingPrompt = "reading_prompt"
-    case finalStep = "final_step"
-    case completed = "completed"
+/// - userInfoForm: View 2 - User provides age, gender, and optional name with form data
+/// - sustainedVowelTest: View 3 - "Ahhh" test with 10-second recording duration
+/// - readingPrompt: View 4 - Reading prompt placeholder with optional prompt text
+/// - finalStep: View 5 - Final completion step with optional completion data
+/// - completed: Onboarding is complete with optional completion timestamp
+enum OnboardingStep: Equatable {
+    case signupMethod(SignupMethod? = nil)
+    case explainer
+    case userInfoForm(UserProfileData? = nil)
+    case sustainedVowelTest(Duration = .seconds(10))
+    case readingPrompt(String? = nil)
+    case finalStep(OnboardingCompletionData? = nil)
+    case completed(Date = Date())
+    
+    /// String identifier for analytics and persistence
+    var identifier: String {
+        switch self {
+        case .signupMethod:
+            return "signup_method"
+        case .explainer:
+            return "explainer"
+        case .userInfoForm:
+            return "user_info_form"
+        case .sustainedVowelTest:
+            return "sustained_vowel_test"
+        case .readingPrompt:
+            return "reading_prompt"
+        case .finalStep:
+            return "final_step"
+        case .completed:
+            return "completed"
+        }
+    }
+    
+
+    
+    // MARK: - Convenience Methods
+    
+    /// Returns the selected signup method if available
+    var selectedSignupMethod: SignupMethod? {
+        if case .signupMethod(let method) = self {
+            return method
+        }
+        return nil
+    }
+    
+    /// Returns the user profile data if available
+    var userProfileData: UserProfileData? {
+        if case .userInfoForm(let data) = self {
+            return data
+        }
+        return nil
+    }
+    
+    /// Returns the sustained vowel test duration
+    var sustainedVowelDuration: Duration {
+        if case .sustainedVowelTest(let duration) = self {
+            return duration
+        }
+        return .seconds(10)
+    }
+    
+    /// Returns the reading prompt text if available
+    var readingPromptText: String? {
+        if case .readingPrompt(let prompt) = self {
+            return prompt
+        }
+        return nil
+    }
+    
+    /// Returns the completion data if available
+    var completionData: OnboardingCompletionData? {
+        if case .finalStep(let data) = self {
+            return data
+        }
+        return nil
+    }
+    
+    /// Returns the completion timestamp
+    var completionTimestamp: Date {
+        if case .completed(let timestamp) = self {
+            return timestamp
+        }
+        return Date()
+    }
+    
+    /// Creates a new step with updated associated data
+    func withAssociatedData<T>(_ data: T) -> OnboardingStep {
+        switch self {
+        case .signupMethod:
+            if let method = data as? SignupMethod {
+                return .signupMethod(method)
+            }
+            return self
+        case .userInfoForm:
+            if let profileData = data as? UserProfileData {
+                return .userInfoForm(profileData)
+            }
+            return self
+        case .sustainedVowelTest:
+            if let duration = data as? Duration {
+                return .sustainedVowelTest(duration)
+            }
+            return self
+        case .readingPrompt:
+            if let prompt = data as? String {
+                return .readingPrompt(prompt)
+            }
+            return self
+        case .finalStep:
+            if let completionData = data as? OnboardingCompletionData {
+                return .finalStep(completionData)
+            }
+            return self
+        case .completed:
+            if let timestamp = data as? Date {
+                return .completed(timestamp)
+            }
+            return self
+        default:
+            return self
+        }
+    }
 }
 
 /// User profile data for form binding during onboarding
@@ -194,20 +425,20 @@ enum OnboardingStep: String, Equatable {
 /// - Uses value objects for better encapsulation and validation
 /// - Provides comprehensive validation with semantic error types
 public struct UserProfileData: Equatable {
-    public var age: Int
+    public var age: Age?
     public var genderIdentity: GenderIdentity
     public var sexAssignedAtBirth: SexAssignedAtBirth
-    public var voiceConditions: [String]
-    public var diagnosedConditions: [String]
+    public var voiceConditions: [String]?
+    public var diagnosedConditions: [String]?
     
     public init(
-        age: Int,
+        age: Int?,
         genderIdentity: GenderIdentity = .preferNotToSay,
         sexAssignedAtBirth: SexAssignedAtBirth = .preferNotToSay,
-        voiceConditions: [String] = ["None"],
-        diagnosedConditions: [String] = ["None"]
+        voiceConditions: [String]? = nil,
+        diagnosedConditions: [String]? = nil
     ) {
-        self.age = age
+        self.age = age.flatMap { try? Age($0) }
         self.genderIdentity = genderIdentity
         self.sexAssignedAtBirth = sexAssignedAtBirth
         self.voiceConditions = voiceConditions
@@ -221,19 +452,17 @@ public struct UserProfileData: Equatable {
     /// - Provides semantic error messages
     public func validate() throws {
         // Age validation using value object
-        if age <= 0 {
+        guard let age = age else {
             throw ValidationError.ageRequired()
-        } else if !Age.isValid(age) {
-            throw ValidationError.ageInvalid()
         }
         
-        // Voice conditions validation
-        if voiceConditions.isEmpty {
+        // Voice conditions validation using shared helper
+        if !voiceConditions.hasValidConditions {
             throw ValidationError.voiceConditionsRequired()
         }
         
-        // Diagnosed conditions validation
-        if diagnosedConditions.isEmpty {
+        // Diagnosed conditions validation using shared helper
+        if !diagnosedConditions.hasValidConditions {
             throw ValidationError.diagnosedConditionsRequired()
         }
     }
@@ -242,69 +471,39 @@ public struct UserProfileData: Equatable {
     /// - Collects all validation errors for comprehensive feedback
     /// - Useful for form validation where multiple errors can be shown
     public func validateAll() -> UserProfileValidationResult {
-        var errors: [ValidationError] = []
-        
-        // Age validation
-        if age <= 0 {
-            errors.append(.ageRequired())
-        } else if !Age.isValid(age) {
-            errors.append(.ageInvalid())
-        }
-        
-        // Voice conditions validation
-        if voiceConditions.isEmpty {
-            errors.append(.voiceConditionsRequired())
-        }
-        
-        // Diagnosed conditions validation
-        if diagnosedConditions.isEmpty {
-            errors.append(.diagnosedConditionsRequired())
-        }
-        
+        let errors = collectValidationErrors()
         return UserProfileValidationResult(isValid: errors.isEmpty, errors: errors)
     }
     
-    /// Validates age specifically using Age value object
-    public func validateAge() -> ValidationError? {
-        if age <= 0 {
-            return .ageRequired()
-        } else if !Age.isValid(age) {
-            return .ageInvalid()
+    /// Collects all validation errors for the profile data
+    /// - Centralized validation logic for reuse
+    /// - Returns array of ValidationError instances
+    private func collectValidationErrors() -> [ValidationError] {
+        var errors: [ValidationError] = []
+        
+        // Age validation using value object
+        if age == nil {
+            errors.append(.ageRequired())
         }
-        return nil
+        
+        // Voice conditions validation using shared helper
+        if !voiceConditions.hasValidConditions {
+            errors.append(.voiceConditionsRequired())
+        }
+        
+        // Diagnosed conditions validation using shared helper
+        if !diagnosedConditions.hasValidConditions {
+            errors.append(.diagnosedConditionsRequired())
+        }
+        
+        return errors
     }
     
-    /// Validates voice conditions specifically
-    public func validateVoiceConditions() -> ValidationError? {
-        if voiceConditions.isEmpty {
-            return .voiceConditionsRequired()
-        }
-        return nil
-    }
-    
-    /// Validates diagnosed conditions specifically
-    public func validateDiagnosedConditions() -> ValidationError? {
-        if diagnosedConditions.isEmpty {
-            return .diagnosedConditionsRequired()
-        }
-        return nil
-    }
+
     
     // MARK: - Profile Creation Methods
     
-    /// Creates a minimal UserProfile for initial signup
-    public static func createMinimalProfile(
-        userId: String,
-        deviceModel: String,
-        osVersion: String,
-        dateProvider: DateProvider = SystemDateProvider()
-    ) throws -> UserProfile {
-        return try UserProfile.createMinimal(
-            userId: userId,
-            deviceModel: deviceModel,
-            osVersion: osVersion
-        )
-    }
+
     
     /// Creates a UserProfile from this form data with injected date provider
     /// - Parameters:
@@ -319,16 +518,22 @@ public struct UserProfileData: Equatable {
         osVersion: String, 
         dateProvider: DateProvider = SystemDateProvider()
     ) throws -> UserProfile {
+        guard let age = age else {
+            throw ValidationError.ageRequired()
+        }
+        
+        let createdDate = dateProvider.currentDate
         return try UserProfile(
             id: id,
-            age: age,
+            age: age.value,
             genderIdentity: genderIdentity,
             sexAssignedAtBirth: sexAssignedAtBirth,
-            voiceConditions: voiceConditions,
-            diagnosedConditions: diagnosedConditions,
+            voiceConditions: voiceConditions ?? [],
+            diagnosedConditions: diagnosedConditions ?? [],
             suspectedConditions: [],
             deviceModel: deviceModel,
-            osVersion: osVersion
+            osVersion: osVersion,
+            createdAt: UserProfile.formatDate(createdDate)
         )
     }
 }
@@ -357,9 +562,22 @@ public struct UserProfileValidationResult {
     
     /// Returns field-specific errors for form validation
     public var fieldErrors: [String: String] {
-        var fieldErrors: [String: String] = [:]
+        return mapErrorsToFieldDictionary { $0.errorDescription }
+    }
+    
+    /// Returns field-specific validation errors for direct UI binding
+    public var fieldErrorMap: [String: ValidationError] {
+        return mapErrorsToFieldDictionary { $0 }
+    }
+    
+    /// Maps validation errors to field dictionary using provided transform
+    /// - Generic utility for creating field-specific error mappings
+    /// - Parameter transform: Function to transform ValidationError to desired type
+    /// - Returns: Dictionary mapping field names to transformed error values
+    private func mapErrorsToFieldDictionary<T>(_ transform: (ValidationError) -> T) -> [String: T] {
+        var fieldErrors: [String: T] = [:]
         for error in errors {
-            fieldErrors[error.fieldName] = error.errorDescription
+            fieldErrors[error.fieldName] = transform(error)
         }
         return fieldErrors
     }
